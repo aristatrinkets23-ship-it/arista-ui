@@ -136,8 +136,11 @@ import { CartService } from '../../core/services/cart.service';
   styles: [`
     :host {
       display: block;
-      position: sticky;
+      position: fixed;
       top: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
       z-index: 1000;
     }
 

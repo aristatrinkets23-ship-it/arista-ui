@@ -25,6 +25,13 @@ import { FooterComponent } from '../footer/footer.component';
     }
     .main-content {
       flex: 1;
+      padding-top: 72px;
+    }
+
+    @media (min-width: 992px) {
+      .main-content {
+        padding-top: 84px;
+      }
     }
   `]
 })
