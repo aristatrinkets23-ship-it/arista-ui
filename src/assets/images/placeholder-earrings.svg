@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="earBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2EFE8"/>
+      <stop offset="100%" stop-color="#DDE3D5"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5C396"/>
+      <stop offset="50%" stop-color="#CFA874"/>
+      <stop offset="100%" stop-color="#A88250"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#earBg)"/>
+  <circle cx="200" cy="200" r="130" fill="none" stroke="#CFA874" stroke-width="1" opacity="0.3"/>
+  <!-- Left Earring -->
+  <path d="M 140 110 Q 140 140 140 150" fill="none" stroke="url(#goldGrad)" stroke-width="3"/>
+  <circle cx="140" cy="155" r="4" fill="#5B4636"/>
+  <circle cx="140" cy="190" r="18" fill="url(#goldGrad)"/>
+  <circle cx="140" cy="190" r="12" fill="#FFFFFF"/>
+  <circle cx="140" cy="235" r="10" fill="#F7E9E6" stroke="#CFA874" stroke-width="1"/>
+
+  <!-- Right Earring -->
+  <path d="M 260 110 Q 260 140 260 150" fill="none" stroke="url(#goldGrad)" stroke-width="3"/>
+  <circle cx="260" cy="155" r="4" fill="#5B4636"/>
+  <circle cx="260" cy="190" r="18" fill="url(#goldGrad)"/>
+  <circle cx="260" cy="190" r="12" fill="#FFFFFF"/>
+  <circle cx="260" cy="235" r="10" fill="#F7E9E6" stroke="#CFA874" stroke-width="1"/>
+
+  <!-- Text -->
+  <text x="200" y="325" font-family="'Playfair Display', Georgia, serif" font-size="15" font-weight="600" fill="#5B4636" text-anchor="middle" letter-spacing="2">PEARL & DIAMOND EARRINGS</text>
+  <text x="200" y="345" font-family="'Montserrat', sans-serif" font-size="10" font-weight="500" fill="#CFA874" text-anchor="middle" letter-spacing="1.5">ARISTA FINE JEWELLERY</text>
+</svg>

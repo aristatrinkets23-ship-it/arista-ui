@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="ringBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2EFE8"/>
+      <stop offset="100%" stop-color="#F7E9E6"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5C396"/>
+      <stop offset="50%" stop-color="#CFA874"/>
+      <stop offset="100%" stop-color="#A88250"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#ringBg)"/>
+  <circle cx="200" cy="200" r="130" fill="none" stroke="#CFA874" stroke-width="1" opacity="0.3"/>
+  <!-- Ring band -->
+  <ellipse cx="200" cy="230" rx="70" ry="35" fill="none" stroke="url(#goldGrad)" stroke-width="14"/>
+  <ellipse cx="200" cy="230" rx="70" ry="35" fill="none" stroke="#5B4636" stroke-width="1" opacity="0.2"/>
+  <!-- Solitaire Diamond Mount -->
+  <polygon points="200,140 220,180 180,180" fill="url(#goldGrad)"/>
+  <!-- Diamond -->
+  <polygon points="200,120 225,145 200,175 175,145" fill="#FFFFFF" stroke="#CFA874" stroke-width="1.5"/>
+  <polygon points="200,120 212,145 200,175" fill="rgba(232, 227, 243, 0.6)"/>
+  <line x1="175" y1="145" x2="225" y2="145" stroke="#CFA874" stroke-width="1"/>
+  <!-- Text -->
+  <text x="200" y="325" font-family="'Playfair Display', Georgia, serif" font-size="15" font-weight="600" fill="#5B4636" text-anchor="middle" letter-spacing="2">SOLITAIRE RINGS</text>
+  <text x="200" y="345" font-family="'Montserrat', sans-serif" font-size="10" font-weight="500" fill="#CFA874" text-anchor="middle" letter-spacing="1.5">ARISTA FINE JEWELLERY</text>
+</svg>

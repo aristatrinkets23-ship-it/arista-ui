@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <rect width="400" height="400" fill="#F2EFE8"/>
+  <circle cx="200" cy="200" r="120" fill="none" stroke="#CFA874" stroke-width="2" stroke-dasharray="6 6"/>
+  <polygon points="200,120 250,170 200,280 150,170" fill="none" stroke="#5B4636" stroke-width="2"/>
+  <polygon points="200,120 225,170 200,280" fill="rgba(207, 168, 116, 0.15)"/>
+  <circle cx="200" cy="120" r="8" fill="#CFA874"/>
+  <text x="200" y="320" font-family="'Playfair Display', Georgia, serif" font-size="16" fill="#5B4636" text-anchor="middle" letter-spacing="2">ARISTA TRINKETS</text>
+  <text x="200" y="340" font-family="'Montserrat', sans-serif" font-size="11" fill="#777777" text-anchor="middle" letter-spacing="1">FINE JEWELLERY</text>
+</svg>

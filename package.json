@@ -1,0 +1,32 @@
+{
+  "name": "arista-trinkets-frontend",
+  "version": "1.0.0",
+  "description": "Angular 22 UI Frontend for Arista Trinkets Jewellery E-Commerce",
+  "scripts": {
+    "start": "node dev-server.js",
+    "dev": "node dev-server.js",
+    "build": "node build.js",
+    "typecheck": "tsc --noEmit",
+    "serve": "node dev-server.js"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/animations": "^22.1.7",
+    "@angular/common": "^22.1.7",
+    "@angular/compiler": "^22.1.7",
+    "@angular/core": "^22.1.7",
+    "@angular/forms": "^22.1.7",
+    "@angular/platform-browser": "^22.1.7",
+    "@angular/platform-browser-dynamic": "^22.1.7",
+    "@angular/router": "^22.1.7",
+    "rxjs": "^7.8.0",
+    "tslib": "^2.6.0",
+    "zone.js": "^0.15.0"
+  },
+  "devDependencies": {
+    "@angular/compiler-cli": "^22.1.7",
+    "@types/node": "^22.13.0",
+    "jsdom": "^29.1.1",
+    "typescript": "^6.0.2"
+  }
+}
