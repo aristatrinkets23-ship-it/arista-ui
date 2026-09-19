@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ProductCardData } from '../../../core/models/product-card-data.model';
 import { BadgeComponent } from '../badge/badge.component';
 import { CartService } from '../../../core/services/cart.service';
@@ -52,8 +53,21 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
           </span>
         </div>
         <div class="add-btn-wrapper">
-          <button type="button" class="quick-add-btn" (click)="onQuickAdd($event)">
-            + Add
+          <button
+            type="button"
+            class="quick-add-btn"
+            [class.added]="isAdded"
+            (click)="onQuickAdd($event)"
+          >
+            <ng-container *ngIf="!isAdded">
+              + Add to Cart
+            </ng-container>
+            <ng-container *ngIf="isAdded">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display: inline-block; vertical-align: -2px; margin-right: 4px;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Added
+            </ng-container>
           </button>
         </div>
       </div>
@@ -217,34 +231,72 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       background-color: var(--brand-warm-gold);
       color: var(--brand-mocha-brown);
       border: none;
-      padding: 6px 24px;
+      padding: 7px 18px;
+      width: 100%;
+      max-width: 180px;
       border-radius: var(--radius-full);
       font-family: var(--font-sans);
-      font-size: 0.78rem;
+      font-size: 0.76rem;
       font-weight: 700;
+      letter-spacing: 0.3px;
       cursor: pointer;
       transition: all var(--transition-fast);
       box-shadow: var(--shadow-sm);
+      text-align: center;
     }
     .quick-add-btn:hover {
       background-color: #E2B882;
       transform: translateY(-1px) scale(1.04);
       box-shadow: var(--shadow-md);
     }
+    .quick-add-btn.added {
+      background-color: var(--brand-mocha-brown);
+      color: var(--brand-pearl-beige);
+      box-shadow: 0 2px 8px rgba(91, 70, 54, 0.25);
+    }
+    .quick-add-btn.added:hover {
+      background-color: #4A3A2C;
+      transform: none;
+    }
   `]
 })
-export class ProductCardComponent implements OnInit {
+export class ProductCardComponent implements OnInit, OnDestroy {
   @Input() product!: ProductCardData;
   @Output() wishlistToggle = new EventEmitter<ProductCardData>();
 
   currentImage: string = DEFAULT_IMAGE;
+  isAdded: boolean = false;
+  private cartSub!: Subscription;
+
   private cartService = inject(CartService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     if (this.product && this.product.image && this.product.image.trim() !== '') {
       this.currentImage = this.product.image;
     } else {
       this.currentImage = DEFAULT_IMAGE;
+    }
+
+    this.checkCartStatus();
+    this.cartSub = this.cartService.cart$.subscribe(() => {
+      this.checkCartStatus();
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.cartSub) {
+      this.cartSub.unsubscribe();
+    }
+  }
+
+  private checkCartStatus(): void {
+    if (this.product) {
+      const targetId = this.product.id || this.product.slug;
+      if (targetId !== undefined && targetId !== null) {
+        this.isAdded = this.cartService.isInCart(targetId);
+        this.cdr.detectChanges();
+      }
     }
   }
 
@@ -262,6 +314,7 @@ export class ProductCardComponent implements OnInit {
     event.preventDefault();
     if (this.product) {
       this.cartService.addToCart(this.product, 1);
+      this.isAdded = true;
     }
   }
 

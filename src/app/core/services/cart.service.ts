@@ -30,6 +30,13 @@ export class CartService {
     return this.cartSubject.getValue();
   }
 
+  isInCart(productId: number | string): boolean {
+    if (!productId && productId !== 0) return false;
+    return this.currentCart.items.some(
+      item => String(item.product.id) === String(productId) || (item.product.slug && item.product.slug === String(productId))
+    );
+  }
+
   addToCart(product: ProductCardData, quantity: number = 1, selectedMetal?: string): void {
     const currentItems = [...this.currentCart.items];
     const addQty = Math.max(1, Number(quantity) || 1);
