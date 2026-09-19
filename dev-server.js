@@ -28,7 +28,7 @@ if (fs.existsSync(legacyBundle)) {
   try { fs.unlinkSync(legacyBundle); } catch (e) {}
 }
 
-// Build bundle.js on server startup into dist/bundle.js
+// Build bundle.js into dist/bundle.js
 function buildBundle() {
   try {
     console.log('Compiling Angular TypeScript bundle to dist/bundle.js...');
@@ -43,6 +43,26 @@ function buildBundle() {
 }
 
 buildBundle();
+
+// Auto re-bundle on src/ file changes
+try {
+  let isBuilding = false;
+  let debounceTimeout = null;
+  fs.watch(path.join(__dirname, 'src'), { recursive: true }, (eventType, filename) => {
+    if (filename && (filename.endsWith('.ts') || filename.endsWith('.html') || filename.endsWith('.css'))) {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        if (!isBuilding) {
+          isBuilding = true;
+          buildBundle();
+          isBuilding = false;
+        }
+      }, 150);
+    }
+  });
+} catch (e) {
+  console.warn('File watcher notice:', e.message);
+}
 
 const server = http.createServer((req, res) => {
   let urlPath = req.url.split('?')[0];

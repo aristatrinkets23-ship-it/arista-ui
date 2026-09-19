@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ProductCardData } from '../../../core/models/product-card-data.model';
 import { BadgeComponent } from '../badge/badge.component';
+import { CartService } from '../../../core/services/cart.service';
 
 const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
 
@@ -49,6 +50,9 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
           <span *ngIf="product.compareAtPrice && product.compareAtPrice > product.price" class="compare-price">
             ₹{{ product.compareAtPrice | number:'1.2-2' }}
           </span>
+          <button type="button" class="quick-add-btn" (click)="onQuickAdd($event)">
+            + Add
+          </button>
         </div>
       </div>
     </div>
@@ -180,7 +184,8 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
 
     .price-row {
       display: flex;
-      align-items: baseline;
+      align-items: center;
+      justify-content: space-between;
       gap: 6px;
       margin-top: auto;
       padding-top: 4px;
@@ -199,6 +204,24 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       text-decoration: line-through;
       color: var(--color-text-muted);
     }
+
+    .quick-add-btn {
+      background-color: var(--brand-warm-gold);
+      color: var(--brand-mocha-brown);
+      border: none;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      margin-left: auto;
+    }
+    .quick-add-btn:hover {
+      background-color: #E2B882;
+      transform: scale(1.05);
+    }
   `]
 })
 export class ProductCardComponent implements OnInit {
@@ -206,6 +229,7 @@ export class ProductCardComponent implements OnInit {
   @Output() wishlistToggle = new EventEmitter<ProductCardData>();
 
   currentImage: string = DEFAULT_IMAGE;
+  private cartService = inject(CartService);
 
   ngOnInit(): void {
     if (this.product && this.product.image && this.product.image.trim() !== '') {
@@ -222,6 +246,14 @@ export class ProductCardComponent implements OnInit {
   onWishlistToggle(event: Event): void {
     event.stopPropagation();
     this.wishlistToggle.emit(this.product);
+  }
+
+  onQuickAdd(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    if (this.product) {
+      this.cartService.addToCart(this.product, 1);
+    }
   }
 
   getBadgeVariant(badge: string): 'gold' | 'mocha' | 'blush' | 'sage' | 'lavender' {
