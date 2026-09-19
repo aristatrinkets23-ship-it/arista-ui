@@ -119,27 +119,34 @@ import { ButtonComponent } from '../../shared/components/button/button.component
   styles: [`
     .account-hero {
       background: var(--brand-pearl-beige);
-      padding: 32px 0 28px 0;
+      padding: 36px 16px 32px 16px;
       border-bottom: 1px solid var(--color-border);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
     .hero-eyebrow {
       font-family: var(--font-sans);
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 3px;
       color: var(--brand-warm-gold);
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+      text-align: center;
     }
     .hero-title {
       font-family: var(--font-serif);
-      font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
       font-weight: 700;
       color: var(--brand-mocha-brown);
-      margin: 0;
+      margin: 0 auto;
       letter-spacing: 0.5px;
-      line-height: 1.2;
+      line-height: 1.25;
+      text-align: center;
     }
 
     .account-tabs {

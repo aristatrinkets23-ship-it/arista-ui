@@ -23,10 +23,7 @@ import { CartService } from '../../core/services/cart.service';
         </button>
 
         <!-- Brand Logo (Icon + Full Brand Mark) -->
-        <a routerLink="/" class="brand-logo" aria-label="Arista Trinkets Home">
-          <img src="/assets/images/logo-icon.jpeg" alt="Arista Monogram Icon" class="brand-logo-icon" width="60" height="60" ngSkipOversizedImageWarning />
-          <img src="/assets/images/logo.jpeg" alt="Arista Trinkets Jewellery" class="brand-logo-img" width="220" height="80" ngSkipOversizedImageWarning />
-        </a>
+        <a routerLink="/" class="brand-logo" aria-label="Arista Trinkets Home"><img src="/assets/images/logo-icon.jpeg" alt="Arista Monogram Icon" class="brand-logo-icon" width="60" height="60" ngSkipOversizedImageWarning /><img src="/assets/images/logo.jpeg" alt="Arista Trinkets Jewellery" class="brand-logo-img" width="220" height="80" ngSkipOversizedImageWarning /></a>
 
         <!-- Desktop Navigation Bar -->
         <nav class="desktop-nav">
@@ -41,13 +38,8 @@ import { CartService } from '../../core/services/cart.service';
           </a>
         </nav>
 
-        <!-- Action Icons (Search, Account, Bag) & Small Auth Buttons -->
+        <!-- Action Icons (Search, Account, Bag) -->
         <div class="header-actions">
-          <div class="header-auth-buttons">
-            <a routerLink="/account" class="auth-btn-sm">Login</a>
-            <a routerLink="/account" class="auth-btn-sm auth-btn-outline">Register</a>
-          </div>
-
           <button type="button" class="action-btn" aria-label="Search items">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>
@@ -134,7 +126,7 @@ import { CartService } from '../../core/services/cart.service';
     }
 
     .brand-logo {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 0;
       text-decoration: none;
@@ -146,6 +138,8 @@ import { CartService } from '../../core/services/cart.service';
       object-fit: contain;
       mix-blend-mode: multiply;
       border-radius: 50%;
+      position: relative;
+      z-index: 2;
     }
 
     .brand-logo-img {
@@ -153,7 +147,9 @@ import { CartService } from '../../core/services/cart.service';
       width: auto;
       object-fit: contain;
       mix-blend-mode: multiply;
-      margin-left: -8px;
+      margin-left: -14px;
+      position: relative;
+      z-index: 1;
     }
 
     @media (min-width: 768px) {
@@ -162,52 +158,8 @@ import { CartService } from '../../core/services/cart.service';
       }
       .brand-logo-img {
         height: 64px;
-        margin-left: -10px;
+        margin-left: -18px;
       }
-    }
-
-    .header-auth-buttons {
-      display: none;
-      align-items: center;
-      gap: 6px;
-      margin-right: 8px;
-    }
-
-    @media (min-width: 768px) {
-      .header-auth-buttons {
-        display: flex;
-      }
-    }
-
-    .auth-btn-sm {
-      font-family: var(--font-sans);
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-      padding: 6px 14px;
-      border-radius: var(--radius-full);
-      background-color: var(--brand-warm-gold);
-      color: var(--brand-mocha-brown);
-      text-decoration: none;
-      transition: all var(--transition-fast);
-      white-space: nowrap;
-    }
-
-    .auth-btn-sm:hover {
-      background-color: #E2B882;
-      color: #382A1F;
-    }
-
-    .auth-btn-outline {
-      background-color: transparent;
-      border: 1px solid var(--brand-mocha-brown);
-      color: var(--brand-mocha-brown);
-    }
-
-    .auth-btn-outline:hover {
-      background-color: var(--brand-mocha-brown);
-      color: #FFFFFF;
     }
 
     .mobile-toggle {
