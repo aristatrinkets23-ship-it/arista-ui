@@ -26,10 +26,10 @@ import { CommonModule } from '@angular/common';
       justify-content: center;
       position: relative;
       font-family: var(--font-sans);
-      font-weight: var(--font-weight-medium);
+      font-weight: var(--font-weight-semibold);
       text-transform: uppercase;
       letter-spacing: 1px;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-full);
       cursor: pointer;
       transition: all var(--transition-fast);
       border: 1px solid transparent;
@@ -47,10 +47,10 @@ import { CommonModule } from '@angular/common';
       box-shadow: none !important;
     }
 
-    /* Sizes */
-    .btn-sm { padding: 8px 18px; font-size: 0.75rem; }
-    .btn-md { padding: 12px 28px; font-size: 0.85rem; }
-    .btn-lg { padding: 16px 36px; font-size: 0.95rem; font-weight: 700; }
+    /* Compact Sizes */
+    .btn-sm { padding: 6px 16px; font-size: 0.75rem; }
+    .btn-md { padding: 9px 22px; font-size: 0.82rem; }
+    .btn-lg { padding: 12px 28px; font-size: 0.88rem; font-weight: 700; }
 
     /* Variants */
     .btn-primary {

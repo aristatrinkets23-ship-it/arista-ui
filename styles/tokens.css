@@ -134,15 +134,15 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--brand-mocha-brown);
   font-family: var(--font-sans);
   font-weight: var(--font-weight-semibold);
-  padding: 14px 32px;
+  padding: 10px 24px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   cursor: pointer;
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-fast);
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
 }
 
 .btn-gold:hover {
@@ -157,14 +157,14 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--color-text-light);
   font-family: var(--font-sans);
   font-weight: var(--font-weight-semibold);
-  padding: 14px 32px;
+  padding: 10px 24px;
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-full);
   cursor: pointer;
   transition: all var(--transition-fast);
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
 }
 
 .btn-mocha:hover {

@@ -125,7 +125,7 @@ import { CartService } from '../../core/services/cart.service';
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <path d="M16 10a4 4 0 0 1-8 0"></path>
             </svg>
-            <span>Bag ({{ cartCount }})</span>
+            <span>Bag {{ cartCount > 0 ? '(' + cartCount + ')' : '' }}</span>
           </a>
         </div>
         <p class="drawer-tagline">Arista Trinkets &bull; Handcrafted Fine Jewellery</p>
@@ -428,13 +428,13 @@ import { CartService } from '../../core/services/cart.service';
       align-items: center;
       justify-content: space-between;
       font-family: var(--font-sans);
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--brand-mocha-brown);
-      padding: 12px 14px;
-      border-radius: var(--radius-md);
+      padding: 10px 18px;
+      border-radius: var(--radius-full);
       text-decoration: none;
       transition: all var(--transition-fast);
       background-color: transparent;
