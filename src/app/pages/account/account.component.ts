@@ -20,9 +20,10 @@ import { ButtonComponent } from '../../shared/components/button/button.component
     <!-- Main Account Section -->
     <section class="section-padding">
       <div class="container">
-        <!-- Auth Tabs (Sign In / Register / Demo Dashboard) -->
+        <!-- Auth Tabs (Sign In / Register / My Account) -->
         <div class="account-tabs">
           <button
+            *ngIf="activeTab !== 'dashboard'"
             type="button"
             [class.active]="activeTab === 'login'"
             (click)="activeTab = 'login'"
@@ -31,6 +32,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             Sign In
           </button>
           <button
+            *ngIf="activeTab !== 'dashboard'"
             type="button"
             [class.active]="activeTab === 'register'"
             (click)="activeTab = 'register'"
@@ -39,12 +41,11 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             Create Account
           </button>
           <button
+            *ngIf="activeTab === 'dashboard'"
             type="button"
-            [class.active]="activeTab === 'dashboard'"
-            (click)="activeTab = 'dashboard'"
-            class="account-tab-btn"
+            class="account-tab-btn active"
           >
-            Account Dashboard Shell
+            My Account Dashboard
           </button>
         </div>
 
@@ -61,7 +62,9 @@ import { ButtonComponent } from '../../shared/components/button/button.component
               <label class="form-label">Password *</label>
               <input type="password" placeholder="••••••••" required class="form-input" />
             </div>
-            <app-button type="submit" variant="primary" size="lg">Sign In &rarr;</app-button>
+            <div class="auth-submit-wrap">
+              <app-button type="submit" variant="primary" size="lg" [rounded]="true">Sign In &rarr;</app-button>
+            </div>
           </form>
         </div>
 
@@ -82,7 +85,9 @@ import { ButtonComponent } from '../../shared/components/button/button.component
               <label class="form-label">Password *</label>
               <input type="password" placeholder="Create a secure password" required class="form-input" />
             </div>
-            <app-button type="submit" variant="primary" size="lg">Create Account &rarr;</app-button>
+            <div class="auth-submit-wrap">
+              <app-button type="submit" variant="primary" size="lg" [rounded]="true">Create Account &rarr;</app-button>
+            </div>
           </form>
         </div>
 
@@ -113,35 +118,39 @@ import { ButtonComponent } from '../../shared/components/button/button.component
   `,
   styles: [`
     .account-hero {
-      background: linear-gradient(135deg, rgba(247, 233, 230, 0.9) 0%, rgba(242, 239, 232, 0.95) 100%), url('/assets/images/placeholder-banner.svg');
-      background-size: cover;
-      padding: 48px 0;
+      background: var(--brand-pearl-beige);
+      padding: 32px 0 28px 0;
       border-bottom: 1px solid var(--color-border);
     }
     .hero-eyebrow {
-      font-size: 0.82rem;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
       color: var(--brand-warm-gold);
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
     }
     .hero-title {
       font-family: var(--font-serif);
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-size: clamp(1.6rem, 3.2vw, 2.3rem);
+      font-weight: 700;
       color: var(--brand-mocha-brown);
+      margin: 0;
+      letter-spacing: 0.5px;
+      line-height: 1.2;
     }
 
     .account-tabs {
       display: flex;
       justify-content: center;
       gap: 12px;
-      margin-bottom: 36px;
+      margin-bottom: 32px;
       flex-wrap: wrap;
     }
     .account-tab-btn {
-      background: var(--brand-pearl-beige);
+      background: #FFFFFF;
       border: 1px solid var(--color-border);
       padding: 10px 24px;
       min-height: 44px;
@@ -151,11 +160,12 @@ import { ButtonComponent } from '../../shared/components/button/button.component
       font-weight: 600;
       color: var(--brand-mocha-brown);
       cursor: pointer;
+      transition: all var(--transition-fast);
     }
     .account-tab-btn.active {
-      background: var(--brand-warm-gold);
-      border-color: var(--brand-warm-gold);
-      color: var(--brand-mocha-brown);
+      background: var(--brand-mocha-brown);
+      border-color: var(--brand-mocha-brown);
+      color: var(--brand-pearl-beige);
     }
 
     .auth-card {
@@ -184,6 +194,12 @@ import { ButtonComponent } from '../../shared/components/button/button.component
       display: flex;
       flex-direction: column;
       gap: 18px;
+    }
+    .auth-submit-wrap {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin-top: 6px;
     }
     .form-group {
       display: flex;

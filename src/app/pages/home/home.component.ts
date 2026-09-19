@@ -43,10 +43,16 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       <div class="container intro-content text-center">
         <span class="intro-eyebrow">Handcrafted Fine Jewellery</span>
         <h2 class="intro-heading">Where Modern Artistry Meets Heritage Precision</h2>
-        <p class="intro-text">
-          At Arista Trinkets, each creation is meticulously sculpted by master artisans using hallmarked 18K gold and conflict-free gemstones. Designed to transcend seasons and embody enduring grace.
+        <p class="intro-tagline">
+          “Timeless pieces, thoughtfully crafted to celebrate every you. ♡”
         </p>
-        <a routerLink="/about" class="intro-link">Read Our Atelier Story &rarr;</a>
+        <div class="brand-mood-tags">
+          <span class="mood-pill">ELEGANT</span>
+          <span class="mood-pill">FEMININE</span>
+          <span class="mood-pill">MINIMAL</span>
+          <span class="mood-pill">TIMELESS</span>
+          <span class="mood-pill">REFINED</span>
+        </div>
       </div>
     </section>
 
@@ -222,8 +228,45 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       font-family: var(--font-serif);
       font-size: clamp(1.6rem, 3.5vw, 2.3rem);
       color: var(--brand-mocha-brown);
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       line-height: 1.25;
+    }
+
+    .intro-tagline {
+      font-family: var(--font-serif);
+      font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+      font-style: italic;
+      color: var(--brand-warm-gold);
+      margin: 12px auto 20px auto;
+      max-width: 650px;
+    }
+
+    .brand-mood-tags {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .mood-pill {
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--brand-mocha-brown);
+      background: var(--brand-pearl-beige);
+      padding: 6px 18px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border);
+      transition: all var(--transition-fast);
+    }
+
+    .mood-pill:hover {
+      background: var(--brand-warm-gold);
+      color: var(--brand-mocha-brown);
+      border-color: var(--brand-warm-gold);
     }
 
     .intro-text {

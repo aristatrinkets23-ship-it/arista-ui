@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
     <button
       [type]="type"
       [disabled]="disabled || loading"
-      [class]="'btn btn-' + variant + ' btn-' + size"
+      [class]="'btn btn-' + variant + ' btn-' + size + (rounded ? ' btn-rounded' : '')"
       (click)="onClick($event)"
       [attr.aria-label]="ariaLabel || null"
     >
@@ -34,6 +34,10 @@ import { CommonModule } from '@angular/common';
       transition: all var(--transition-fast);
       border: 1px solid transparent;
       outline: none;
+    }
+
+    .btn-rounded {
+      border-radius: var(--radius-full) !important;
     }
     
     .btn:disabled {
@@ -113,6 +117,7 @@ export class ButtonComponent {
   @Input() type: 'button' | 'submit' | 'reset' = 'button';
   @Input() disabled: boolean = false;
   @Input() loading: boolean = false;
+  @Input() rounded: boolean = false;
   @Input() ariaLabel: string = '';
 
   @Output() btnClick = new EventEmitter<Event>();

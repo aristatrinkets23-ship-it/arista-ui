@@ -10,13 +10,6 @@ import { CartService } from '../../core/services/cart.service';
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   template: `
-    <!-- Top Announcement Bar -->
-    <div class="announcement-bar">
-      <div class="container">
-        <p class="announcement-text">Complimentary Worldwide Insured Express Delivery on Orders Over ₹5,000</p>
-      </div>
-    </div>
-
     <!-- Main Navigation Header -->
     <header class="site-header">
       <div class="container header-content">
@@ -29,9 +22,10 @@ import { CartService } from '../../core/services/cart.service';
           </svg>
         </button>
 
-        <!-- Brand Logo -->
+        <!-- Brand Logo (Icon + Full Brand Mark) -->
         <a routerLink="/" class="brand-logo" aria-label="Arista Trinkets Home">
-          <img src="/assets/images/logo.jpeg" alt="Arista Trinkets Jewellery" class="brand-logo-img" width="150" height="100" ngSkipOversizedImageWarning />
+          <img src="/assets/images/logo-icon.jpeg" alt="Arista Monogram Icon" class="brand-logo-icon" width="60" height="60" ngSkipOversizedImageWarning />
+          <img src="/assets/images/logo.jpeg" alt="Arista Trinkets Jewellery" class="brand-logo-img" width="220" height="80" ngSkipOversizedImageWarning />
         </a>
 
         <!-- Desktop Navigation Bar -->
@@ -125,32 +119,55 @@ import { CartService } from '../../core/services/cart.service';
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 64px;
+      height: 72px;
     }
 
     @media (min-width: 992px) {
       .header-content {
-        height: 76px;
+        height: 84px;
       }
     }
 
     .brand-logo {
       display: flex;
       align-items: center;
+      gap: 10px;
       text-decoration: none;
     }
 
+    .brand-logo-icon {
+      height: 48px;
+      width: auto;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+      border-radius: 50%;
+    }
+
     .brand-logo-img {
-      height: 40px;
+      height: 54px;
       width: auto;
       object-fit: contain;
       mix-blend-mode: multiply;
     }
 
     @media (min-width: 768px) {
-      .brand-logo-img {
-        height: 48px;
+      .brand-logo-icon {
+        height: 56px;
       }
+      .brand-logo-img {
+        height: 64px;
+      }
+    }
+
+    .mobile-toggle {
+      background: transparent;
+      border: none;
+      color: var(--brand-mocha-brown);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
     }
 
     .desktop-nav {
@@ -158,9 +175,9 @@ import { CartService } from '../../core/services/cart.service';
       gap: 28px;
     }
 
-    @media (min-width: 992px) {
+    @media (min-width: 768px) {
       .desktop-nav { display: flex; }
-      .mobile-toggle { display: none; }
+      .mobile-toggle { display: none !important; }
     }
 
     .nav-link {
