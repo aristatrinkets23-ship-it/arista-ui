@@ -106,3 +106,71 @@ a.btn,
     gap: 24px;
   }
 }
+
+/* ==========================================================================
+   Global Utility Classes & Hero Banner Alignment
+   ========================================================================== */
+.text-center {
+  text-align: center !important;
+}
+
+.text-left {
+  text-align: left !important;
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+/* Page Hero Shared Banner System (Centered Alignment Across All Pages) */
+.shop-hero,
+.cat-hero,
+.about-hero,
+.contact-hero,
+.cart-hero,
+.account-hero,
+.checkout-hero,
+.page-hero {
+  text-align: center !important;
+}
+
+.shop-hero .container,
+.cat-hero .container,
+.about-hero .container,
+.contact-hero .container,
+.cart-hero .container,
+.account-hero .container,
+.checkout-hero .container,
+.page-hero .container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.shop-hero .hero-title,
+.cat-hero .hero-title,
+.about-hero .hero-title,
+.contact-hero .hero-title,
+.cart-hero .hero-title,
+.account-hero .hero-title,
+.checkout-hero .hero-title,
+.page-hero .hero-title {
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.shop-hero .hero-desc,
+.cat-hero .hero-desc,
+.about-hero .hero-desc,
+.contact-hero .hero-desc,
+.cart-hero .hero-desc,
+.account-hero .hero-desc,
+.checkout-hero .hero-desc,
+.page-hero .hero-desc {
+  text-align: center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
