@@ -35,8 +35,118 @@ import { MockDataService } from '../../core/mock/mock-data.service';
             <app-button variant="outline" size="lg">Our Atelier Craft</app-button>
           </a>
         </div>
+
+        <!-- Floating Feature Highlight Bar -->
+        <div class="hero-feature-bar">
+          <div class="feature-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="3" width="15" height="13" rx="2" ry="2"></rect>
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+              <circle cx="5.5" cy="18.5" r="2.5"></circle>
+              <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            </svg>
+            <div class="feature-text">
+              <strong>FREE SHIPPING</strong>
+              <span>On Every Order</span>
+            </div>
+          </div>
+          <span class="feature-divider"></span>
+          <div class="feature-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            <div class="feature-text">
+              <strong>30-DAY RETURNS</strong>
+              <span>No Questions Asked</span>
+            </div>
+          </div>
+          <span class="feature-divider"></span>
+          <div class="feature-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <div class="feature-text">
+              <strong>SECURE PAYMENT</strong>
+              <span>Encrypted Checkout</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
+
+    <!-- Mocha Infinite Marquee Ribbon -->
+    <div class="marquee-ribbon">
+      <div class="marquee-track">
+        <div class="marquee-content">
+          <span class="marquee-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 3h12l4 6-10 12L2 9z"></path>
+            </svg>
+            HANDCRAFTED QUALITY
+          </span>
+          <span class="marquee-sep">|</span>
+          <span class="marquee-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+            CERTIFIED AUTHENTICITY
+          </span>
+          <span class="marquee-sep">|</span>
+          <span class="marquee-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            SECURE PAYMENT
+          </span>
+          <span class="marquee-sep">|</span>
+          <span class="marquee-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            EASY 30-DAY RETURNS
+          </span>
+          <span class="marquee-sep">|</span>
+        </div>
+        <div class="marquee-content" aria-hidden="true">
+          <span class="marquee-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 3h12l4 6-10 12L2 9z"></path>
+            </svg>
+            HANDCRAFTED QUALITY
+          </span>
+          <span class="marquee-sep">|</span>
+          <span class="marquee-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <polyline points="9 12 11 14 15 10"></polyline>
+            </svg>
+            CERTIFIED AUTHENTICITY
+          </span>
+          <span class="marquee-sep">|</span>
+          <span class="marquee-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            SECURE PAYMENT
+          </span>
+          <span class="marquee-sep">|</span>
+          <span class="marquee-item">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            EASY 30-DAY RETURNS
+          </span>
+          <span class="marquee-sep">|</span>
+        </div>
+      </div>
+    </div>
 
     <!-- Brand Introduction Section -->
     <section class="brand-intro-section">
@@ -200,6 +310,130 @@ import { MockDataService } from '../../core/mock/mock-data.service';
     .hero-cta-link {
       display: inline-block;
       text-decoration: none;
+    }
+
+    /* Hero Feature Bar */
+    .hero-feature-bar {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 36px;
+      padding: 12px 28px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(207, 168, 116, 0.4);
+      border-radius: var(--radius-full);
+      box-shadow: 0 4px 20px rgba(91, 70, 54, 0.08);
+      max-width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--brand-mocha-brown);
+    }
+
+    .feature-item svg {
+      color: var(--brand-warm-gold);
+      flex-shrink: 0;
+    }
+
+    .feature-text {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+      line-height: 1.25;
+    }
+
+    .feature-text strong {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--brand-mocha-brown);
+    }
+
+    .feature-text span {
+      font-size: 0.68rem;
+      color: #776655;
+    }
+
+    .feature-divider {
+      width: 1px;
+      height: 24px;
+      background-color: rgba(207, 168, 116, 0.4);
+    }
+
+    @media (max-width: 640px) {
+      .hero-feature-bar {
+        gap: 12px;
+        padding: 10px 16px;
+      }
+      .feature-divider {
+        display: none;
+      }
+    }
+
+    /* Marquee Ribbon */
+    .marquee-ribbon {
+      background-color: #3A2C21;
+      color: #F8F5EE;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 12px 0;
+      border-top: 1px solid rgba(207, 168, 116, 0.3);
+      border-bottom: 1px solid rgba(207, 168, 116, 0.3);
+      user-select: none;
+    }
+
+    .marquee-track {
+      display: flex;
+      width: max-content;
+      animation: marqueeScroll 25s linear infinite;
+    }
+
+    .marquee-ribbon:hover .marquee-track {
+      animation-play-state: paused;
+    }
+
+    .marquee-content {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      padding-right: 28px;
+    }
+
+    .marquee-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: #F8F5EE;
+    }
+
+    .marquee-item svg {
+      color: var(--brand-warm-gold);
+      flex-shrink: 0;
+    }
+
+    .marquee-sep {
+      color: rgba(207, 168, 116, 0.5);
+      font-weight: 300;
+    }
+
+    @keyframes marqueeScroll {
+      0% {
+        transform: translateX(0%);
+      }
+      100% {
+        transform: translateX(-50%);
+      }
     }
 
     /* Brand Intro Section */
