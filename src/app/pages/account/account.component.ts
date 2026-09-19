@@ -63,7 +63,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
               <input type="password" placeholder="••••••••" required class="form-input" />
             </div>
             <div class="auth-submit-wrap">
-              <app-button type="submit" variant="primary" size="lg" [rounded]="true">Sign In &rarr;</app-button>
+              <app-button type="submit" variant="primary" size="sm" [rounded]="true">Sign In &rarr;</app-button>
             </div>
           </form>
         </div>
@@ -86,7 +86,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
               <input type="password" placeholder="Create a secure password" required class="form-input" />
             </div>
             <div class="auth-submit-wrap">
-              <app-button type="submit" variant="primary" size="lg" [rounded]="true">Create Account &rarr;</app-button>
+              <app-button type="submit" variant="primary" size="sm" [rounded]="true">Create Account &rarr;</app-button>
             </div>
           </form>
         </div>
