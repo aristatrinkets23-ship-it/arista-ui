@@ -15,6 +15,15 @@ export class CartService {
     const loadedItems = this.loadCartFromStorage();
     this.cartSubject = new BehaviorSubject<CartSummary>(this.calculateSummary(loadedItems));
     this.cart$ = this.cartSubject.asObservable();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event) => {
+        if (event.key === this.STORAGE_KEY) {
+          const freshItems = this.loadCartFromStorage();
+          this.cartSubject.next(this.calculateSummary(freshItems));
+        }
+      });
+    }
   }
 
   get currentCart(): CartSummary {
@@ -27,7 +36,7 @@ export class CartService {
 
     if (existingIndex > -1) {
       const existing = currentItems[existingIndex];
-      const newQty = existing.quantity + quantity;
+      const newQty = (Number(existing.quantity) || 0) + (Number(quantity) || 1);
       currentItems[existingIndex] = {
         ...existing,
         quantity: newQty,
@@ -36,9 +45,9 @@ export class CartService {
     } else {
       currentItems.push({
         product,
-        quantity,
+        quantity: Number(quantity) || 1,
         selectedMetal: selectedMetal || '18K Warm Gold',
-        subtotal: product.price * quantity
+        subtotal: product.price * (Number(quantity) || 1)
       });
     }
 
@@ -46,7 +55,8 @@ export class CartService {
   }
 
   updateQuantity(productId: number | string, quantity: number): void {
-    if (quantity <= 0) {
+    const numericQty = Number(quantity) || 0;
+    if (numericQty <= 0) {
       this.removeFromCart(productId);
       return;
     }
@@ -55,8 +65,8 @@ export class CartService {
       if (item.product.id === productId) {
         return {
           ...item,
-          quantity,
-          subtotal: item.product.price * quantity
+          quantity: numericQty,
+          subtotal: item.product.price * numericQty
         };
       }
       return item;
@@ -84,7 +94,10 @@ export class CartService {
       if (typeof localStorage !== 'undefined') {
         const saved = localStorage.getItem(this.STORAGE_KEY);
         if (saved !== null) {
-          return JSON.parse(saved);
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
         }
       }
     } catch (e) {
@@ -122,8 +135,8 @@ export class CartService {
   }
 
   private calculateSummary(items: CartItem[]): CartSummary {
-    const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
-    const subtotal = items.reduce((acc, item) => acc + item.subtotal, 0);
+    const itemCount = items.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0);
+    const subtotal = items.reduce((acc, item) => acc + ((Number(item.product?.price) || 0) * (Number(item.quantity) || 0)), 0);
     const estimatedShipping = subtotal > 5000 || subtotal === 0 ? 0 : 500;
     const estimatedTax = Math.round(subtotal * 0.03); // 3% GST placeholder
     const total = subtotal + estimatedShipping + estimatedTax;

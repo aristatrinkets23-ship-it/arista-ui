@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -60,7 +60,7 @@ import { CartService } from '../../core/services/cart.service';
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <path d="M16 10a4 4 0 0 1-8 0"></path>
             </svg>
-            <span class="bag-count">{{ cartCount }}</span>
+            <span class="bag-count" *ngIf="cartCount > 0">{{ cartCount }}</span>
           </a>
         </div>
       </div>
@@ -554,10 +554,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ];
 
   private cartService = inject(CartService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.cartSub = this.cartService.cart$.subscribe(summary => {
-      this.cartCount = summary.itemCount;
+      this.cartCount = summary ? summary.itemCount : 0;
+      this.cdr.detectChanges();
     });
   }
 
