@@ -50,6 +50,8 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
           <span *ngIf="product.compareAtPrice && product.compareAtPrice > product.price" class="compare-price">
             ₹{{ product.compareAtPrice | number:'1.2-2' }}
           </span>
+        </div>
+        <div class="add-btn-wrapper">
           <button type="button" class="quick-add-btn" (click)="onQuickAdd($event)">
             + Add
           </button>
@@ -184,8 +186,7 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
 
     .price-row {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
+      align-items: baseline;
       gap: 6px;
       margin-top: auto;
       padding-top: 4px;
@@ -205,22 +206,30 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       color: var(--color-text-muted);
     }
 
+    .add-btn-wrapper {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      margin-top: 6px;
+    }
+
     .quick-add-btn {
       background-color: var(--brand-warm-gold);
       color: var(--brand-mocha-brown);
       border: none;
-      padding: 5px 12px;
+      padding: 6px 24px;
       border-radius: var(--radius-full);
       font-family: var(--font-sans);
-      font-size: 0.75rem;
+      font-size: 0.78rem;
       font-weight: 700;
       cursor: pointer;
       transition: all var(--transition-fast);
-      margin-left: auto;
+      box-shadow: var(--shadow-sm);
     }
     .quick-add-btn:hover {
       background-color: #E2B882;
-      transform: scale(1.05);
+      transform: translateY(-1px) scale(1.04);
+      box-shadow: var(--shadow-md);
     }
   `]
 })
