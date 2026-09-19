@@ -134,30 +134,19 @@ import { CartService } from '../../core/services/cart.service';
     <div class="drawer-backdrop" *ngIf="isMobileNavOpen" (click)="toggleMobileNav()"></div>
   `,
   styles: [`
-    .announcement-bar {
-      background-color: var(--brand-mocha-brown);
-      color: var(--brand-pearl-beige);
-      text-align: center;
-      padding: 7px 12px;
-      border-bottom: 1px solid rgba(207, 168, 116, 0.25);
-    }
-
-    .announcement-text {
-      font-size: var(--font-size-announcement);
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-      font-weight: 500;
-      line-height: 1.35;
-      margin: 0;
+    :host {
+      display: block;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
 
     .site-header {
-      background-color: #FFFFFF;
+      background-color: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(10px);
       border-bottom: 1px solid var(--color-border);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 2px 10px rgba(91, 70, 54, 0.03);
+      box-shadow: 0 4px 16px rgba(91, 70, 54, 0.08);
+      width: 100%;
     }
 
     .header-content {
