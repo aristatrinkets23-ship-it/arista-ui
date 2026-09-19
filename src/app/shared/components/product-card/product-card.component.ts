@@ -258,6 +258,13 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       background-color: #4A3A2C;
       transform: none;
     }
+
+    @media (max-width: 480px) {
+      .card-details { padding: 8px 10px; gap: 4px; }
+      .product-title { font-size: 0.88rem; }
+      .price { font-size: 0.88rem; }
+      .quick-add-btn { padding: 6px 10px; font-size: 0.7rem; max-width: 100%; }
+    }
   `]
 })
 export class ProductCardComponent implements OnInit, OnDestroy {

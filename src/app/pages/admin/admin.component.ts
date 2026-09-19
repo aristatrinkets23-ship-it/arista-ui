@@ -1,9 +1,12 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MockDataService } from '../../core/mock/mock-data.service';
 import { ProductCardData } from '../../core/models/product-card-data.model';
+import { AuthService } from '../../core/services/auth.service';
+
+const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
 @Component({
   selector: 'app-admin',
@@ -14,10 +17,16 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
     <section class="admin-hero">
       <div class="container hero-content">
         <div>
-          <span class="hero-eyebrow">Atelier Back-Office</span>
-          <h1 class="hero-title">Arista Trinkets Management Console</h1>
+          <span class="hero-eyebrow">Secured Atelier Console</span>
+          <h1 class="hero-title">Arista Trinkets Management Portal</h1>
+          <span class="hero-user" *ngIf="adminUser">
+            Logged in as: <strong>{{ adminUser.name }}</strong> ({{ adminUser.email }})
+          </span>
         </div>
-        <a routerLink="/" class="btn-storefront">&larr; Return to Customer Storefront</a>
+        <div class="hero-actions">
+          <a routerLink="/" class="btn-storefront">&larr; Customer Storefront</a>
+          <button type="button" class="btn-logout" (click)="onLogout()">Sign Out</button>
+        </div>
       </div>
     </section>
 
@@ -77,6 +86,14 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
           >
             Customer Orders (12)
           </button>
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeTab === 'credentials'"
+            (click)="activeTab = 'credentials'"
+          >
+            ⚙ Admin Credentials & Security
+          </button>
         </div>
 
         <!-- TAB 1: PRODUCT CATALOG TABLE -->
@@ -97,7 +114,12 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
               <tbody>
                 <tr *ngFor="let item of products">
                   <td>
-                    <img [src]="item.image" [alt]="item.name" class="table-img" />
+                    <img
+                      [src]="item.image || defaultImage"
+                      [alt]="item.name"
+                      (error)="onTableImageError($event)"
+                      class="table-img"
+                    />
                   </td>
                   <td>
                     <strong class="item-name">{{ item.name }}</strong>
@@ -120,7 +142,7 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
                   </td>
                   <td>
                     <div class="action-btns">
-                      <button type="button" class="btn-action edit" (click)="editProduct(item)">Edit</button>
+                      <button type="button" class="btn-action edit" (click)="editProduct(item)">Edit Product</button>
                       <button type="button" class="btn-action delete" (click)="deleteProduct(item.id)">Delete</button>
                     </div>
                   </td>
@@ -141,11 +163,11 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
             <form (submit)="saveProduct($event)" class="product-form">
               <div class="form-row">
                 <div class="form-group">
-                  <label>Product Name</label>
+                  <label>Product Name *</label>
                   <input type="text" [(ngModel)]="newProduct.name" name="name" placeholder="e.g. Royal Heritage Ruby Pendant" required />
                 </div>
                 <div class="form-group">
-                  <label>Category</label>
+                  <label>Category *</label>
                   <select [(ngModel)]="newProduct.category" name="category" required>
                     <option value="Rings">Rings</option>
                     <option value="Necklaces">Necklaces</option>
@@ -157,7 +179,7 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
 
               <div class="form-row">
                 <div class="form-group">
-                  <label>Price (₹ INR)</label>
+                  <label>Price (₹ INR) *</label>
                   <input type="number" [(ngModel)]="newProduct.price" name="price" placeholder="45000" required />
                 </div>
                 <div class="form-group">
@@ -176,26 +198,56 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
                 </div>
               </div>
 
+              <!-- UPLOAD PHOTO FROM DEVICE & INITIAL STOCK QUANTITY ROW -->
               <div class="form-row">
                 <div class="form-group">
-                  <label>Image Source / Asset Path</label>
-                  <select [(ngModel)]="newProduct.image" name="image" required>
-                    <option value="/assets/images/placeholder-rings.svg">Rings Vector Asset (/assets/images/placeholder-rings.svg)</option>
-                    <option value="/assets/images/placeholder-necklaces.svg">Necklaces Vector Asset (/assets/images/placeholder-necklaces.svg)</option>
-                    <option value="/assets/images/placeholder-earrings.svg">Earrings Vector Asset (/assets/images/placeholder-earrings.svg)</option>
-                    <option value="/assets/images/placeholder-bracelets.svg">Bracelets Vector Asset (/assets/images/placeholder-bracelets.svg)</option>
-                    <option value="/assets/images/placeholder-jewellery.svg">Jewellery Generic Asset (/assets/images/placeholder-jewellery.svg)</option>
-                  </select>
+                  <label>Upload your photo (Select from device/computer) *</label>
+                  <input
+                    #newFileInput
+                    type="file"
+                    accept="image/*"
+                    (change)="onFileSelected($event, 'new')"
+                    class="custom-file-input"
+                  />
+                  <div class="system-file-badge" *ngIf="newSystemFileName || isDataUrl(newProduct.image)" style="margin-top: 6px;">
+                    <span>✓ Selected Photo: <strong>{{ newSystemFileName || 'Local Photo File' }}</strong></span>
+                    <button type="button" class="btn-clear-file" (click)="clearSystemFile('new')">✕ Clear</button>
+                  </div>
                 </div>
+
                 <div class="form-group">
-                  <label>Initial Stock Quantity</label>
+                  <label>INITIAL STOCK QUANTITY</label>
                   <input type="number" [(ngModel)]="newProduct.stockQuantity" name="stockQuantity" placeholder="10" />
+                </div>
+              </div>
+
+              <!-- OR CUSTOM WEB IMAGE URL OVERRIDE -->
+              <div class="form-group" style="margin-top: 14px;">
+                <label>Or Enter Custom Web Image URL</label>
+                <input
+                  type="text"
+                  [(ngModel)]="newProduct.image"
+                  name="customUrl"
+                  placeholder="https://images.unsplash.com/... or data:image/..."
+                />
+              </div>
+
+              <!-- Live Image Preview Box -->
+              <div class="preview-box">
+                <span class="preview-label">Live Image Preview:</span>
+                <div class="preview-img-container">
+                  <img
+                    [src]="newProduct.image || defaultImage"
+                    (error)="onPreviewImageError($event)"
+                    alt="Product Preview"
+                    class="preview-img"
+                  />
                 </div>
               </div>
 
               <div class="form-group">
                 <label>Product Description & Atelier Craft Notes</label>
-                <textarea rows="4" [(ngModel)]="newProduct.description" name="description" placeholder="Describe the gold karatage, diamond clarity, craftsmanship, and design details..."></textarea>
+                <textarea rows="4" [(ngModel)]="newProduct.description" name="description" placeholder="Describe the gold karatage, diamond clarity, craftsmanship..."></textarea>
               </div>
 
               <button type="submit" class="btn-save">+ Publish Product to Storefront</button>
@@ -255,8 +307,271 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
             </table>
           </div>
         </div>
+
+        <!-- TAB 4: ADMIN CREDENTIALS & SECURITY MANAGEMENT -->
+        <div *ngIf="activeTab === 'credentials'" class="tab-content">
+          <div class="credentials-grid">
+            <!-- SECTION 1: UPDATE YOUR CREDENTIALS -->
+            <div class="form-card">
+              <h2 class="form-title">Update Your Admin Profile & Credentials</h2>
+              <div class="success-banner" *ngIf="profileSuccessMessage">
+                ✓ {{ profileSuccessMessage }}
+              </div>
+              <div class="error-banner" *ngIf="profileErrorMessage">
+                ⚠ {{ profileErrorMessage }}
+              </div>
+
+              <form (submit)="onUpdateProfile($event)" class="product-form">
+                <div class="form-group">
+                  <label>Admin Full Name *</label>
+                  <input type="text" [(ngModel)]="profileForm.name" name="profName" required />
+                </div>
+
+                <div class="form-group">
+                  <label>Admin Email Address *</label>
+                  <input type="email" [(ngModel)]="profileForm.email" name="profEmail" required />
+                </div>
+
+                <div class="form-group">
+                  <label>New Secret Password (Leave blank to keep current)</label>
+                  <div class="password-field-wrapper">
+                    <input
+                      [type]="showProfilePassword ? 'text' : 'password'"
+                      [(ngModel)]="profileForm.newPassword"
+                      name="profPassword"
+                      placeholder="••••••••••••"
+                    />
+                    <button
+                      type="button"
+                      class="btn-toggle-eye"
+                      (click)="showProfilePassword = !showProfilePassword"
+                      [title]="showProfilePassword ? 'Hide Password' : 'Show Password'"
+                    >
+                      <svg *ngIf="!showProfilePassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <svg *ngIf="showProfilePassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn-save">Save Profile Changes</button>
+              </form>
+            </div>
+
+            <!-- SECTION 2: CREATE NEW ADMIN ACCOUNT & CREATED USER TABLE -->
+            <div class="form-card">
+              <div class="section-title-row">
+                <h2 class="form-title" style="margin:0;">Create New Admin Account</h2>
+                <span class="limit-badge" [class.reached]="createdAdminUsers.length >= 1">
+                  Admin Limit: {{ createdAdminUsers.length }}/1 Accounts
+                </span>
+              </div>
+
+              <div class="success-banner" *ngIf="newAdminSuccessMessage" style="margin-top:16px;">
+                ✓ {{ newAdminSuccessMessage }}
+              </div>
+              <div class="error-banner" *ngIf="newAdminErrorMessage" style="margin-top:16px;">
+                ⚠ {{ newAdminErrorMessage }}
+              </div>
+
+              <!-- Registration Form (Visible only if limit < 1) -->
+              <form (submit)="onCreateAdmin($event)" class="product-form" style="margin-top: 16px;" *ngIf="createdAdminUsers.length < 1">
+                <div class="form-group">
+                  <label>New Admin Full Name *</label>
+                  <input type="text" [(ngModel)]="newAdminForm.name" name="newAdminName" placeholder="e.g. Executive Director" required />
+                </div>
+
+                <div class="form-group">
+                  <label>New Admin Email Address *</label>
+                  <input type="email" [(ngModel)]="newAdminForm.email" name="newAdminEmail" placeholder="manager@aristatrinkets.com" required />
+                </div>
+
+                <div class="form-group">
+                  <label>Initial Password *</label>
+                  <div class="password-field-wrapper">
+                    <input
+                      [type]="showNewAdminPassword ? 'text' : 'password'"
+                      [(ngModel)]="newAdminForm.password"
+                      name="newAdminPassword"
+                      placeholder="••••••••••••"
+                      required
+                    />
+                    <button
+                      type="button"
+                      class="btn-toggle-eye"
+                      (click)="showNewAdminPassword = !showNewAdminPassword"
+                      [title]="showNewAdminPassword ? 'Hide Password' : 'Show Password'"
+                    >
+                      <svg *ngIf="!showNewAdminPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                      <svg *ngIf="showNewAdminPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                        <line x1="1" y1="1" x2="23" y2="23"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn-save">+ Register New Admin User</button>
+              </form>
+
+              <div class="limit-reached-banner" *ngIf="createdAdminUsers.length >= 1" style="margin-top:16px;">
+                <span>🔒 Maximum limit reached. Only 1 additional admin user account can be created and active.</span>
+              </div>
+
+              <!-- TABLE VIEW OF CREATED USER ADMIN -->
+              <div class="created-admin-section" style="margin-top: 24px;" *ngIf="createdAdminUsers.length > 0">
+                <h3 class="sub-table-title">Registered Secondary Admin Users ({{ createdAdminUsers.length }})</h3>
+                <div class="table-responsive">
+                  <table class="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Admin Name</th>
+                        <th>Email Address</th>
+                        <th>Assigned Role</th>
+                        <th>Registration Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let admin of createdAdminUsers">
+                        <td>
+                          <strong class="item-name">{{ admin.name }}</strong>
+                        </td>
+                        <td>
+                          <span class="cust-email">{{ admin.email }}</span>
+                        </td>
+                        <td>
+                          <span class="badge-tag">{{ admin.role }}</span>
+                        </td>
+                        <td>
+                          <span class="order-date">{{ admin.createdAt }}</span>
+                        </td>
+                        <td>
+                          <span class="stock-pill in-stock">{{ admin.status }}</span>
+                        </td>
+                        <td>
+                          <button type="button" class="btn-action delete" (click)="deleteAdminUser(admin.id)">
+                            Revoke / Remove
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
+
+    <!-- EDIT PRODUCT MODAL OVERLAY POPUP -->
+    <div *ngIf="editingProduct" class="modal-backdrop" (click)="closeEditModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="form-title" style="margin:0;">Edit Product Details (#{{ editingProduct.id }})</h2>
+          <button type="button" class="btn-close" (click)="closeEditModal()">&times;</button>
+        </div>
+
+        <div class="success-banner" *ngIf="editSuccessMessage" style="margin-top:16px;">
+          ✓ {{ editSuccessMessage }}
+        </div>
+
+        <form (submit)="updateProduct($event)" class="product-form" style="margin-top: 16px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Product Name *</label>
+              <input type="text" [(ngModel)]="editingProduct.name" name="editName" required />
+            </div>
+            <div class="form-group">
+              <label>Category *</label>
+              <select [(ngModel)]="editingProduct.category" name="editCategory" required>
+                <option value="Rings">Rings</option>
+                <option value="Necklaces">Necklaces</option>
+                <option value="Earrings">Earrings</option>
+                <option value="Bracelets">Bracelets</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Price (₹ INR) *</label>
+              <input type="number" [(ngModel)]="editingProduct.price" name="editPrice" required />
+            </div>
+            <div class="form-group">
+              <label>Compare-At Price (₹ INR)</label>
+              <input type="number" [(ngModel)]="editingProduct.compareAtPrice" name="editCompareAtPrice" />
+            </div>
+            <div class="form-group">
+              <label>Badge Highlight Tag</label>
+              <select [(ngModel)]="editingProduct.badge" name="editBadge">
+                <option value="">None</option>
+                <option value="FEATURED">FEATURED</option>
+                <option value="NEW">NEW</option>
+                <option value="SALE">SALE</option>
+                <option value="BESTSELLER">BESTSELLER</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- UPLOAD YOUR PHOTO FROM DEVICE FIELD -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Upload your photo (Select from device/computer) *</label>
+            <input
+              #editFileInput
+              type="file"
+              accept="image/*"
+              (change)="onFileSelected($event, 'edit')"
+              class="custom-file-input"
+            />
+            <div class="system-file-badge" *ngIf="editSystemFileName || isDataUrl(editingProduct.image)" style="margin-top: 6px;">
+              <span>✓ Selected Photo: <strong>{{ editSystemFileName || 'Local Photo File' }}</strong></span>
+              <button type="button" class="btn-clear-file" (click)="clearSystemFile('edit')">✕ Clear</button>
+            </div>
+          </div>
+
+          <!-- OR CUSTOM WEB IMAGE URL OVERRIDE -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Or Enter Custom Web Image URL</label>
+            <input
+              type="text"
+              [(ngModel)]="editingProduct.image"
+              name="editCustomUrl"
+              placeholder="https://images.unsplash.com/... or data:image/..."
+            />
+          </div>
+
+          <!-- Live Image Preview Box -->
+          <div class="preview-box">
+            <span class="preview-label">Live Image Preview:</span>
+            <div class="preview-img-container">
+              <img
+                [src]="editingProduct.image || defaultImage"
+                (error)="onPreviewImageError($event)"
+                alt="Edit Preview"
+                class="preview-img"
+              />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancel</button>
+            <button type="submit" class="btn-save" style="margin-top:0;">Save Product Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
   `,
   styles: [`
     .admin-hero {
@@ -288,7 +603,19 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
       font-family: var(--font-serif);
       font-size: 1.85rem;
       color: #FFFFFF;
-      margin: 0;
+      margin: 0 0 6px 0;
+    }
+
+    .hero-user {
+      font-size: 0.85rem;
+      color: #E2B882;
+      display: block;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
     }
 
     .btn-storefront {
@@ -305,6 +632,22 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
     .btn-storefront:hover {
       background: var(--brand-warm-gold);
       color: var(--brand-mocha-brown);
+    }
+
+    .btn-logout {
+      background: #C62828;
+      color: #FFFFFF;
+      border: none;
+      font-weight: 600;
+      font-size: 0.88rem;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: background var(--transition-fast);
+    }
+
+    .btn-logout:hover {
+      background: #B71C1C;
     }
 
     .bg-pearl {
@@ -364,33 +707,66 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
       font-weight: 600;
     }
 
+    @media (max-width: 576px) {
+      .admin-hero { padding: 24px 0; }
+      .hero-title { font-size: 1.35rem; }
+      .hero-actions { width: 100%; justify-content: flex-start; }
+      .btn-storefront, .btn-logout { flex: 1; text-align: center; padding: 8px 10px; font-size: 0.8rem; }
+    }
+
     .admin-tabs {
       display: flex;
-      gap: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
       margin-bottom: 24px;
-      border-bottom: 2px solid var(--color-border);
-      padding-bottom: 2px;
-      overflow-x: auto;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 14px;
     }
 
     .tab-btn {
-      background: transparent;
-      border: none;
+      background: #FFFFFF;
+      border: 1px solid var(--color-border);
       font-family: var(--font-sans);
       font-weight: 600;
-      font-size: 0.92rem;
-      color: var(--color-text-muted);
-      padding: 12px 20px;
+      font-size: 0.88rem;
+      color: var(--brand-mocha-brown);
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
       cursor: pointer;
-      border-bottom: 3px solid transparent;
       white-space: nowrap;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+
+    @media (max-width: 768px) {
+      .admin-tabs {
+        gap: 6px;
+      }
+      .tab-btn {
+        flex: 1 1 calc(50% - 6px);
+        font-size: 0.82rem;
+        padding: 10px 12px;
+        white-space: normal;
+        text-align: center;
+        word-break: break-word;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .tab-btn {
+        flex: 1 1 100%;
+      }
+    }
+
+    .tab-btn:hover {
+      border-color: var(--brand-warm-gold);
+      color: var(--brand-warm-gold);
     }
 
     .tab-btn.active {
-      color: var(--brand-mocha-brown);
-      border-bottom-color: var(--brand-warm-gold);
-      background: #FFFFFF;
-      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      background: var(--brand-mocha-brown);
+      color: #FFFFFF;
+      border-color: var(--brand-mocha-brown);
     }
 
     .table-responsive {
@@ -425,32 +801,18 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
     }
 
     .table-img {
-      width: 44px;
-      height: 44px;
+      width: 48px;
+      height: 48px;
       object-fit: cover;
       border-radius: var(--radius-sm);
       background: var(--brand-pearl-beige);
+      border: 1px solid var(--color-border);
     }
 
-    .item-name {
-      display: block;
-      color: var(--brand-mocha-brown);
-    }
-
-    .item-category {
-      font-size: 0.78rem;
-      color: var(--color-text-muted);
-    }
-
-    .item-price {
-      color: var(--brand-mocha-brown);
-    }
-
-    .item-compare {
-      text-decoration: line-through;
-      color: var(--color-text-muted);
-      font-size: 0.85rem;
-    }
+    .item-name { display: block; color: var(--brand-mocha-brown); }
+    .item-category { font-size: 0.78rem; color: var(--color-text-muted); }
+    .item-price { color: var(--brand-mocha-brown); }
+    .item-compare { text-decoration: line-through; color: var(--color-text-muted); font-size: 0.85rem; }
 
     .badge-tag {
       background: var(--brand-soft-blush);
@@ -467,22 +829,10 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
       padding: 4px 10px;
       border-radius: 12px;
     }
+    .stock-pill.in-stock { background: #E8F5E9; color: #2E7D32; }
+    .stock-pill.out-stock { background: #FFEBEE; color: #C62828; }
 
-    .stock-pill.in-stock {
-      background: #E8F5E9;
-      color: #2E7D32;
-    }
-
-    .stock-pill.out-stock {
-      background: #FFEBEE;
-      color: #C62828;
-    }
-
-    .action-btns {
-      display: flex;
-      gap: 8px;
-    }
-
+    .action-btns { display: flex; gap: 8px; }
     .btn-action {
       border: none;
       padding: 6px 12px;
@@ -491,15 +841,13 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
       font-weight: 600;
       cursor: pointer;
     }
+    .btn-action.edit { background: var(--brand-pearl-beige); color: var(--brand-mocha-brown); }
+    .btn-action.delete { background: #FFEBEE; color: #C62828; }
 
-    .btn-action.edit {
-      background: var(--brand-pearl-beige);
-      color: var(--brand-mocha-brown);
-    }
-
-    .btn-action.delete {
-      background: #FFEBEE;
-      color: #C62828;
+    @media (max-width: 576px) {
+      .form-card { padding: 18px 14px; }
+      .modal-card { padding: 18px 14px; max-height: 92vh; }
+      .action-btns { flex-direction: column; gap: 6px; }
     }
 
     .form-card {
@@ -507,16 +855,99 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
       padding: 28px;
-      max-width: 800px;
-      margin: 0 auto;
       box-shadow: var(--shadow-sm);
     }
 
     .form-title {
       font-family: var(--font-serif);
       color: var(--brand-mocha-brown);
-      font-size: 1.5rem;
+      font-size: 1.4rem;
       margin-bottom: 20px;
+    }
+
+    .input-with-btn {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .input-with-btn select {
+      flex: 1;
+    }
+
+    .btn-browse {
+      background: var(--brand-warm-gold);
+      color: var(--brand-mocha-brown);
+      border: 1px solid var(--brand-warm-gold);
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background var(--transition-fast);
+    }
+    .btn-browse:hover {
+      background: #E2B882;
+    }
+
+    .system-file-notice {
+      font-size: 0.8rem;
+      color: #2E7D32;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .system-file-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #E8F5E9;
+      border: 1px solid #A5D6A7;
+      color: #2E7D32;
+      font-size: 0.82rem;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+    }
+
+    .custom-file-input {
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      background: #FFFFFF;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-family: var(--font-sans);
+      cursor: pointer;
+    }
+
+    .custom-file-input::file-selector-button {
+      background: var(--brand-pearl-beige);
+      color: var(--brand-mocha-brown);
+      border: 1px solid var(--color-border);
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 12px;
+      transition: background var(--transition-fast);
+    }
+    .custom-file-input::file-selector-button:hover {
+      background: var(--brand-warm-gold);
+    }
+
+    .btn-clear-file {
+      background: transparent;
+      border: none;
+      color: #C62828;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 2px 6px;
+    }
+    .btn-clear-file:hover {
+      text-decoration: underline;
     }
 
     .success-banner {
@@ -529,28 +960,28 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
       font-size: 0.9rem;
     }
 
-    .product-form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+    .error-banner {
+      background: #FFEBEE;
+      color: #C62828;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
     }
+
+    .product-form { display: flex; flex-direction: column; gap: 16px; }
 
     .form-row {
       display: grid;
       grid-template-columns: 1fr;
       gap: 16px;
     }
-
     @media (min-width: 768px) {
       .form-row { grid-template-columns: repeat(2, 1fr); }
     }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
     .form-group label {
       font-size: 0.8rem;
       font-weight: 600;
@@ -567,22 +998,60 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
       font-family: var(--font-sans);
     }
 
+    .preview-box {
+      margin-top: 8px;
+      padding: 12px;
+      background: var(--brand-pearl-beige);
+      border: 1px dashed var(--brand-warm-gold);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .preview-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--brand-mocha-brown);
+    }
+
+    .preview-img-container {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: #FFFFFF;
+      border: 1px solid var(--color-border);
+    }
+
+    .preview-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
     .btn-save {
       background-color: var(--brand-warm-gold);
       color: var(--brand-mocha-brown);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
-      padding: 16px;
+      padding: 14px;
       border: none;
       border-radius: var(--radius-sm);
       cursor: pointer;
-      font-size: 0.92rem;
+      font-size: 0.9rem;
       margin-top: 12px;
     }
+    .btn-save:hover { background-color: #E2B882; }
 
-    .btn-save:hover {
-      background-color: #E2B882;
+    .credentials-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    @media (min-width: 992px) {
+      .credentials-grid { grid-template-columns: repeat(2, 1fr); }
     }
 
     .order-no { display: block; color: var(--brand-mocha-brown); }
@@ -597,7 +1066,6 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
       padding: 4px 10px;
       border-radius: 12px;
     }
-
     .status-badge.paid { background: #E8F5E9; color: #2E7D32; }
     .status-badge.pending { background: #FFF3E0; color: #E65100; }
     .status-badge.shipped { background: #E3F2FD; color: #1565C0; }
@@ -609,12 +1077,186 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
       border-radius: var(--radius-sm);
       font-size: 0.8rem;
     }
+
+    /* EDIT MODAL POPUP STYLES */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-md);
+      width: 100%;
+      max-width: 680px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--brand-warm-gold);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      padding-bottom: 12px;
+    }
+
+    .btn-close {
+      background: transparent;
+      border: none;
+      font-size: 1.8rem;
+      line-height: 1;
+      color: var(--brand-mocha-brown);
+      cursor: pointer;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 20px;
+      border-top: 1px solid var(--color-border);
+      padding-top: 14px;
+    }
+
+    .btn-cancel {
+      background: var(--brand-pearl-beige);
+      color: var(--brand-mocha-brown);
+      border: 1px solid var(--color-border);
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .password-field-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+
+    .password-field-wrapper input {
+      width: 100%;
+      padding-right: 42px;
+    }
+
+    .section-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .limit-badge {
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 12px;
+      background: #E8F5E9;
+      color: #2E7D32;
+      border: 1px solid #A5D6A7;
+    }
+
+    .limit-badge.reached {
+      background: #FFF3E0;
+      color: #E65100;
+      border-color: #FFE082;
+    }
+
+    .limit-reached-banner {
+      background: #FFF8E1;
+      color: #B78103;
+      border: 1px solid #FFE082;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .sub-table-title {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      color: var(--brand-mocha-brown);
+      margin-bottom: 12px;
+    }
+
+    .btn-toggle-eye {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 1.15rem;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.75;
+      transition: opacity var(--transition-fast);
+      user-select: none;
+    }
+
+    .btn-toggle-eye:hover {
+      opacity: 1;
+    }
   `]
 })
 export class AdminComponent implements OnInit {
-  activeTab: 'products' | 'add-product' | 'orders' = 'products';
+  defaultImage = DEFAULT_FALLBACK_IMAGE;
+  activeTab: 'products' | 'add-product' | 'orders' | 'credentials' = 'products';
   products: ProductCardData[] = [];
   successMessage: string = '';
+
+  adminUser: any = null;
+
+  editingProduct: any = null;
+  editSuccessMessage: string = '';
+
+  newSystemFileName: string = '';
+  editSystemFileName: string = '';
+
+  profileForm = {
+    name: '',
+    email: '',
+    newPassword: ''
+  };
+  profileSuccessMessage: string = '';
+  profileErrorMessage: string = '';
+  showProfilePassword: boolean = false;
+
+  newAdminForm = {
+    name: '',
+    email: '',
+    password: ''
+  };
+  newAdminSuccessMessage: string = '';
+  newAdminErrorMessage: string = '';
+  showNewAdminPassword: boolean = false;
+
+  createdAdminUsers: Array<{
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    createdAt: string;
+    status: string;
+  }> = [];
 
   newProduct = {
     name: '',
@@ -661,46 +1303,251 @@ export class AdminComponent implements OnInit {
   ];
 
   private mockDataService = inject(MockDataService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
   ngOnInit(): void {
+    this.adminUser = this.authService.currentUser();
+    if (this.adminUser) {
+      this.profileForm.name = this.adminUser.name || 'Admin User';
+      this.profileForm.email = this.adminUser.email || '';
+    }
+
+    const savedAdmins = localStorage.getItem('arista_created_admins');
+    if (savedAdmins) {
+      try {
+        this.createdAdminUsers = JSON.parse(savedAdmins);
+      } catch {
+        this.createdAdminUsers = [];
+      }
+    }
+
     this.mockDataService.getProducts().subscribe(prods => {
-      this.products = prods;
+      this.products = prods.map(p => {
+        let img = p.image ? p.image.trim() : '';
+        if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
+          img = '/' + img;
+        }
+        return {
+          ...p,
+          image: img || this.defaultImage
+        };
+      });
     });
+  }
+
+  onLogout(): void {
+    this.authService.logout();
+    this.router.navigate(['/admin/login']);
+  }
+
+  onTableImageError(event: Event): void {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement) {
+      imgElement.src = this.defaultImage;
+    }
+  }
+
+  onPreviewImageError(event: Event): void {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement) {
+      imgElement.src = this.defaultImage;
+    }
+  }
+
+  onDropdownImageSelect(event: Event, targetForm: 'new' | 'edit', fileInputEl: HTMLInputElement): void {
+    const select = event.target as HTMLSelectElement;
+    if (select.value === 'UPLOAD_SYSTEM') {
+      fileInputEl.click();
+    }
+  }
+
+  onFileSelected(event: Event, targetForm: 'new' | 'edit'): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const fileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (targetForm === 'new') {
+          this.newProduct.image = result;
+          this.newSystemFileName = fileName;
+        } else if (this.editingProduct) {
+          this.editingProduct.image = result;
+          this.editSystemFileName = fileName;
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  clearSystemFile(targetForm: 'new' | 'edit'): void {
+    if (targetForm === 'new') {
+      this.newSystemFileName = '';
+      this.newProduct.image = '/assets/images/placeholder-rings.svg';
+    } else if (this.editingProduct) {
+      this.editSystemFileName = '';
+      this.editingProduct.image = '/assets/images/placeholder-rings.svg';
+    }
+  }
+
+  isDataUrl(url?: string): boolean {
+    return !!url && url.startsWith('data:');
+  }
+
+  editProduct(product: ProductCardData): void {
+    let img = product.image ? product.image.trim() : '';
+    if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
+      img = '/' + img;
+    }
+
+    this.editingProduct = {
+      id: product.id,
+      name: product.name,
+      category: product.category || 'Rings',
+      price: product.price,
+      compareAtPrice: product.compareAtPrice || null,
+      badge: product.badge || '',
+      image: img || '/assets/images/placeholder-rings.svg',
+      stockQuantity: 10,
+      description: ''
+    };
+    this.editSuccessMessage = '';
+    this.editSystemFileName = '';
+  }
+
+  closeEditModal(): void {
+    this.editingProduct = null;
+    this.editSuccessMessage = '';
+    this.editSystemFileName = '';
+  }
+
+  async updateProduct(event: Event): Promise<void> {
+    event.preventDefault();
+    if (!this.editingProduct || !this.editingProduct.name || !this.editingProduct.price) return;
+
+    let finalImage = this.editingProduct.image && this.editingProduct.image.trim() !== ''
+      ? this.editingProduct.image.trim()
+      : this.defaultImage;
+
+    if (!finalImage.startsWith('http') && !finalImage.startsWith('data:') && !finalImage.startsWith('/')) {
+      finalImage = '/' + finalImage;
+    }
+
+    const payload = {
+      ...this.editingProduct,
+      image: finalImage
+    };
+
+    try {
+      const token = this.authService.getToken();
+      await fetch(`http://localhost:5000/api/v1/admin/products/${this.editingProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      // Offline fallback
+    }
+
+    // Sync product update with MockDataService
+    this.mockDataService.updateProduct(this.editingProduct.id, {
+      name: this.editingProduct.name,
+      category: this.editingProduct.category,
+      price: Number(this.editingProduct.price),
+      compareAtPrice: this.editingProduct.compareAtPrice ? Number(this.editingProduct.compareAtPrice) : undefined,
+      badge: (this.editingProduct.badge as any) || undefined,
+      image: finalImage,
+      stockQuantity: this.editingProduct.stockQuantity,
+      description: this.editingProduct.description
+    });
+
+    // Update product in local state
+    const index = this.products.findIndex(p => p.id === this.editingProduct.id);
+    if (index !== -1) {
+      this.products[index] = {
+        ...this.products[index],
+        name: this.editingProduct.name,
+        category: this.editingProduct.category,
+        price: Number(this.editingProduct.price),
+        compareAtPrice: this.editingProduct.compareAtPrice ? Number(this.editingProduct.compareAtPrice) : undefined,
+        badge: (this.editingProduct.badge as any) || undefined,
+        image: finalImage
+      };
+    }
+
+    this.editSuccessMessage = `Jewellery item "${this.editingProduct.name}" updated successfully!`;
+
+    setTimeout(() => {
+      this.closeEditModal();
+    }, 1200);
   }
 
   async saveProduct(event: Event): Promise<void> {
     event.preventDefault();
-
     if (!this.newProduct.name || !this.newProduct.price) return;
 
-    try {
-      await fetch('http://localhost:5000/api/v1/admin/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.newProduct)
-      });
-    } catch (err) {
-      // Ignored non-critical offline fallback
+    let finalImage = this.newProduct.image && this.newProduct.image.trim() !== ''
+      ? this.newProduct.image.trim()
+      : this.defaultImage;
+
+    if (!finalImage.startsWith('http') && !finalImage.startsWith('data:') && !finalImage.startsWith('/')) {
+      finalImage = '/' + finalImage;
     }
 
-    const createdItem: ProductCardData = {
-      id: Date.now(),
+    const payload = {
+      ...this.newProduct,
+      image: finalImage
+    };
+
+    try {
+      const token = this.authService.getToken();
+      await fetch('http://localhost:5000/api/v1/admin/products', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      // Offline fallback
+    }
+
+    const createdMockProduct = this.mockDataService.addProduct({
       name: this.newProduct.name,
-      slug: this.newProduct.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
       category: this.newProduct.category,
       price: Number(this.newProduct.price),
       compareAtPrice: this.newProduct.compareAtPrice ? Number(this.newProduct.compareAtPrice) : undefined,
       badge: (this.newProduct.badge as 'NEW' | 'SALE' | 'FEATURED' | 'BESTSELLER') || undefined,
-      image: this.newProduct.image,
+      image: finalImage,
+      stockQuantity: this.newProduct.stockQuantity,
+      description: this.newProduct.description
+    });
+
+    const createdItem: ProductCardData = {
+      id: createdMockProduct.id,
+      name: createdMockProduct.name,
+      slug: createdMockProduct.slug,
+      category: createdMockProduct.category,
+      price: createdMockProduct.price,
+      compareAtPrice: createdMockProduct.compareAtPrice,
+      badge: createdMockProduct.badge,
+      image: createdMockProduct.image,
       available: true
     };
 
     this.products = [createdItem, ...this.products];
-    this.successMessage = `Jewellery creation "${this.newProduct.name}" published successfully to catalog!`;
+    this.successMessage = `Jewellery creation "${this.newProduct.name}" published successfully!`;
 
     setTimeout(() => {
       this.successMessage = '';
       this.activeTab = 'products';
+      this.newSystemFileName = '';
       this.newProduct = {
         name: '',
         category: 'Rings',
@@ -714,14 +1561,79 @@ export class AdminComponent implements OnInit {
     }, 1800);
   }
 
-  editProduct(product: ProductCardData): void {
-    alert(`Editing product ID ${product.id}: ${product.name}`);
+  async onUpdateProfile(event: Event): Promise<void> {
+    event.preventDefault();
+    this.profileSuccessMessage = '';
+    this.profileErrorMessage = '';
+
+    const res = await this.authService.updateAdminProfile(
+      this.profileForm.name,
+      this.profileForm.email,
+      this.profileForm.newPassword
+    );
+
+    if (res.success) {
+      this.profileSuccessMessage = res.message;
+      this.adminUser = this.authService.currentUser();
+      this.profileForm.newPassword = '';
+    } else {
+      this.profileErrorMessage = res.message;
+    }
+  }
+
+  async onCreateAdmin(event: Event): Promise<void> {
+    event.preventDefault();
+    this.newAdminSuccessMessage = '';
+    this.newAdminErrorMessage = '';
+
+    if (!this.newAdminForm.name || !this.newAdminForm.email || !this.newAdminForm.password) {
+      this.newAdminErrorMessage = 'Please fill in all required fields (Name, Email, Password).';
+      return;
+    }
+
+    if (this.createdAdminUsers.length >= 1) {
+      this.newAdminErrorMessage = 'Maximum Limit Reached: Only 1 additional Admin User account is allowed.';
+      return;
+    }
+
+    const res = await this.authService.createAdminUser(
+      this.newAdminForm.name,
+      this.newAdminForm.email,
+      this.newAdminForm.password
+    );
+
+    if (res.success) {
+      this.newAdminErrorMessage = '';
+      this.newAdminSuccessMessage = res.message || 'Secondary Admin user registered successfully!';
+
+      const newAdminObj = {
+        id: Date.now(),
+        name: this.newAdminForm.name,
+        email: this.newAdminForm.email,
+        role: 'ADMIN',
+        createdAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+        status: 'ACTIVE'
+      };
+      this.createdAdminUsers = [...this.createdAdminUsers, newAdminObj];
+      localStorage.setItem('arista_created_admins', JSON.stringify(this.createdAdminUsers));
+
+      this.newAdminForm = { name: '', email: '', password: '' };
+    } else {
+      this.newAdminSuccessMessage = '';
+      this.newAdminErrorMessage = res.message;
+    }
+  }
+
+  deleteAdminUser(adminId: number): void {
+    this.createdAdminUsers = this.createdAdminUsers.filter(a => a.id !== adminId);
+    localStorage.setItem('arista_created_admins', JSON.stringify(this.createdAdminUsers));
+    this.newAdminErrorMessage = '';
+    this.newAdminSuccessMessage = 'Admin user account revoked and removed successfully.';
   }
 
   deleteProduct(productId: number): void {
-    if (confirm('Are you sure you want to remove this product from catalog?')) {
-      this.products = this.products.filter(p => p.id !== productId);
-    }
+    this.products = this.products.filter(p => p.id !== productId);
+    this.mockDataService.deleteProduct(productId);
   }
 
   updateOrderStatus(order: any, event: Event): void {

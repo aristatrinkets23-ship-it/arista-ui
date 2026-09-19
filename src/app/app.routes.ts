@@ -10,6 +10,8 @@ import { CartComponent } from './pages/cart/cart.component';
 import { CheckoutComponent } from './pages/checkout/checkout.component';
 import { AccountComponent } from './pages/account/account.component';
 import { AdminComponent } from './pages/admin/admin.component';
+import { AdminLoginComponent } from './pages/admin/admin-login/admin-login.component';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   {
@@ -25,7 +27,8 @@ export const routes: Routes = [
       { path: 'cart', component: CartComponent },
       { path: 'checkout', component: CheckoutComponent },
       { path: 'account', component: AccountComponent },
-      { path: 'admin', component: AdminComponent }
+      { path: 'admin/login', component: AdminLoginComponent },
+      { path: 'admin', component: AdminComponent, canActivate: [adminGuard] }
     ]
   },
   { path: '**', redirectTo: '' }

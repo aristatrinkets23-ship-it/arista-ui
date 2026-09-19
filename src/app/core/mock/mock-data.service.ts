@@ -253,10 +253,10 @@ export class MockDataService {
   }
 
   getProductBySlug(slug: string): Observable<Product | undefined> {
-    let found = this.products.find(p => p.slug === slug);
+    const lowerSlug = slug.toLowerCase();
+    let found = this.products.find(p => p.slug.toLowerCase() === lowerSlug || p.id.toString() === slug);
     if (!found) {
-      // Return first product as robust fallback if matching slug not found
-      found = this.products[0];
+      found = this.products.find(p => p.slug.includes(lowerSlug)) || this.products[0];
     }
     return of(found);
   }
@@ -264,5 +264,65 @@ export class MockDataService {
   getRelatedProducts(currentSlug: string): Observable<ProductCardData[]> {
     const related = this.products.filter(p => p.slug !== currentSlug).slice(0, 4);
     return of(related);
+  }
+
+  addProduct(newProd: Partial<Product>): Product {
+    const id = Date.now();
+    const slug = (newProd.name || 'product-' + id).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const image = newProd.image || '/assets/images/placeholder-jewellery.svg';
+
+    const fullProduct: Product = {
+      id,
+      name: newProd.name || 'New Jewellery Creation',
+      slug,
+      image,
+      images: [image, '/assets/images/placeholder-jewellery.svg'],
+      price: Number(newProd.price) || 0,
+      compareAtPrice: newProd.compareAtPrice ? Number(newProd.compareAtPrice) : undefined,
+      badge: (newProd.badge as any) || undefined,
+      category: newProd.category || 'Rings',
+      available: true,
+      inStock: true,
+      stockQuantity: newProd.stockQuantity || 10,
+      description: newProd.description || 'Exquisite handcrafted fine jewellery piece by Arista Trinkets.',
+      materials: ['18K Warm Gold', 'Fine Gemstones'],
+      careGuide: 'Handle with care. Store in protective velvet box.',
+      shippingInfo: 'Complimentary insured express delivery within 3-5 business days.',
+      metalType: '18K Warm Gold',
+      specifications: [
+        { label: 'Category', value: newProd.category || 'Rings' },
+        { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' }
+      ]
+    };
+
+    this.products.unshift(fullProduct);
+    return fullProduct;
+  }
+
+  updateProduct(id: number, updated: Partial<Product>): void {
+    const index = this.products.findIndex(p => p.id === id);
+    if (index !== -1) {
+      const existing = this.products[index];
+      const name = updated.name || existing.name;
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const image = updated.image || existing.image || '/assets/images/placeholder-jewellery.svg';
+
+      this.products[index] = {
+        ...existing,
+        ...updated,
+        name,
+        slug,
+        image,
+        images: [image, '/assets/images/placeholder-jewellery.svg'],
+        price: updated.price ? Number(updated.price) : existing.price,
+        compareAtPrice: updated.compareAtPrice ? Number(updated.compareAtPrice) : existing.compareAtPrice,
+        badge: (updated.badge as any) !== undefined ? (updated.badge as any) : existing.badge,
+        category: updated.category || existing.category
+      };
+    }
+  }
+
+  deleteProduct(id: number): void {
+    this.products = this.products.filter(p => p.id !== id);
   }
 }

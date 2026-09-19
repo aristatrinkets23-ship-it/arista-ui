@@ -32,7 +32,7 @@ import { CartService } from '../../core/services/cart.service';
               <span *ngIf="product.badge" class="badge-overlay">
                 <app-badge [variant]="getBadgeVariant(product.badge)">{{ product.badge }}</app-badge>
               </span>
-              <img [src]="selectedImage" [alt]="product.name" class="main-img" />
+              <img [src]="selectedImage || '/assets/images/placeholder-jewellery.svg'" (error)="onImageError()" [alt]="product.name" class="main-img" />
             </div>
             <div *ngIf="product.images && product.images.length > 1" class="thumb-list">
               <button
@@ -42,7 +42,7 @@ import { CartService } from '../../core/services/cart.service';
                 (click)="selectedImage = img"
                 class="thumb-btn"
               >
-                <img [src]="img" [alt]="product.name" class="thumb-img" />
+                <img [src]="img" (error)="onImageError()" [alt]="product.name" class="thumb-img" />
               </button>
             </div>
           </div>
@@ -466,6 +466,10 @@ export class ProductDetailComponent implements OnInit {
       const slug = params['slug'] || 'eternal-solitaire-diamond-ring';
       this.loadProduct(slug);
     });
+  }
+
+  onImageError(): void {
+    this.selectedImage = '/assets/images/placeholder-jewellery.svg';
   }
 
   loadProduct(slug: string): void {

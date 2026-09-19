@@ -1,13 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, FormsModule, SectionHeadingComponent, ButtonComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SectionHeadingComponent, ButtonComponent],
   template: `
     <!-- Account Page Hero -->
     <section class="account-hero text-center">
@@ -56,14 +58,19 @@ import { ButtonComponent } from '../../shared/components/button/button.component
           <form (submit)="onLoginSubmit($event)" class="auth-form">
             <div class="form-group">
               <label class="form-label">Email Address *</label>
-              <input type="email" placeholder="name&#64;example.com" required class="form-input" />
+              <input type="email" [(ngModel)]="loginEmail" name="email" placeholder="name&#64;example.com" required class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">Password *</label>
-              <input type="password" placeholder="••••••••" required class="form-input" />
+              <input type="password" [(ngModel)]="loginPassword" name="password" placeholder="••••••••" required class="form-input" />
             </div>
             <div class="auth-submit-wrap">
               <app-button type="submit" variant="primary" size="sm" [rounded]="true">Sign In &rarr;</app-button>
+            </div>
+            <div style="text-align: center; margin-top: 16px;">
+              <a routerLink="/admin/login" style="font-size: 0.82rem; color: var(--brand-warm-gold); font-weight: 600; text-decoration: underline;">
+                Are you a Store Administrator? Sign in to Admin Console &rarr;
+              </a>
             </div>
           </form>
         </div>
@@ -75,15 +82,15 @@ import { ButtonComponent } from '../../shared/components/button/button.component
           <form (submit)="onRegisterSubmit($event)" class="auth-form">
             <div class="form-group">
               <label class="form-label">Full Name *</label>
-              <input type="text" placeholder="e.g. Lady Catherine" required class="form-input" />
+              <input type="text" [(ngModel)]="regName" name="name" placeholder="e.g. Lady Catherine" required class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">Email Address *</label>
-              <input type="email" placeholder="name&#64;example.com" required class="form-input" />
+              <input type="email" [(ngModel)]="regEmail" name="email" placeholder="name&#64;example.com" required class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">Password *</label>
-              <input type="password" placeholder="Create a secure password" required class="form-input" />
+              <input type="password" [(ngModel)]="regPassword" name="password" placeholder="Create a secure password" required class="form-input" />
             </div>
             <div class="auth-submit-wrap">
               <app-button type="submit" variant="primary" size="sm" [rounded]="true">Create Account &rarr;</app-button>
@@ -94,8 +101,8 @@ import { ButtonComponent } from '../../shared/components/button/button.component
         <!-- Account Dashboard Placeholder Shell -->
         <div *ngIf="activeTab === 'dashboard'" class="dashboard-shell">
           <div class="dash-welcome">
-            <h3>Welcome, Valued Collector</h3>
-            <p>Customer Account & Order History Portal (Backend Authentication Integration Planned for Phase 05+)</p>
+            <h3>Welcome, {{ currentUser?.name || 'Valued Collector' }}</h3>
+            <p>Customer Account & Order History Portal</p>
           </div>
 
           <div class="dash-grid">
@@ -270,18 +277,48 @@ import { ButtonComponent } from '../../shared/components/button/button.component
     }
   `]
 })
-export class AccountComponent {
+export class AccountComponent implements OnInit {
   activeTab: 'login' | 'register' | 'dashboard' = 'login';
 
-  onLoginSubmit(event: Event): void {
+  loginEmail: string = '';
+  loginPassword: string = '';
+
+  regName: string = '';
+  regEmail: string = '';
+  regPassword: string = '';
+
+  currentUser: any = null;
+
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
+  ngOnInit(): void {
+    if (this.authService.isAuthenticated()) {
+      this.currentUser = this.authService.currentUser();
+      this.activeTab = 'dashboard';
+    }
+  }
+
+  async onLoginSubmit(event: Event): Promise<void> {
     event.preventDefault();
-    alert('Authentication Service: Login credentials validated (Demo State). Switching to Account Dashboard.');
-    this.activeTab = 'dashboard';
+    if (!this.loginEmail || !this.loginPassword) return;
+
+    const res = await this.authService.login(this.loginEmail, this.loginPassword);
+    if (res.success && res.user) {
+      this.currentUser = res.user;
+      if (res.user.role === 'ADMIN' || res.user.role === 'SUPER_ADMIN') {
+        this.router.navigate(['/admin']);
+      } else {
+        this.activeTab = 'dashboard';
+      }
+    } else {
+      alert(res.message);
+    }
   }
 
   onRegisterSubmit(event: Event): void {
     event.preventDefault();
-    alert('Authentication Service: Account registration completed (Demo State). Welcome to Arista Club!');
+    alert('Account created successfully! Welcome to The Arista Club.');
     this.activeTab = 'dashboard';
   }
 }
