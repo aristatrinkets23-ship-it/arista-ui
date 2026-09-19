@@ -69,19 +69,67 @@ import { CartService } from '../../core/services/cart.service';
     <!-- Mobile Drawer Overlay -->
     <div class="mobile-drawer" [class.open]="isMobileNavOpen">
       <div class="drawer-header">
-        <img src="/assets/images/logo.jpeg" alt="Arista Trinkets" class="drawer-logo-img" width="120" height="80" ngSkipOversizedImageWarning />
-        <button type="button" class="close-btn" (click)="toggleMobileNav()" aria-label="Close menu">&times;</button>
-      </div>
-      <nav class="mobile-nav">
-        <a
-          *ngFor="let item of navItems"
-          [routerLink]="item.path"
-          (click)="toggleMobileNav()"
-          class="mobile-nav-link"
-        >
-          {{ item.label }}
+        <a routerLink="/" (click)="toggleMobileNav()" class="drawer-logo" aria-label="Arista Trinkets Home">
+          <img src="/assets/images/logo-icon.jpeg" alt="Arista Monogram Icon" class="drawer-logo-icon" width="40" height="40" ngSkipOversizedImageWarning />
+          <img src="/assets/images/logo.jpeg" alt="Arista Trinkets Jewellery" class="drawer-logo-img" width="140" height="45" ngSkipOversizedImageWarning />
         </a>
-      </nav>
+        <button type="button" class="close-btn" (click)="toggleMobileNav()" aria-label="Close menu">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <span class="drawer-section-title">Navigation Menu</span>
+        <nav class="mobile-nav">
+          <a
+            *ngFor="let item of navItems"
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            [routerLinkActiveOptions]="{exact: item.path === '/'}"
+            (click)="toggleMobileNav()"
+            class="mobile-nav-link"
+          >
+            <span>{{ item.label }}</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </a>
+        </nav>
+
+        <div class="drawer-collections">
+          <span class="drawer-section-title">Curated Collections</span>
+          <div class="collection-tags">
+            <a routerLink="/categories" (click)="toggleMobileNav()" class="tag-pill">Rings</a>
+            <a routerLink="/categories" (click)="toggleMobileNav()" class="tag-pill">Necklaces</a>
+            <a routerLink="/categories" (click)="toggleMobileNav()" class="tag-pill">Earrings</a>
+            <a routerLink="/categories" (click)="toggleMobileNav()" class="tag-pill">Bracelets</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-footer">
+        <div class="drawer-actions">
+          <a routerLink="/account" (click)="toggleMobileNav()" class="drawer-action-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+            <span>Account</span>
+          </a>
+          <a routerLink="/cart" (click)="toggleMobileNav()" class="drawer-action-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <path d="M16 10a4 4 0 0 1-8 0"></path>
+            </svg>
+            <span>Bag ({{ cartCount }})</span>
+          </a>
+        </div>
+        <p class="drawer-tagline">Arista Trinkets &bull; Handcrafted Fine Jewellery</p>
+      </div>
     </div>
     <div class="drawer-backdrop" *ngIf="isMobileNavOpen" (click)="toggleMobileNav()"></div>
   `,
@@ -273,20 +321,22 @@ import { CartService } from '../../core/services/cart.service';
       background-color: var(--brand-pearl-beige);
     }
 
-    /* Mobile Drawer */
+    /* Luxury Mobile Drawer */
     .mobile-drawer {
       position: fixed;
       top: 0;
       left: 0;
-      width: 290px;
-      max-width: 85vw;
+      width: 310px;
+      max-width: 88vw;
       height: 100vh;
       background-color: #FFFFFF;
       z-index: 200;
       transform: translateX(-100%);
       transition: transform var(--transition-normal);
-      padding: var(--space-lg);
-      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+      display: flex;
+      flex-direction: column;
+      box-shadow: 10px 0 35px rgba(91, 70, 54, 0.16);
+      overflow-y: auto;
     }
 
     .mobile-drawer.open {
@@ -297,51 +347,185 @@ import { CartService } from '../../core/services/cart.service';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: var(--space-xl);
-      padding-bottom: var(--space-sm);
+      padding: 16px 20px;
       border-bottom: 1px solid var(--color-border);
+      background: var(--brand-pearl-beige);
     }
 
     .drawer-logo {
-      font-family: var(--font-serif);
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: var(--brand-mocha-brown);
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      text-decoration: none;
+    }
+
+    .drawer-logo-icon {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+      border-radius: 50%;
+      position: relative;
+      z-index: 2;
+    }
+
+    .drawer-logo-img {
+      height: 42px;
+      width: auto;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+      margin-left: -10px;
+      position: relative;
+      z-index: 1;
     }
 
     .close-btn {
-      background: transparent;
-      border: none;
-      font-size: 2rem;
+      background: #FFFFFF;
+      border: 1px solid var(--color-border);
       color: var(--brand-mocha-brown);
       cursor: pointer;
-      width: 44px;
-      height: 44px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .close-btn:hover {
+      background-color: var(--brand-warm-gold);
+      color: var(--brand-mocha-brown);
+      border-color: var(--brand-warm-gold);
+    }
+
+    .drawer-body {
+      padding: 24px 20px;
+      flex: 1;
+    }
+
+    .drawer-section-title {
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--brand-warm-gold);
+      display: block;
+      margin-bottom: 12px;
     }
 
     .mobile-nav {
       display: flex;
       flex-direction: column;
-      gap: var(--space-xs);
+      gap: 6px;
+      margin-bottom: 24px;
     }
 
     .mobile-nav-link {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-sans);
       font-size: 0.95rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--brand-mocha-brown);
-      padding: 12px 0;
-      border-bottom: 1px solid var(--brand-pearl-beige);
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
       text-decoration: none;
-      transition: color var(--transition-fast);
+      transition: all var(--transition-fast);
+      background-color: transparent;
     }
 
-    .mobile-nav-link:hover {
+    .mobile-nav-link:hover, .mobile-nav-link.active {
+      background-color: var(--brand-pearl-beige);
       color: var(--brand-warm-gold);
+      transform: translateX(4px);
+    }
+
+    .mobile-nav-link svg {
+      transition: transform var(--transition-fast);
+      color: #999999;
+    }
+
+    .mobile-nav-link:hover svg, .mobile-nav-link.active svg {
+      color: var(--brand-warm-gold);
+      transform: translateX(2px);
+    }
+
+    .drawer-collections {
+      border-top: 1px solid var(--color-border);
+      padding-top: 20px;
+    }
+
+    .collection-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .tag-pill {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--brand-mocha-brown);
+      background: var(--brand-pearl-beige);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      text-decoration: none;
+      transition: all var(--transition-fast);
+      border: 1px solid var(--color-border);
+    }
+
+    .tag-pill:hover {
+      background: var(--brand-mocha-brown);
+      color: var(--brand-pearl-beige);
+      border-color: var(--brand-mocha-brown);
+    }
+
+    .drawer-footer {
+      padding: 18px 20px;
+      background: var(--brand-pearl-beige);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .drawer-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .drawer-action-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #FFFFFF;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-full);
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--brand-mocha-brown);
+      text-decoration: none;
+      transition: all var(--transition-fast);
+    }
+
+    .drawer-action-btn:hover {
+      background: var(--brand-mocha-brown);
+      color: var(--brand-pearl-beige);
+      border-color: var(--brand-mocha-brown);
+    }
+
+    .drawer-tagline {
+      font-size: 0.72rem;
+      color: #777777;
+      text-align: center;
+      margin: 0;
+      letter-spacing: 0.5px;
     }
 
     .drawer-backdrop {
