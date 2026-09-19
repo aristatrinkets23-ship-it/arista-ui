@@ -23,21 +23,6 @@ import { CartService } from '../../core/services/cart.service';
   ],
   template: `
     <div class="product-detail-page" *ngIf="product">
-      <!-- Breadcrumb Bar -->
-      <div class="breadcrumb-bar">
-        <div class="container">
-          <div class="breadcrumbs">
-            <a routerLink="/">Home</a>
-            <span class="sep">/</span>
-            <a routerLink="/shop">Shop</a>
-            <span class="sep">/</span>
-            <a [routerLink]="['/shop']" [queryParams]="{ category: product.category?.toLowerCase() }">{{ product.category }}</a>
-            <span class="sep">/</span>
-            <span class="current">{{ product.name }}</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Main Product Grid -->
       <section class="section-padding">
         <div class="container product-main-grid">
@@ -175,28 +160,6 @@ import { CartService } from '../../core/services/cart.service';
     </div>
   `,
   styles: [`
-    .breadcrumb-bar {
-      background-color: var(--brand-pearl-beige);
-      padding: 12px 0;
-      border-bottom: 1px solid var(--color-border);
-      font-size: 0.82rem;
-    }
-    .breadcrumbs {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .breadcrumbs a {
-      color: #666666;
-      text-decoration: none;
-    }
-    .breadcrumbs a:hover {
-      color: var(--brand-warm-gold);
-    }
-    .sep { color: #A09080; }
-    .current { color: var(--brand-mocha-brown); font-weight: 600; }
-
     .product-main-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -244,8 +207,8 @@ import { CartService } from '../../core/services/cart.service';
     }
 
     .thumb-btn {
-      width: 70px;
-      height: 70px;
+      width: 64px;
+      height: 64px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--color-border);
       background: #FFFFFF;
@@ -311,7 +274,7 @@ import { CartService } from '../../core/services/cart.service';
       background-color: var(--brand-soft-blush);
       color: #C2410C;
       padding: 4px 8px;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-full);
     }
 
     .product-description {
@@ -340,10 +303,10 @@ import { CartService } from '../../core/services/cart.service';
     .metal-pill {
       background: #FFFFFF;
       border: 1px solid var(--color-border);
-      padding: 10px 18px;
-      min-height: 44px;
-      border-radius: var(--radius-sm);
-      font-size: 0.85rem;
+      padding: 8px 18px;
+      min-height: 40px;
+      border-radius: var(--radius-full);
+      font-size: 0.84rem;
       font-weight: 600;
       color: var(--brand-mocha-brown);
       cursor: pointer;
@@ -366,39 +329,41 @@ import { CartService } from '../../core/services/cart.service';
       display: flex;
       align-items: center;
       border: 1px solid var(--color-border);
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-full);
       background-color: #FFFFFF;
-      height: 48px;
+      height: 42px;
+      padding: 0 4px;
     }
 
     .qty-btn {
       background: transparent;
       border: none;
-      width: 40px;
+      width: 34px;
       height: 100%;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       color: var(--brand-mocha-brown);
       cursor: pointer;
     }
     .qty-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     .qty-val {
-      padding: 0 12px;
+      padding: 0 10px;
       font-weight: 700;
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: var(--brand-mocha-brown);
     }
 
     .btn-add-bag {
       flex: 1;
-      min-width: 220px;
-      height: 48px;
+      min-width: 200px;
+      height: 42px;
+      padding: 8px 24px;
       background-color: var(--brand-warm-gold);
       color: var(--brand-mocha-brown);
       border: none;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-full);
       font-weight: 700;
-      font-size: 0.88rem;
+      font-size: 0.84rem;
       text-transform: uppercase;
       letter-spacing: 1px;
       cursor: pointer;
@@ -409,15 +374,16 @@ import { CartService } from '../../core/services/cart.service';
     .btn-add-bag:hover {
       background-color: #E2B882;
       box-shadow: var(--shadow-gold);
+      transform: translateY(-1px);
     }
 
     .added-notice {
       background-color: #F0F7ED;
       border: 1px solid #C8E6C9;
       color: #2E7D32;
-      padding: 12px 16px;
-      border-radius: var(--radius-sm);
-      font-size: 0.9rem;
+      padding: 10px 16px;
+      border-radius: var(--radius-full);
+      font-size: 0.88rem;
       font-weight: 600;
       display: flex;
       justify-content: space-between;
