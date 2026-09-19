@@ -12,7 +12,10 @@ import { RouterLink } from '@angular/router';
         <!-- Brand Column -->
         <div class="footer-col brand-col">
           <div class="footer-brand">
-            <img src="/assets/images/logo.jpeg" alt="Arista Trinkets" class="footer-logo-img" width="150" height="100" ngSkipOversizedImageWarning />
+            <a routerLink="/" class="footer-logo-link" aria-label="Arista Trinkets">
+              <img src="/assets/images/logo-icon.jpeg" alt="Arista Icon" class="footer-logo-icon" width="36" height="36" ngSkipOversizedImageWarning />
+              <img src="/assets/images/logo.jpeg" alt="Arista Trinkets" class="footer-logo-img" width="130" height="40" ngSkipOversizedImageWarning />
+            </a>
           </div>
           <p class="brand-tagline">
             Handcrafted fine jewellery created with timeless gold, silver, and precious stones for every occasion.
@@ -97,14 +100,34 @@ import { RouterLink } from '@angular/router';
     .footer-brand {
       display: inline-flex;
       align-items: flex-start;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+    }
+
+    .footer-logo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0;
+      text-decoration: none;
+      background: #FFFFFF;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .footer-logo-icon {
+      height: 30px;
+      width: auto;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+      border-radius: 50%;
     }
 
     .footer-logo-img {
-      height: 48px;
+      height: 34px;
       width: auto;
       object-fit: contain;
-      filter: brightness(0) invert(1);
+      mix-blend-mode: multiply;
+      margin-left: -8px;
     }
 
     .brand-tagline {

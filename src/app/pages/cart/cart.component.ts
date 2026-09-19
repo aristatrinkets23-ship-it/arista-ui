@@ -138,24 +138,32 @@ import { CartService } from '../../core/services/cart.service';
     .cart-hero {
       background: linear-gradient(135deg, rgba(247, 233, 230, 0.9) 0%, rgba(242, 239, 232, 0.95) 100%), url('/assets/images/placeholder-banner.svg');
       background-size: cover;
-      padding: 48px 0;
+      padding: 40px 16px;
       border-bottom: 1px solid var(--color-border);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .hero-eyebrow {
       font-size: 0.82rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 2.5px;
       color: var(--brand-warm-gold);
       display: block;
       margin-bottom: 8px;
+      text-align: center;
     }
 
     .hero-title {
       font-family: var(--font-serif);
       font-size: clamp(1.8rem, 4vw, 2.8rem);
       color: var(--brand-mocha-brown);
+      text-align: center;
+      margin: 0 auto;
     }
 
     .cart-layout {
