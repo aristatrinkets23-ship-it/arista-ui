@@ -32,22 +32,26 @@ export class CartService {
 
   addToCart(product: ProductCardData, quantity: number = 1, selectedMetal?: string): void {
     const currentItems = [...this.currentCart.items];
-    const existingIndex = currentItems.findIndex(item => item.product.id === product.id);
+    const addQty = Math.max(1, Number(quantity) || 1);
+    const existingIndex = currentItems.findIndex(item => 
+      String(item.product.id) === String(product.id) || (product.slug && item.product.slug === product.slug)
+    );
 
     if (existingIndex > -1) {
       const existing = currentItems[existingIndex];
-      const newQty = (Number(existing.quantity) || 0) + (Number(quantity) || 1);
+      const newQty = (Number(existing.quantity) || 0) + addQty;
       currentItems[existingIndex] = {
         ...existing,
+        selectedMetal: selectedMetal || existing.selectedMetal,
         quantity: newQty,
-        subtotal: product.price * newQty
+        subtotal: (Number(product.price) || 0) * newQty
       };
     } else {
       currentItems.push({
         product,
-        quantity: Number(quantity) || 1,
+        quantity: addQty,
         selectedMetal: selectedMetal || '18K Warm Gold',
-        subtotal: product.price * (Number(quantity) || 1)
+        subtotal: (Number(product.price) || 0) * addQty
       });
     }
 
@@ -62,11 +66,11 @@ export class CartService {
     }
 
     const currentItems = this.currentCart.items.map(item => {
-      if (item.product.id === productId) {
+      if (String(item.product.id) === String(productId) || item.product.slug === productId) {
         return {
           ...item,
           quantity: numericQty,
-          subtotal: item.product.price * numericQty
+          subtotal: (Number(item.product.price) || 0) * numericQty
         };
       }
       return item;
@@ -76,7 +80,9 @@ export class CartService {
   }
 
   removeFromCart(productId: number | string): void {
-    const updatedItems = this.currentCart.items.filter(item => item.product.id !== productId);
+    const updatedItems = this.currentCart.items.filter(
+      item => String(item.product.id) !== String(productId) && item.product.slug !== productId
+    );
     this.saveAndUpdate(updatedItems);
   }
 
