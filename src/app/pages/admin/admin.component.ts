@@ -883,7 +883,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       padding: 12px 18px;
       min-height: 44px;
       border: none;
-      background: #C62828;
+      background: var(--brand-mocha-brown);
       color: #FFFFFF;
       border-radius: var(--radius-full);
       font-weight: 600;
@@ -892,8 +892,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       transition: all var(--transition-fast);
     }
     .modal-btn-confirm:hover {
-      background: #B71C1C;
+      background: #2D1E14;
       transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
     }
 
     @keyframes fadeIn {
@@ -1025,19 +1026,22 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     }
 
     .btn-logout {
-      background: #C62828;
+      background: transparent;
       color: #FFFFFF;
-      border: none;
+      border: 1px solid rgba(255, 255, 255, 0.4);
       font-weight: 600;
       font-size: 0.88rem;
       padding: 8px 20px;
       border-radius: 50px;
       cursor: pointer;
-      transition: background var(--transition-fast);
+      transition: all var(--transition-fast);
     }
 
     .btn-logout:hover {
-      background: #B71C1C;
+      background: var(--brand-warm-gold);
+      border-color: var(--brand-warm-gold);
+      color: var(--brand-mocha-brown);
+      transform: translateY(-1px);
     }
 
     .bg-pearl {
