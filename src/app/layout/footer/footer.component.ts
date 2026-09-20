@@ -70,7 +70,7 @@ import { RouterLink } from '@angular/router';
   `,
   styles: [`
     .site-footer {
-      background-color: var(--brand-mocha-brown);
+      background-color: #1A120B;
       color: var(--brand-pearl-beige);
       padding-top: 36px;
       border-top: 3px solid var(--brand-warm-gold);
@@ -120,7 +120,7 @@ import { RouterLink } from '@angular/router';
       height: 42px;
       width: auto;
       object-fit: contain;
-      filter: invert(1) sepia(0.8) saturate(3) hue-rotate(5deg) brightness(1.25);
+      filter: invert(1) sepia(0.85) saturate(3.5) hue-rotate(5deg) brightness(1.2);
       mix-blend-mode: screen;
       position: relative;
       z-index: 2;
@@ -130,7 +130,7 @@ import { RouterLink } from '@angular/router';
       height: 48px;
       width: auto;
       object-fit: contain;
-      filter: invert(1) sepia(0.8) saturate(3) hue-rotate(5deg) brightness(1.25);
+      filter: invert(1) sepia(0.85) saturate(3.5) hue-rotate(5deg) brightness(1.2);
       mix-blend-mode: screen;
       margin-left: -12px;
       position: relative;
@@ -196,8 +196,8 @@ import { RouterLink } from '@angular/router';
       flex: 1;
       padding: 12px 14px;
       min-height: 44px;
-      border: 1px solid #7D6452;
-      background-color: #443427;
+      border: 1px solid rgba(207, 168, 116, 0.3);
+      background-color: #281D14;
       color: #FFFFFF;
       border-radius: var(--radius-sm);
       font-size: 0.88rem;
@@ -205,7 +205,7 @@ import { RouterLink } from '@angular/router';
     }
 
     .newsletter-input::placeholder {
-      color: #B5A599;
+      color: #9E8D80;
     }
 
     .newsletter-input:focus {
@@ -215,7 +215,7 @@ import { RouterLink } from '@angular/router';
 
     .newsletter-btn {
       background-color: var(--brand-warm-gold);
-      color: var(--brand-mocha-brown);
+      color: #1A120B;
       border: none;
       padding: 12px 24px;
       min-height: 44px;
@@ -230,15 +230,15 @@ import { RouterLink } from '@angular/router';
 
     .newsletter-btn:hover {
       background-color: #E2B882;
-      color: #382A1F;
+      color: #1A120B;
     }
 
     .copyright-bar {
-      background-color: #3D2E22;
-      border-top: 1px solid rgba(207, 168, 116, 0.2);
+      background-color: #120C07;
+      border-top: 1px solid rgba(207, 168, 116, 0.15);
       padding: 16px 0;
       font-size: 0.82rem;
-      color: #C2B3A7;
+      color: #A8988C;
     }
 
     .copyright-content {
