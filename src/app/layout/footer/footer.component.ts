@@ -13,8 +13,8 @@ import { RouterLink } from '@angular/router';
         <div class="footer-col brand-col">
           <div class="footer-brand">
             <a routerLink="/" class="footer-logo-link" aria-label="Arista Trinkets">
-              <img src="/assets/images/logo-icon-transparent.png" alt="Arista Icon" class="footer-logo-icon" width="36" height="36" ngSkipOversizedImageWarning />
-              <img src="/assets/images/logo-transparent.png" alt="Arista Trinkets" class="footer-logo-img" width="130" height="40" ngSkipOversizedImageWarning />
+              <span class="footer-logo-icon" role="img" aria-label="Arista Monogram"></span>
+              <span class="footer-logo-img" role="img" aria-label="Arista Trinkets Fine Jewellery"></span>
             </a>
           </div>
           <p class="brand-tagline">
@@ -117,20 +117,36 @@ import { RouterLink } from '@angular/router';
     }
 
     .footer-logo-icon {
-      height: 42px;
-      width: auto;
-      object-fit: contain;
-      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) brightness(0.9);
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      background-color: var(--brand-warm-gold);
+      -webkit-mask-image: url('/assets/images/logo-icon-transparent.png');
+      mask-image: url('/assets/images/logo-icon-transparent.png');
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center;
+      mask-position: center;
       position: relative;
       z-index: 2;
     }
 
     .footer-logo-img {
-      height: 48px;
-      width: auto;
-      object-fit: contain;
-      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) brightness(0.9);
-      margin-left: -12px;
+      display: inline-block;
+      width: 125px;
+      height: 42px;
+      background-color: var(--brand-warm-gold);
+      -webkit-mask-image: url('/assets/images/logo-transparent.png');
+      mask-image: url('/assets/images/logo-transparent.png');
+      -webkit-mask-size: contain;
+      mask-size: contain;
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center left;
+      mask-position: center left;
+      margin-left: -6px;
       position: relative;
       z-index: 1;
     }
