@@ -118,8 +118,8 @@ import { RouterLink } from '@angular/router';
 
     .footer-logo-icon {
       display: inline-block;
-      width: 36px;
-      height: 36px;
+      width: 50px;
+      height: 50px;
       background-color: var(--brand-warm-gold);
       -webkit-mask-image: url('/assets/images/logo-icon-transparent.png');
       mask-image: url('/assets/images/logo-icon-transparent.png');
@@ -129,14 +129,15 @@ import { RouterLink } from '@angular/router';
       mask-repeat: no-repeat;
       -webkit-mask-position: center;
       mask-position: center;
+      filter: drop-shadow(0 0 0.5px var(--brand-warm-gold)) drop-shadow(0 0 0.5px var(--brand-warm-gold));
       position: relative;
       z-index: 2;
     }
 
     .footer-logo-img {
       display: inline-block;
-      width: 125px;
-      height: 42px;
+      width: 175px;
+      height: 56px;
       background-color: var(--brand-warm-gold);
       -webkit-mask-image: url('/assets/images/logo-transparent.png');
       mask-image: url('/assets/images/logo-transparent.png');
@@ -146,7 +147,8 @@ import { RouterLink } from '@angular/router';
       mask-repeat: no-repeat;
       -webkit-mask-position: center left;
       mask-position: center left;
-      margin-left: -6px;
+      filter: drop-shadow(0 0 0.5px var(--brand-warm-gold)) drop-shadow(0 0 0.5px var(--brand-warm-gold));
+      margin-left: -8px;
       position: relative;
       z-index: 1;
     }
