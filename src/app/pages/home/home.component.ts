@@ -140,7 +140,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
           align="center"
         ></app-section-heading>
 
-        <div class="category-grid">
+        <div *ngIf="categories.length > 0" class="category-grid">
           <a
             *ngFor="let cat of categories"
             [routerLink]="['/shop']"
@@ -155,6 +155,14 @@ import { MockDataService } from '../../core/mock/mock-data.service';
               <span class="category-count">{{ cat.itemCount }} Items</span>
               <span class="category-cta">SHOP COLLECTION &rarr;</span>
             </div>
+          </a>
+        </div>
+
+        <div *ngIf="categories.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
+          <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">No Categories Created Yet</h3>
+          <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Add collection categories from the Admin Dashboard to feature them here on the homepage.</p>
+          <a routerLink="/admin" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
+            ⚙ Go to Admin to Add Category & Product
           </a>
         </div>
       </div>
@@ -199,8 +207,6 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       </div>
     </section>
 
-
-
     <!-- Featured Products Section -->
     <section class="section-padding">
       <div class="container">
@@ -210,11 +216,19 @@ import { MockDataService } from '../../core/mock/mock-data.service';
           align="center"
         ></app-section-heading>
 
-        <div class="grid-products">
+        <div *ngIf="featuredProducts.length > 0" class="grid-products">
           <app-product-card
             *ngFor="let product of featuredProducts"
             [product]="product"
           ></app-product-card>
+        </div>
+
+        <div *ngIf="featuredProducts.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
+          <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">No Products in Catalog</h3>
+          <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Add jewellery pieces from the Admin Dashboard to feature them on the storefront.</p>
+          <a routerLink="/admin" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
+            ⚙ Go to Admin to Add Products & Categories
+          </a>
         </div>
       </div>
     </section>

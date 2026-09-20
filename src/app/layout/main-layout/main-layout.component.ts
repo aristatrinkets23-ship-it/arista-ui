@@ -10,12 +10,12 @@ import { Subscription, filter } from 'rxjs';
   standalone: true,
   imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent],
   template: `
-    <div class="layout-wrapper">
-      <app-header></app-header>
-      <main class="main-content">
+    <div class="layout-wrapper" [class.is-admin]="isAdminRoute">
+      <app-header *ngIf="!isAdminRoute"></app-header>
+      <main class="main-content" [class.no-header]="isAdminRoute">
         <router-outlet></router-outlet>
       </main>
-      <app-footer></app-footer>
+      <app-footer *ngIf="!isAdminRoute"></app-footer>
     </div>
   `,
   styles: [`
@@ -28,29 +28,45 @@ import { Subscription, filter } from 'rxjs';
       flex: 1;
       padding-top: 72px;
     }
+    .main-content.no-header {
+      padding-top: 0 !important;
+    }
 
     @media (min-width: 992px) {
       .main-content {
         padding-top: 84px;
       }
+      .main-content.no-header {
+        padding-top: 0 !important;
+      }
     }
   `]
 })
 export class MainLayoutComponent implements AfterViewInit, OnDestroy {
+  isAdminRoute: boolean = false;
   private router = inject(Router);
   private el = inject(ElementRef);
   private routerSub!: Subscription;
   private observer!: IntersectionObserver;
+
+  constructor() {
+    this.checkAdminRoute(this.router.url);
+  }
 
   ngAfterViewInit(): void {
     this.initScrollObserver();
 
     this.routerSub = this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe(() => {
+      .subscribe((event: any) => {
+        this.checkAdminRoute(event.urlAfterRedirects || event.url);
         window.scrollTo({ top: 0, behavior: 'instant' });
         setTimeout(() => this.observeElements(), 120);
       });
+  }
+
+  private checkAdminRoute(url: string): void {
+    this.isAdminRoute = url ? url.includes('/admin') : false;
   }
 
   ngOnDestroy(): void {

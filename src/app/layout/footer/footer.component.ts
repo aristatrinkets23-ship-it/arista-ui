@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { MockDataService } from '../../core/mock/mock-data.service';
+import { Category } from '../../core/models/category.model';
 
 @Component({
   selector: 'app-footer',
@@ -25,10 +27,14 @@ import { RouterLink } from '@angular/router';
         <div class="footer-col">
           <h4 class="col-title">Collections</h4>
           <ul class="footer-links">
-            <li><a routerLink="/shop" [queryParams]="{ category: 'rings' }">Rings</a></li>
-            <li><a routerLink="/shop" [queryParams]="{ category: 'necklaces' }">Necklaces</a></li>
-            <li><a routerLink="/shop" [queryParams]="{ category: 'earrings' }">Earrings</a></li>
-            <li><a routerLink="/shop" [queryParams]="{ category: 'bracelets' }">Bracelets</a></li>
+            <ng-container *ngIf="categories.length > 0">
+              <li *ngFor="let cat of categories">
+                <a routerLink="/shop" [queryParams]="{ category: cat.slug }">{{ cat.name }}</a>
+              </li>
+            </ng-container>
+            <ng-container *ngIf="categories.length === 0">
+              <li><a routerLink="/shop">All Collections</a></li>
+            </ng-container>
           </ul>
         </div>
 
@@ -98,7 +104,7 @@ import { RouterLink } from '@angular/router';
 
     .footer-brand {
       display: inline-flex;
-      align-items: flex-start;
+      align-items: center;
       margin-bottom: 14px;
     }
 
@@ -117,48 +123,44 @@ import { RouterLink } from '@angular/router';
 
     .footer-logo-full {
       display: inline-block;
-      width: 105px;
-      height: 32px;
-      background-color: var(--brand-warm-gold);
-      -webkit-mask-image: url('/assets/images/full-logo-transparent.png');
-      mask-image: url('/assets/images/full-logo-transparent.png');
-      -webkit-mask-size: contain;
-      mask-size: contain;
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-      -webkit-mask-position: center left;
-      mask-position: center left;
+      width: 148px;
+      height: 48px;
+      background-image: url('/assets/images/full-logo-transparent.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: left center;
+      filter: brightness(0) invert(1);
     }
 
     .brand-tagline {
-      font-size: var(--font-size-footer-body);
-      color: #E6DAD0;
+      font-size: 0.92rem;
+      color: #C2B3A7;
       line-height: 1.6;
-      margin-top: 8px;
+      max-width: 300px;
     }
 
     .col-title {
       font-family: var(--font-serif);
-      font-size: 1.1rem;
-      font-weight: 600;
+      font-size: 1.15rem;
       color: var(--brand-warm-gold);
-      margin-bottom: 12px;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
     }
 
     .footer-links {
       list-style: none;
+      padding: 0;
+      margin: 0;
       display: flex;
       flex-direction: column;
       gap: 10px;
     }
 
     .footer-links a {
-      color: #E6DAD0;
-      font-size: var(--font-size-footer-body);
+      color: var(--brand-pearl-beige);
+      font-size: 0.92rem;
       text-decoration: none;
       transition: color var(--transition-fast);
-      display: inline-block;
-      padding: 2px 0;
     }
 
     .footer-links a:hover {
@@ -166,79 +168,65 @@ import { RouterLink } from '@angular/router';
     }
 
     .newsletter-desc {
-      font-size: var(--font-size-footer-body);
-      color: #E6DAD0;
-      margin-bottom: 12px;
+      font-size: 0.9rem;
+      color: #C2B3A7;
+      margin-bottom: 16px;
       line-height: 1.5;
     }
 
     .newsletter-form {
       display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    @media (min-width: 480px) {
-      .newsletter-form {
-        flex-direction: row;
-        gap: 8px;
-      }
+      gap: 8px;
     }
 
     .newsletter-input {
       flex: 1;
-      padding: 12px 14px;
-      min-height: 44px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(207, 168, 116, 0.3);
-      background-color: #281D14;
-      color: #FFFFFF;
       border-radius: var(--radius-sm);
+      color: #FFFFFF;
       font-size: 0.88rem;
-      font-family: var(--font-sans);
     }
 
     .newsletter-input::placeholder {
-      color: #9E8D80;
+      color: #9E8E82;
     }
 
     .newsletter-input:focus {
-      outline: 2px solid var(--brand-warm-gold);
+      outline: none;
       border-color: var(--brand-warm-gold);
     }
 
     .newsletter-btn {
       background-color: var(--brand-warm-gold);
-      color: #1A120B;
+      color: var(--brand-mocha-brown);
       border: none;
-      padding: 12px 24px;
-      min-height: 44px;
+      padding: 10px 20px;
       border-radius: var(--radius-sm);
       font-weight: 700;
       font-size: 0.85rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
       cursor: pointer;
-      transition: all var(--transition-fast);
+      text-transform: uppercase;
+      transition: background var(--transition-fast);
     }
 
     .newsletter-btn:hover {
       background-color: #E2B882;
-      color: #1A120B;
     }
 
     .copyright-bar {
-      background-color: #120C07;
       border-top: 1px solid rgba(207, 168, 116, 0.15);
-      padding: 16px 0;
+      padding: 20px 0;
       font-size: 0.82rem;
-      color: #A8988C;
+      color: #A39387;
     }
 
     .copyright-content {
       display: flex;
       flex-direction: column;
+      gap: 12px;
       align-items: center;
-      gap: 8px;
       text-align: center;
     }
 
@@ -266,7 +254,19 @@ import { RouterLink } from '@angular/router';
     }
   `]
 })
-export class FooterComponent {
+export class FooterComponent implements OnInit {
+  categories: Category[] = [];
+
+  private mockDataService = inject(MockDataService);
+  private cdr = inject(ChangeDetectorRef);
+
+  ngOnInit(): void {
+    this.mockDataService.getCategories().subscribe(cats => {
+      this.categories = cats;
+      this.cdr.detectChanges();
+    });
+  }
+
   onNewsletterSubmit(event: Event): void {
     event.preventDefault();
     alert('Thank you for joining The Arista Club!');

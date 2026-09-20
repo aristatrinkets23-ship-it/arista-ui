@@ -191,6 +191,27 @@ import { CartService } from '../../core/services/cart.service';
         </div>
       </section>
     </div>
+
+    <!-- Fallback Empty State when product is null/not found -->
+    <div class="product-detail-page empty-detail-page" *ngIf="!product">
+      <section class="section-padding text-center" style="padding: 90px 24px;">
+        <div class="container" style="max-width: 580px; margin: 0 auto; background: var(--brand-pearl-beige); padding: 48px 32px; border-radius: 16px; border: 1px dashed var(--brand-warm-gold);">
+          <div style="font-size: 3.2rem; margin-bottom: 16px;">✨</div>
+          <h2 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.8rem; margin-bottom: 12px;">No Product Found</h2>
+          <p style="color: #666; font-size: 0.98rem; line-height: 1.6; margin-bottom: 28px;">
+            There are currently no products in the catalog or the requested jewellery piece is not available. Please add categories and products from the admin dashboard.
+          </p>
+          <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+            <a routerLink="/admin" style="padding: 12px 28px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.9rem; transition: transform 0.2s;">
+              ⚙ Go to Admin to Add Products & Categories
+            </a>
+            <a routerLink="/shop" style="padding: 12px 28px; text-decoration: none; border-radius: 50px; font-weight: 600; background: #FFFFFF; color: var(--brand-mocha-brown); font-size: 0.9rem; border: 1px solid var(--color-border);">
+              Return to Shop Catalog
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
   `,
   styles: [`
     .product-main-grid {
@@ -597,8 +618,18 @@ export class ProductDetailComponent implements OnInit {
       if (p) {
         this.product = p;
         this.currentImageIndex = 0;
-        this.selectedImage = p.image || '/assets/images/placeholder-jewellery.svg';
-        this.selectedMetal = p.metalType || '18K Warm Gold';
+        const imgs = this.productImages;
+        this.selectedImage = imgs[0] || p.image || '/assets/images/placeholder-jewellery.svg';
+
+        if (p.materials && Array.isArray(p.materials) && p.materials.length > 0) {
+          this.metalOptions = p.materials;
+        } else if (typeof (p as any).materials === 'string' && (p as any).materials) {
+          this.metalOptions = ((p as any).materials as string).split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
+        } else {
+          this.metalOptions = ['18K Warm Gold', 'Sterling Silver', 'Rose Gold'];
+        }
+
+        this.selectedMetal = p.metalType || (this.metalOptions.length > 0 ? this.metalOptions[0] : '18K Warm Gold');
         this.quantity = 1;
         this.addedToBagNotice = false;
 

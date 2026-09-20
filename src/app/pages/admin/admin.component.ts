@@ -59,27 +59,19 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
           <div class="metric-card">
             <span class="metric-label">Total Completed Orders</span>
-            <span class="metric-value">12</span>
-            <span class="metric-sub">+3 Orders Today</span>
+            <span class="metric-value">{{ mockOrders.length }}</span>
+            <span class="metric-sub">Active Customer Orders</span>
           </div>
 
           <div class="metric-card warning">
             <span class="metric-label">Low Stock Items</span>
-            <span class="metric-value">1</span>
+            <span class="metric-value">{{ lowStockCount }}</span>
             <span class="metric-sub">Action Required</span>
           </div>
         </div>
 
         <!-- Admin Tab Controls -->
         <div class="admin-tabs">
-          <button
-            type="button"
-            class="tab-btn"
-            [class.active]="activeTab === 'products'"
-            (click)="activeTab = 'products'"
-          >
-            Product Catalog ({{ products.length }})
-          </button>
           <button
             type="button"
             class="tab-btn"
@@ -91,10 +83,18 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           <button
             type="button"
             class="tab-btn"
+            [class.active]="activeTab === 'products'"
+            (click)="activeTab = 'products'"
+          >
+            Product Catalog ({{ products.length }})
+          </button>
+          <button
+            type="button"
+            class="tab-btn"
             [class.active]="activeTab === 'orders'"
             (click)="activeTab = 'orders'"
           >
-            Customer Orders (12)
+            Customer Orders ({{ mockOrders.length }})
           </button>
           <button
             type="button"
@@ -106,7 +106,61 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </button>
         </div>
 
-        <!-- TAB 1: PRODUCT CATALOG TABLE -->
+        <!-- TAB 1: CATEGORIES CATALOG TABLE -->
+        <div *ngIf="activeTab === 'categories'" class="tab-content">
+          <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.2rem;">Collection Categories ({{ categories.length }})</h3>
+            <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="showAddCategoryModal = true">
+              + Add New Category
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Poster</th>
+                  <th>Category Name</th>
+                  <th>Slug / Path</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="categories.length === 0">
+                  <td colspan="6" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
+                    No data found in category catalog. Click <strong>+ Add New Category</strong> above to create collections.
+                  </td>
+                </tr>
+                <tr *ngFor="let cat of categories">
+                  <td>
+                    <img [src]="cat.image" [alt]="cat.name" (error)="onTableImageError($event)" class="table-thumb" style="width: 54px; height: 54px; object-fit: cover; border-radius: 8px;" />
+                  </td>
+                  <td>
+                    <strong>{{ cat.name }}</strong>
+                  </td>
+                  <td>
+                    <code>/shop?category={{ cat.slug }}</code>
+                  </td>
+                  <td>
+                    <span class="table-desc" style="max-width: 320px; display: inline-block;">{{ cat.description }}</span>
+                  </td>
+                  <td>
+                    <span class="badge-status success">{{ cat.featured ? 'FEATURED' : 'ACTIVE' }}</span>
+                  </td>
+                  <td>
+                    <div class="action-btns">
+                      <button type="button" class="btn-action edit" (click)="editCategory(cat)">Edit</button>
+                      <button type="button" class="btn-action delete" (click)="promptDeleteCategory(cat)">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB 2: PRODUCT CATALOG TABLE -->
         <div *ngIf="activeTab === 'products'" class="tab-content">
           <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.2rem;">Product Catalog ({{ products.length }})</h3>
@@ -128,6 +182,11 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 </tr>
               </thead>
               <tbody>
+                <tr *ngIf="products.length === 0">
+                  <td colspan="7" style="text-align: center; padding: 36px; color: #7A6658;">
+                    No products found in catalog. Click <strong>+ Add New Jewellery Piece</strong> above to create a product.
+                  </td>
+                </tr>
                 <tr *ngFor="let item of products">
                   <td>
                     <img
@@ -153,13 +212,13 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                     <span *ngIf="!item.badge">-</span>
                   </td>
                   <td>
-                    <span class="stock-pill in-stock" *ngIf="item.inStock !== false">In Stock (10)</span>
+                    <span class="stock-pill in-stock" *ngIf="item.inStock !== false">In Stock ({{ item.stockQuantity || 10 }})</span>
                     <span class="stock-pill out-stock" *ngIf="item.inStock === false">Out of Stock</span>
                   </td>
                   <td>
                     <div class="action-btns">
                       <button type="button" class="btn-action edit" (click)="editProduct(item)">Edit Product</button>
-                      <button type="button" class="btn-action delete" (click)="deleteProduct(item.id)">Delete</button>
+                      <button type="button" class="btn-action delete" (click)="promptDeleteProduct(item)">Delete</button>
                     </div>
                   </td>
                 </tr>
@@ -184,6 +243,11 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 </tr>
               </thead>
               <tbody>
+                <tr *ngIf="mockOrders.length === 0">
+                  <td colspan="7" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
+                    No data found in customer orders. New customer orders will appear here.
+                  </td>
+                </tr>
                 <tr *ngFor="let order of mockOrders">
                   <td>
                     <strong class="order-no">#{{ order.number }}</strong>
@@ -223,216 +287,74 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
         <!-- TAB 4: ADMIN CREDENTIALS & SECURITY MANAGEMENT -->
         <div *ngIf="activeTab === 'credentials'" class="tab-content">
-          <div class="credentials-grid">
-            <!-- SECTION 1: UPDATE YOUR CREDENTIALS -->
-            <div class="form-card">
-              <h2 class="form-title">Update Your Admin Profile & Credentials</h2>
-              <div class="success-banner" *ngIf="profileSuccessMessage">
-                ✓ {{ profileSuccessMessage }}
+          <div class="form-card">
+            <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.25rem;">
+                  Registered Admin Accounts ({{ createdAdminUsers.length }})
+                </h3>
+                <p style="font-size: 0.82rem; color: #666; margin: 4px 0 0 0;">
+                  Manage administrator accounts registered in the database with access to the Atelier dashboard.
+                </p>
               </div>
-              <div class="error-banner" *ngIf="profileErrorMessage">
-                ⚠ {{ profileErrorMessage }}
-              </div>
-
-              <form (submit)="onUpdateProfile($event)" class="product-form">
-                <div class="form-group">
-                  <label>Admin Full Name *</label>
-                  <input type="text" [(ngModel)]="profileForm.name" name="profName" required />
-                </div>
-
-                <div class="form-group">
-                  <label>Admin Email Address *</label>
-                  <input type="email" [(ngModel)]="profileForm.email" name="profEmail" required />
-                </div>
-
-                <div class="form-group">
-                  <label>New Secret Password (Leave blank to keep current)</label>
-                  <div class="password-field-wrapper">
-                    <input
-                      [type]="showProfilePassword ? 'text' : 'password'"
-                      [(ngModel)]="profileForm.newPassword"
-                      name="profPassword"
-                      placeholder="••••••••••••"
-                    />
-                    <button
-                      type="button"
-                      class="btn-toggle-eye"
-                      (click)="showProfilePassword = !showProfilePassword"
-                      [title]="showProfilePassword ? 'Hide Password' : 'Show Password'"
-                    >
-                      <svg *ngIf="!showProfilePassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                      <svg *ngIf="showProfilePassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <button type="submit" class="btn-save">Save Profile Changes</button>
-              </form>
+              <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="showCreateAdminModal = true">
+                + Create New Admin User
+              </button>
             </div>
 
-            <!-- SECTION 2: CREATE NEW ADMIN ACCOUNT & CREATED USER TABLE -->
-            <div class="form-card">
-              <div class="section-title-row">
-                <h2 class="form-title" style="margin:0;">Create New Admin Account</h2>
-                <span class="limit-badge" [class.reached]="createdAdminUsers.length >= 1">
-                  Admin Limit: {{ createdAdminUsers.length }}/1 Accounts
-                </span>
-              </div>
-
-              <div class="success-banner" *ngIf="newAdminSuccessMessage" style="margin-top:16px;">
-                ✓ {{ newAdminSuccessMessage }}
-              </div>
-              <div class="error-banner" *ngIf="newAdminErrorMessage" style="margin-top:16px;">
-                ⚠ {{ newAdminErrorMessage }}
-              </div>
-
-              <!-- Registration Form (Visible only if limit < 1) -->
-              <form (submit)="onCreateAdmin($event)" class="product-form" style="margin-top: 16px;" *ngIf="createdAdminUsers.length < 1">
-                <div class="form-group">
-                  <label>New Admin Full Name *</label>
-                  <input type="text" [(ngModel)]="newAdminForm.name" name="newAdminName" placeholder="e.g. Executive Director" required />
-                </div>
-
-                <div class="form-group">
-                  <label>New Admin Email Address *</label>
-                  <input type="email" [(ngModel)]="newAdminForm.email" name="newAdminEmail" placeholder="manager@aristatrinkets.com" required />
-                </div>
-
-                <div class="form-group">
-                  <label>Initial Password *</label>
-                  <div class="password-field-wrapper">
-                    <input
-                      [type]="showNewAdminPassword ? 'text' : 'password'"
-                      [(ngModel)]="newAdminForm.password"
-                      name="newAdminPassword"
-                      placeholder="••••••••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      class="btn-toggle-eye"
-                      (click)="showNewAdminPassword = !showNewAdminPassword"
-                      [title]="showNewAdminPassword ? 'Hide Password' : 'Show Password'"
-                    >
-                      <svg *ngIf="!showNewAdminPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                      <svg *ngIf="showNewAdminPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <button type="submit" class="btn-save">+ Register New Admin User</button>
-              </form>
-
-              <div class="limit-reached-banner" *ngIf="createdAdminUsers.length >= 1" style="margin-top:16px;">
-                <span>🔒 Maximum limit reached. Only 1 additional admin user account can be created and active.</span>
-              </div>
-
-              <!-- TABLE VIEW OF CREATED USER ADMIN -->
-              <div class="created-admin-section" style="margin-top: 24px;" *ngIf="createdAdminUsers.length > 0">
-                <h3 class="sub-table-title">Registered Secondary Admin Users ({{ createdAdminUsers.length }})</h3>
-                <div class="table-responsive">
-                  <table class="admin-table">
-                    <thead>
-                      <tr>
-                        <th>Admin Name</th>
-                        <th>Email Address</th>
-                        <th>Assigned Role</th>
-                        <th>Registration Date</th>
-                        <th>Status</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let admin of createdAdminUsers">
-                        <td>
-                          <strong class="item-name">{{ admin.name }}</strong>
-                        </td>
-                        <td>
-                          <span class="cust-email">{{ admin.email }}</span>
-                        </td>
-                        <td>
-                          <span class="badge-tag">{{ admin.role }}</span>
-                        </td>
-                        <td>
-                          <span class="order-date">{{ admin.createdAt }}</span>
-                        </td>
-                        <td>
-                          <span class="stock-pill in-stock">{{ admin.status }}</span>
-                        </td>
-                        <td>
-                          <button type="button" class="btn-action delete" (click)="deleteAdminUser(admin.id)">
-                            Revoke / Remove
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+            <!-- TABLE VIEW OF ADMIN USERS FROM BACKEND DATABASE -->
+            <div class="table-responsive">
+              <table class="admin-table">
+                <thead>
+                  <tr>
+                    <th>Admin Name</th>
+                    <th>Email Address</th>
+                    <th>Assigned Role</th>
+                    <th>Registration Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="createdAdminUsers.length === 0">
+                    <td colspan="6" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
+                      No admin accounts found in database. Click <strong>+ Create New Admin User</strong> above to register an admin.
+                    </td>
+                  </tr>
+                  <tr *ngFor="let admin of createdAdminUsers">
+                    <td>
+                      <strong class="item-name">{{ admin.name }}</strong>
+                    </td>
+                    <td>
+                      <span class="cust-email">{{ admin.email }}</span>
+                    </td>
+                    <td>
+                      <span class="badge-tag">{{ admin.role }}</span>
+                    </td>
+                    <td>
+                      <span class="order-date">{{ admin.createdAt }}</span>
+                    </td>
+                    <td>
+                      <span class="stock-pill in-stock">{{ admin.status || 'ACTIVE' }}</span>
+                    </td>
+                    <td>
+                      <div class="action-btns">
+                        <button type="button" class="btn-action edit" (click)="openUpdatePasswordModal(admin)">
+                          Update Password
+                        </button>
+                        <button type="button" class="btn-action delete" (click)="promptDeleteAdminUser(admin)">
+                          Revoke / Remove
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        <!-- TAB: CATEGORIES CATALOG TABLE -->
-        <div *ngIf="activeTab === 'categories'" class="tab-content">
-          <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.2rem;">Collection Categories ({{ categories.length }})</h3>
-            <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="showAddCategoryModal = true">
-              + Add New Category
-            </button>
-          </div>
-          <div class="table-responsive">
-            <table class="admin-table">
-              <thead>
-                <tr>
-                  <th>Poster</th>
-                  <th>Category Name</th>
-                  <th>Slug / Path</th>
-                  <th>Description</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let cat of categories">
-                  <td>
-                    <img [src]="cat.image" [alt]="cat.name" (error)="onTableImageError($event)" class="table-thumb" style="width: 54px; height: 54px; object-fit: cover; border-radius: 8px;" />
-                  </td>
-                  <td>
-                    <strong>{{ cat.name }}</strong>
-                  </td>
-                  <td>
-                    <code>/shop?category={{ cat.slug }}</code>
-                  </td>
-                  <td>
-                    <span class="table-desc" style="max-width: 320px; display: inline-block;">{{ cat.description }}</span>
-                  </td>
-                  <td>
-                    <span class="badge-status success">{{ cat.featured ? 'FEATURED' : 'ACTIVE' }}</span>
-                  </td>
-                  <td>
-                    <div class="action-btns">
-                      <button type="button" class="btn-action edit" (click)="editCategory(cat)">Edit</button>
-                      <button type="button" class="btn-action delete" (click)="deleteCategory(cat.id)">Delete</button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+
 
       </div>
     </section>
@@ -458,10 +380,8 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             <div class="form-group">
               <label>Category *</label>
               <select [(ngModel)]="editingProduct.category" name="editCategory" required>
-                <option value="Rings">Rings</option>
-                <option value="Necklaces">Necklaces</option>
-                <option value="Earrings">Earrings</option>
-                <option value="Bracelets">Bracelets</option>
+                <option value="" disabled selected>Select Category</option>
+                <option *ngFor="let cat of categories" [value]="cat.name">{{ cat.name }}</option>
               </select>
             </div>
           </div>
@@ -499,7 +419,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               Upload or add multiple photos for this product. Customers will see them as an interactive slide gallery on the storefront.
             </p>
 
-            <!-- File Upload & Add URL Row -->
+            <!-- File Upload Bar -->
             <div class="gallery-upload-bar">
               <label class="gallery-upload-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -510,13 +430,6 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 + Upload Multiple Image Files
                 <input type="file" multiple accept="image/*" (change)="onMultipleFilesSelected($event, 'edit')" style="display: none;" />
               </label>
-
-              <div class="gallery-url-group">
-                <input #editUrlInput type="text" placeholder="Or paste image URL (https://... or /assets/...)" class="gallery-url-input" />
-                <button type="button" class="gallery-add-url-btn" (click)="addImageUrl('edit', editUrlInput.value); editUrlInput.value = ''">
-                  + Add URL
-                </button>
-              </div>
             </div>
 
             <!-- Gallery Thumbnails Grid -->
@@ -534,6 +447,93 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 </div>
               </div>
             </div>
+
+            <!-- Gallery Empty State Notice -->
+            <div *ngIf="!editingProduct.images || editingProduct.images.length === 0" style="padding: 16px; text-align: center; background: #FFFFFF; border: 1px dashed #D5C9BD; border-radius: 8px; margin-top: 10px; font-size: 0.8rem; color: #777777;">
+              📷 No product photos attached from backend. Click <strong>+ Upload Multiple Image Files</strong> above to add photos.
+            </div>
+          </div>
+          <!-- METAL TYPES & FINISHES (MATERIALS) -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Available Metal Finishes & Options (Comma-Separated)</label>
+            <input
+              type="text"
+              [(ngModel)]="editingProduct.materialsStr"
+              name="editMaterialsStr"
+              placeholder="e.g. 18K Warm Gold, Sterling Silver, Rose Gold"
+            />
+            <p style="font-size: 0.75rem; color: #777; margin: 4px 0 0 0;">
+              Metal choices shown as pills on product details page.
+            </p>
+          </div>
+
+          <!-- DYNAMIC SPECIFICATIONS BUILDER -->
+          <div class="form-group" style="margin-top: 14px; background: #FAF7F2; padding: 14px; border-radius: 8px; border: 1px solid #E8DFD5;">
+            <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 700; color: #5B4636;">
+              <span>📋 Product Specifications (Accordion Table)</span>
+              <button
+                type="button"
+                (click)="addSpecificationRow('edit')"
+                style="background: #C5A059; color: #FFF; border: none; padding: 7px 18px; border-radius: 24px; font-size: 0.8rem; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(197, 160, 89, 0.35); display: inline-flex; align-items: center; gap: 4px;"
+              >
+                + Add Spec Line
+              </button>
+            </label>
+
+            <div *ngFor="let spec of editingProduct.specifications; let idx = index" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+              <input
+                type="text"
+                [(ngModel)]="spec.label"
+                [name]="'editSpecLabel_' + idx"
+                placeholder="Spec Label (e.g. Karatage)"
+                style="flex: 1; padding: 8px 12px; font-size: 0.82rem; border-radius: 6px; border: 1px solid #D5C9BD;"
+              />
+              <input
+                type="text"
+                [(ngModel)]="spec.value"
+                [name]="'editSpecVal_' + idx"
+                placeholder="Spec Value (e.g. 18K Yellow Gold)"
+                style="flex: 1; padding: 8px 12px; font-size: 0.82rem; border-radius: 6px; border: 1px solid #D5C9BD;"
+              />
+              <button
+                type="button"
+                (click)="removeSpecificationRow('edit', idx)"
+                style="background: transparent; color: #DC2626; border: none; padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.15s ease;"
+                title="Delete specification line"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </button>
+            </div>
+            <div *ngIf="!editingProduct.specifications || editingProduct.specifications.length === 0" style="font-size: 0.78rem; color: #888; text-align: center; padding: 6px 0;">
+              No specifications added yet. Click <strong>+ Add Spec Line</strong> to add key-value specifications.
+            </div>
+          </div>
+
+          <!-- CARE & MAINTENANCE GUIDE -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Care & Maintenance Guide</label>
+            <textarea
+              rows="3"
+              [(ngModel)]="editingProduct.careGuide"
+              name="editCareGuide"
+              placeholder="e.g. Handle with care. Store in protective velvet pouch after use. Avoid contact with perfumes and hairsprays."
+            ></textarea>
+          </div>
+
+          <!-- COMPLIMENTARY SHIPPING & RETURNS -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Complimentary Shipping & Returns Info</label>
+            <textarea
+              rows="3"
+              [(ngModel)]="editingProduct.shippingInfo"
+              name="editShippingInfo"
+              placeholder="e.g. Complimentary insured express delivery within 3-5 business days."
+            ></textarea>
           </div>
 
           <div class="modal-footer">
@@ -642,6 +642,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             <div class="form-group">
               <label>Category *</label>
               <select [(ngModel)]="newProduct.category" name="category" required>
+                <option value="" disabled selected>Select Category</option>
                 <option *ngFor="let cat of categories" [value]="cat.name">{{ cat.name }}</option>
               </select>
             </div>
@@ -685,7 +686,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               Upload or add multiple photos for this product. Storefront customers will see them as an interactive slide gallery.
             </p>
 
-            <!-- File Upload & Add URL Row -->
+            <!-- File Upload Bar -->
             <div class="gallery-upload-bar">
               <label class="gallery-upload-btn">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -696,13 +697,6 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 + Upload Multiple Image Files
                 <input type="file" multiple accept="image/*" (change)="onMultipleFilesSelected($event, 'new')" style="display: none;" />
               </label>
-
-              <div class="gallery-url-group">
-                <input #newUrlInput type="text" placeholder="Or paste image URL (https://... or /assets/...)" class="gallery-url-input" />
-                <button type="button" class="gallery-add-url-btn" (click)="addImageUrl('new', newUrlInput.value); newUrlInput.value = ''">
-                  + Add URL
-                </button>
-              </div>
             </div>
 
             <!-- Gallery Thumbnails Grid -->
@@ -720,11 +714,99 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 </div>
               </div>
             </div>
+
+            <!-- Gallery Empty State Notice -->
+            <div *ngIf="!newProduct.images || newProduct.images.length === 0" style="padding: 16px; text-align: center; background: #FFFFFF; border: 1px dashed #D5C9BD; border-radius: 8px; margin-top: 10px; font-size: 0.8rem; color: #777777;">
+              📷 No photo files added yet. Click <strong>+ Upload Multiple Image Files</strong> above to add photos.
+            </div>
           </div>
 
           <div class="form-group">
             <label>Product Description & Atelier Craft Notes</label>
             <textarea rows="4" [(ngModel)]="newProduct.description" name="description" placeholder="Describe the gold karatage, diamond clarity, craftsmanship..."></textarea>
+          </div>
+
+          <!-- METAL TYPES & FINISHES (MATERIALS) -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Available Metal Finishes & Options (Comma-Separated)</label>
+            <input
+              type="text"
+              [(ngModel)]="newProduct.materialsStr"
+              name="materialsStr"
+              placeholder="e.g. 18K Warm Gold, Sterling Silver, Rose Gold"
+            />
+            <p style="font-size: 0.75rem; color: #777; margin: 4px 0 0 0;">
+              Metal choices shown as pills on product details page.
+            </p>
+          </div>
+
+          <!-- DYNAMIC SPECIFICATIONS BUILDER -->
+          <div class="form-group" style="margin-top: 14px; background: #FAF7F2; padding: 14px; border-radius: 8px; border: 1px solid #E8DFD5;">
+            <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 700; color: #5B4636;">
+              <span>📋 Product Specifications (Accordion Table)</span>
+              <button
+                type="button"
+                (click)="addSpecificationRow('new')"
+                style="background: #C5A059; color: #FFF; border: none; padding: 7px 18px; border-radius: 24px; font-size: 0.8rem; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(197, 160, 89, 0.35); display: inline-flex; align-items: center; gap: 4px;"
+              >
+                + Add Spec Line
+              </button>
+            </label>
+
+            <div *ngFor="let spec of newProduct.specifications; let idx = index" style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
+              <input
+                type="text"
+                [(ngModel)]="spec.label"
+                [name]="'specLabel_' + idx"
+                placeholder="Spec Label (e.g. Karatage)"
+                style="flex: 1; padding: 8px 12px; font-size: 0.82rem; border-radius: 6px; border: 1px solid #D5C9BD;"
+              />
+              <input
+                type="text"
+                [(ngModel)]="spec.value"
+                [name]="'specVal_' + idx"
+                placeholder="Spec Value (e.g. 18K Yellow Gold)"
+                style="flex: 1; padding: 8px 12px; font-size: 0.82rem; border-radius: 6px; border: 1px solid #D5C9BD;"
+              />
+              <button
+                type="button"
+                (click)="removeSpecificationRow('new', idx)"
+                style="background: transparent; color: #DC2626; border: none; padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: transform 0.15s ease;"
+                title="Delete specification line"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </button>
+            </div>
+            <div *ngIf="!newProduct.specifications || newProduct.specifications.length === 0" style="font-size: 0.78rem; color: #888; text-align: center; padding: 6px 0;">
+              No specifications added yet. Click <strong>+ Add Spec Line</strong> to add key-value specifications.
+            </div>
+          </div>
+
+          <!-- CARE & MAINTENANCE GUIDE -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Care & Maintenance Guide</label>
+            <textarea
+              rows="3"
+              [(ngModel)]="newProduct.careGuide"
+              name="careGuide"
+              placeholder="e.g. Handle with care. Store in protective velvet pouch after use. Avoid contact with perfumes and hairsprays."
+            ></textarea>
+          </div>
+
+          <!-- COMPLIMENTARY SHIPPING & RETURNS -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Complimentary Shipping & Returns Info</label>
+            <textarea
+              rows="3"
+              [(ngModel)]="newProduct.shippingInfo"
+              name="shippingInfo"
+              placeholder="e.g. Complimentary insured express delivery within 3-5 business days."
+            ></textarea>
           </div>
 
           <div class="modal-footer">
@@ -802,21 +884,136 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
 
           <!-- Live Poster Card Preview -->
-          <div class="preview-box">
-            <span class="preview-label">Storefront Poster Preview:</span>
+          <div class="preview-box" *ngIf="newCategory.image">
+            <span class="preview-label">Selected Poster Preview:</span>
             <div class="preview-img-container" style="aspect-ratio: 16/9; max-width: 380px;">
               <img
-                [src]="newCategory.image || defaultImage"
+                [src]="newCategory.image"
                 (error)="onPreviewImageError($event)"
                 alt="Category Poster Preview"
                 class="preview-img"
               />
             </div>
           </div>
+          <div *ngIf="!newCategory.image" style="padding: 14px; background: rgba(0,0,0,0.02); border: 1px dashed var(--color-border); border-radius: var(--radius-sm); font-size: 0.82rem; color: #777; text-align: center; margin-top: 10px;">
+            📷 No category poster selected. Click <strong>Choose file</strong> above to select an image from your device.
+          </div>
 
           <div class="modal-footer">
             <button type="button" class="btn-cancel" (click)="showAddCategoryModal = false">Cancel</button>
             <button type="submit" class="btn-save" style="margin-top:0;">+ Publish Category to Storefront</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- CREATE NEW ADMIN USER MODAL OVERLAY POPUP -->
+    <div *ngIf="showCreateAdminModal" class="modal-backdrop" (click)="showCreateAdminModal = false">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="form-title" style="margin:0;">+ Create New Admin User Account</h2>
+          <button type="button" class="btn-close" (click)="showCreateAdminModal = false">&times;</button>
+        </div>
+
+        <div class="error-banner" *ngIf="newAdminErrorMessage" style="margin-top:16px;">
+          ⚠ {{ newAdminErrorMessage }}
+        </div>
+
+        <form (submit)="onCreateAdmin($event)" class="product-form" style="margin-top: 16px;">
+          <div class="form-group">
+            <label>Admin Full Name *</label>
+            <input type="text" [(ngModel)]="newAdminForm.name" name="newAdminName" placeholder="e.g. Executive Director" required />
+          </div>
+
+          <div class="form-group">
+            <label>Admin Email Address *</label>
+            <input type="email" [(ngModel)]="newAdminForm.email" name="newAdminEmail" placeholder="admin@aristatrinkets.com" required />
+          </div>
+
+          <div class="form-group">
+            <label>Initial Password *</label>
+            <div class="password-field-wrapper">
+              <input
+                [type]="showNewAdminPassword ? 'text' : 'password'"
+                [(ngModel)]="newAdminForm.password"
+                name="newAdminPassword"
+                placeholder="••••••••••••"
+                required
+              />
+              <button
+                type="button"
+                class="btn-toggle-eye"
+                (click)="showNewAdminPassword = !showNewAdminPassword"
+                [title]="showNewAdminPassword ? 'Hide Password' : 'Show Password'"
+              >
+                <svg *ngIf="!showNewAdminPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg *ngIf="showNewAdminPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="showCreateAdminModal = false">Cancel</button>
+            <button type="submit" class="btn-save" style="margin-top:0;">+ Register Admin User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- UPDATE ADMIN PASSWORD MODAL OVERLAY POPUP -->
+    <div *ngIf="showUpdatePasswordModal" class="modal-backdrop" (click)="closeUpdatePasswordModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="form-title" style="margin:0;">Update Admin Password ({{ editingAdminUser?.name }})</h2>
+          <button type="button" class="btn-close" (click)="closeUpdatePasswordModal()">&times;</button>
+        </div>
+
+        <p style="font-size: 0.85rem; color: #666; margin: 8px 0 0 0;">
+          Account Email: <strong>{{ editingAdminUser?.email }}</strong>
+        </p>
+
+        <div class="error-banner" *ngIf="updatePasswordErrorMessage" style="margin-top:16px;">
+          ⚠ {{ updatePasswordErrorMessage }}
+        </div>
+
+        <form (submit)="onUpdateAdminPassword($event)" class="product-form" style="margin-top: 16px;">
+          <div class="form-group">
+            <label>New Secret Password *</label>
+            <div class="password-field-wrapper">
+              <input
+                [type]="showNewPasswordInputText ? 'text' : 'password'"
+                [(ngModel)]="newPasswordInput"
+                name="newAdminPassInput"
+                placeholder="Enter new secret password..."
+                required
+              />
+              <button
+                type="button"
+                class="btn-toggle-eye"
+                (click)="showNewPasswordInputText = !showNewPasswordInputText"
+                [title]="showNewPasswordInputText ? 'Hide Password' : 'Show Password'"
+              >
+                <svg *ngIf="!showNewPasswordInputText" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <svg *ngIf="showNewPasswordInputText" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeUpdatePasswordModal()">Cancel</button>
+            <button type="submit" class="btn-save" style="margin-top:0;">Save New Password</button>
           </div>
         </form>
       </div>
@@ -837,6 +1034,30 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
         <div class="modal-actions">
           <button type="button" class="modal-btn-cancel" (click)="cancelLogout()">Cancel</button>
           <button type="button" class="modal-btn-confirm" (click)="confirmLogout()">Sign Out &rarr;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item Delete Confirmation Modal Overlay -->
+    <div class="logout-modal-backdrop" *ngIf="deleteTarget" (click)="cancelDelete()">
+      <div class="logout-modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-icon-wrap" style="background: #FFEBEE; color: #C62828; border-color: #FFCDD2;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </div>
+        <h3 class="modal-title">Confirm Delete {{ deleteTarget.type === 'product' ? 'Product' : (deleteTarget.type === 'category' ? 'Category' : 'Admin User') }}</h3>
+        <p class="modal-desc">
+          Are you sure you want to delete <strong>"{{ deleteTarget.name }}"</strong>? This action cannot be undone and will revoke admin dashboard access.
+        </p>
+        <div class="modal-actions">
+          <button type="button" class="modal-btn-cancel" (click)="cancelDelete()">Cancel</button>
+          <button type="button" class="modal-btn-confirm" style="background: #DC3545;" (click)="confirmDelete()">
+            Delete {{ deleteTarget.type === 'product' ? 'Product' : (deleteTarget.type === 'category' ? 'Category' : 'Admin User') }}
+          </button>
         </div>
       </div>
     </div>
@@ -1704,8 +1925,8 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       height: 38px !important;
       min-height: 38px !important;
       max-height: 38px !important;
-      padding: 0 16px !important;
-      border-radius: 6px !important;
+      padding: 0 20px !important;
+      border-radius: 50px !important;
       background: var(--brand-mocha-brown) !important;
       color: #FFFFFF !important;
       font-size: 0.8rem !important;
@@ -1717,7 +1938,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       border: none !important;
       white-space: nowrap !important;
       transition: all 0.2s ease !important;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
       text-transform: none !important;
       letter-spacing: normal !important;
       margin-bottom: 0 !important;
@@ -1898,8 +2119,8 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       background: rgba(207, 168, 116, 0.15) !important;
       color: #5B4636 !important;
       border: 1px solid rgba(207, 168, 116, 0.4) !important;
-      border-radius: 4px !important;
-      padding: 0 4px !important;
+      border-radius: 50px !important;
+      padding: 0 6px !important;
       cursor: pointer !important;
       height: 24px !important;
       min-height: 24px !important;
@@ -1931,7 +2152,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       background: #F7F5F2 !important;
       color: #5B4636 !important;
       border: 1px solid #E2D9CF !important;
-      border-radius: 4px !important;
+      border-radius: 50% !important;
       padding: 0 !important;
       cursor: pointer !important;
       display: inline-flex !important;
@@ -1961,7 +2182,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 })
 export class AdminComponent implements OnInit {
   defaultImage = DEFAULT_FALLBACK_IMAGE;
-  activeTab: 'products' | 'add-product' | 'categories' | 'add-category' | 'orders' | 'credentials' = 'products';
+  activeTab: 'products' | 'add-product' | 'categories' | 'add-category' | 'orders' | 'credentials' = 'categories';
   products: ProductCardData[] = [];
   categories: Category[] = [];
   successMessage: string = '';
@@ -1971,6 +2192,7 @@ export class AdminComponent implements OnInit {
 
   adminUser: any = null;
   showLogoutModal: boolean = false;
+  deleteTarget: { type: 'product' | 'category' | 'user'; id: number | string; name: string } | null = null;
 
   editingProduct: any = null;
   editSuccessMessage: string = '';
@@ -1990,7 +2212,7 @@ export class AdminComponent implements OnInit {
     name: '',
     slug: '',
     description: '',
-    image: '/assets/images/hero-categories.jpg'
+    image: ''
   };
 
   profileForm = {
@@ -2022,48 +2244,42 @@ export class AdminComponent implements OnInit {
 
   newProduct = {
     name: '',
-    category: 'Rings',
-    price: 45000,
-    compareAtPrice: 52000,
+    category: '',
+    price: '',
+    compareAtPrice: '',
     badge: 'NEW',
-    stockQuantity: 10,
-    image: '/assets/images/placeholder-rings.svg',
-    images: ['/assets/images/placeholder-rings.svg', '/assets/images/placeholder-jewellery.svg'],
-    description: ''
+    stockQuantity: '',
+    image: '',
+    images: [] as string[],
+    description: '',
+    materialsStr: '18K Warm Gold, Sterling Silver, Rose Gold',
+    careGuide: 'Handle with care. Store in protective velvet pouch after use. Avoid contact with perfumes and hairsprays.',
+    shippingInfo: 'Complimentary insured express delivery within 3-5 business days.',
+    specifications: [
+      { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' },
+      { label: 'Certification', value: 'BIS Hallmarked Gold' }
+    ] as Array<{ label: string, value: string }>
   };
 
-  mockOrders = [
-    {
-      number: 'ART-849201',
-      date: '19 Sep 2026',
-      customer: 'Priya Sharma',
-      email: 'priya.sharma@example.com',
-      paymentMethod: 'RAZORPAY',
-      total: 45000,
-      paymentStatus: 'PAID',
-      status: 'PROCESSING'
-    },
-    {
-      number: 'ART-732104',
-      date: '18 Sep 2026',
-      customer: 'Ananya Roy',
-      email: 'ananya.roy@example.com',
-      paymentMethod: 'RAZORPAY',
-      total: 89000,
-      paymentStatus: 'PAID',
-      status: 'SHIPPED'
-    },
-    {
-      number: 'ART-619283',
-      date: '17 Sep 2026',
-      customer: 'Meera Patel',
-      email: 'meera.patel@example.com',
-      paymentMethod: 'COD',
-      total: 24500,
-      paymentStatus: 'PENDING',
-      status: 'PROCESSING'
+  addSpecificationRow(targetForm: 'new' | 'edit'): void {
+    if (targetForm === 'new') {
+      if (!this.newProduct.specifications) this.newProduct.specifications = [];
+      this.newProduct.specifications.push({ label: '', value: '' });
+    } else if (this.editingProduct) {
+      if (!this.editingProduct.specifications) this.editingProduct.specifications = [];
+      this.editingProduct.specifications.push({ label: '', value: '' });
     }
-  ];
+  }
+
+  removeSpecificationRow(targetForm: 'new' | 'edit', index: number): void {
+    if (targetForm === 'new' && this.newProduct.specifications) {
+      this.newProduct.specifications.splice(index, 1);
+    } else if (this.editingProduct && this.editingProduct.specifications) {
+      this.editingProduct.specifications.splice(index, 1);
+    }
+  }
+
+  mockOrders: any[] = [];
 
   toastMessage: string = '';
   toastType: 'success' | 'error' = 'success';
@@ -2096,14 +2312,7 @@ export class AdminComponent implements OnInit {
       this.profileForm.email = this.adminUser.email || '';
     }
 
-    const savedAdmins = localStorage.getItem('arista_created_admins');
-    if (savedAdmins) {
-      try {
-        this.createdAdminUsers = JSON.parse(savedAdmins);
-      } catch {
-        this.createdAdminUsers = [];
-      }
-    }
+    this.loadAdminUsers();
 
     this.mockDataService.getProducts().subscribe(prods => {
       this.products = prods.map(p => {
@@ -2116,10 +2325,12 @@ export class AdminComponent implements OnInit {
           image: img || this.defaultImage
         };
       });
+      this.cdr.detectChanges();
     });
 
     this.mockDataService.getCategories().subscribe(cats => {
       this.categories = cats;
+      this.cdr.detectChanges();
     });
   }
 
@@ -2306,21 +2517,59 @@ export class AdminComponent implements OnInit {
       img = '/' + img;
     }
 
-    let imagesList: string[] = Array.isArray(product.images) && product.images.length > 0 
-      ? [...product.images] 
-      : (img ? [img] : ['/assets/images/placeholder-rings.svg']);
+    let rawList: string[] = Array.isArray(product.images) && product.images.length > 0
+      ? [...product.images]
+      : (img ? [img] : []);
+
+    let imagesList: string[] = rawList.map(url => {
+      let u = url ? url.trim() : '';
+      if (u && !u.startsWith('http') && !u.startsWith('data:') && !u.startsWith('/')) {
+        u = '/' + u;
+      }
+      return u;
+    }).filter(u => u !== '');
+
+    if (imagesList.length === 0 && img) {
+      imagesList = [img];
+    }
+
+    let matsStr = '';
+    if (Array.isArray(product.materials)) {
+      matsStr = product.materials.join(', ');
+    } else if (typeof product.materials === 'string') {
+      matsStr = product.materials;
+    } else {
+      matsStr = '18K Warm Gold, Sterling Silver, Rose Gold';
+    }
+
+    let specsList: Array<{ label: string, value: string }> = [];
+    if (Array.isArray(product.specifications) && product.specifications.length > 0) {
+      specsList = product.specifications.map((s: any) => ({
+        label: s.label || s.spec_label || '',
+        value: s.value || s.spec_value || ''
+      }));
+    } else {
+      specsList = [
+        { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' },
+        { label: 'Certification', value: 'BIS Hallmarked Gold' }
+      ];
+    }
 
     this.editingProduct = {
       id: product.id,
       name: product.name,
-      category: product.category || 'Rings',
+      category: product.category || (this.categories.length > 0 ? this.categories[0].name : ''),
       price: product.price,
       compareAtPrice: product.compareAtPrice || null,
       badge: product.badge || '',
-      image: img || '/assets/images/placeholder-rings.svg',
+      image: img || (imagesList.length > 0 ? imagesList[0] : ''),
       images: imagesList,
-      stockQuantity: product.stockQuantity || 10,
-      description: product.description || ''
+      stockQuantity: product.stockQuantity !== undefined && product.stockQuantity !== null ? product.stockQuantity : 0,
+      description: product.description || '',
+      materialsStr: matsStr,
+      careGuide: product.careGuide || product.care_guide || 'Handle with care. Store in protective velvet pouch after use.',
+      shippingInfo: product.shippingInfo || product.shipping_info || 'Complimentary insured express delivery within 3-5 business days.',
+      specifications: specsList
     };
     this.editSuccessMessage = '';
     this.editSystemFileName = '';
@@ -2334,7 +2583,33 @@ export class AdminComponent implements OnInit {
 
   async updateProduct(event: Event): Promise<void> {
     event.preventDefault();
-    if (!this.editingProduct || !this.editingProduct.name || !this.editingProduct.price) return;
+    if (!this.editingProduct) return;
+
+    if (!this.editingProduct.name || !this.editingProduct.name.trim()) {
+      this.showToast('Product Name is mandatory.', 'error');
+      return;
+    }
+    if (!this.editingProduct.category || !this.editingProduct.category.trim()) {
+      this.showToast('Category selection is mandatory.', 'error');
+      return;
+    }
+    if (!this.editingProduct.price || Number(this.editingProduct.price) <= 0) {
+      this.showToast('Valid Product Price is mandatory.', 'error');
+      return;
+    }
+    if (this.editingProduct.stockQuantity === '' || this.editingProduct.stockQuantity === null || this.editingProduct.stockQuantity === undefined || Number(this.editingProduct.stockQuantity) < 0) {
+      this.showToast('Stock Quantity is mandatory.', 'error');
+      return;
+    }
+    const hasImage = (this.editingProduct.image && this.editingProduct.image.trim() !== '') || (this.editingProduct.images && this.editingProduct.images.length > 0);
+    if (!hasImage) {
+      this.showToast('Product Image is mandatory.', 'error');
+      return;
+    }
+    if (!this.editingProduct.description || !this.editingProduct.description.trim()) {
+      this.showToast('Product Description is mandatory.', 'error');
+      return;
+    }
 
     let finalImage = this.editingProduct.image && this.editingProduct.image.trim() !== ''
       ? this.editingProduct.image.trim()
@@ -2348,10 +2623,26 @@ export class AdminComponent implements OnInit {
       ? this.editingProduct.images
       : [finalImage];
 
+    const materialsArray = (this.editingProduct.materialsStr || '')
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter((s: string) => s !== '');
+
+    const validSpecs = (this.editingProduct.specifications || [])
+      .filter((s: any) => s.label && s.label.trim() !== '' && s.value && s.value.trim() !== '');
+
     const payload = {
       ...this.editingProduct,
+      name: this.editingProduct.name.trim(),
+      price: Number(this.editingProduct.price),
+      stockQuantity: Number(this.editingProduct.stockQuantity) || 0,
+      description: this.editingProduct.description ? this.editingProduct.description.trim() : '',
       image: finalImage,
-      images: imagesList
+      images: imagesList,
+      materials: materialsArray,
+      careGuide: this.editingProduct.careGuide || '',
+      shippingInfo: this.editingProduct.shippingInfo || '',
+      specifications: validSpecs
     };
 
     let notificationMsg = `Product ID ${this.editingProduct.id} updated successfully.`;
@@ -2378,15 +2669,19 @@ export class AdminComponent implements OnInit {
 
     // Sync product update with MockDataService
     this.mockDataService.updateProduct(this.editingProduct.id, {
-      name: this.editingProduct.name,
+      name: this.editingProduct.name.trim(),
       category: this.editingProduct.category,
       price: Number(this.editingProduct.price),
       compareAtPrice: this.editingProduct.compareAtPrice ? Number(this.editingProduct.compareAtPrice) : undefined,
       badge: (this.editingProduct.badge as any) || undefined,
       image: finalImage,
       images: imagesList,
-      stockQuantity: this.editingProduct.stockQuantity,
-      description: this.editingProduct.description
+      stockQuantity: Number(this.editingProduct.stockQuantity) || 0,
+      description: this.editingProduct.description ? this.editingProduct.description.trim() : '',
+      materials: materialsArray,
+      careGuide: this.editingProduct.careGuide || '',
+      shippingInfo: this.editingProduct.shippingInfo || '',
+      specifications: validSpecs
     });
 
     // Update product in local state
@@ -2394,7 +2689,7 @@ export class AdminComponent implements OnInit {
     if (index !== -1) {
       this.products[index] = {
         ...this.products[index],
-        name: this.editingProduct.name,
+        name: this.editingProduct.name.trim(),
         category: this.editingProduct.category,
         price: Number(this.editingProduct.price),
         compareAtPrice: this.editingProduct.compareAtPrice ? Number(this.editingProduct.compareAtPrice) : undefined,
@@ -2413,11 +2708,36 @@ export class AdminComponent implements OnInit {
 
   async saveProduct(event: Event): Promise<void> {
     event.preventDefault();
-    if (!this.newProduct.name || !this.newProduct.price) return;
+
+    if (!this.newProduct.name || !this.newProduct.name.trim()) {
+      this.showToast('Product Name is mandatory.', 'error');
+      return;
+    }
+    if (!this.newProduct.category || !this.newProduct.category.trim()) {
+      this.showToast('Category selection is mandatory.', 'error');
+      return;
+    }
+    if (!this.newProduct.price || Number(this.newProduct.price) <= 0) {
+      this.showToast('Valid Product Price is mandatory.', 'error');
+      return;
+    }
+    if (this.newProduct.stockQuantity === '' || this.newProduct.stockQuantity === null || this.newProduct.stockQuantity === undefined || Number(this.newProduct.stockQuantity) < 0) {
+      this.showToast('Stock Quantity is mandatory.', 'error');
+      return;
+    }
+    const hasImage = (this.newProduct.image && this.newProduct.image.trim() !== '') || (this.newProduct.images && this.newProduct.images.length > 0);
+    if (!hasImage) {
+      this.showToast('Product Image is mandatory.', 'error');
+      return;
+    }
+    if (!this.newProduct.description || !this.newProduct.description.trim()) {
+      this.showToast('Product Description is mandatory.', 'error');
+      return;
+    }
 
     let finalImage = this.newProduct.image && this.newProduct.image.trim() !== ''
       ? this.newProduct.image.trim()
-      : this.defaultImage;
+      : (this.newProduct.images && this.newProduct.images.length > 0 ? this.newProduct.images[0] : this.defaultImage);
 
     if (!finalImage.startsWith('http') && !finalImage.startsWith('data:') && !finalImage.startsWith('/')) {
       finalImage = '/' + finalImage;
@@ -2427,15 +2747,32 @@ export class AdminComponent implements OnInit {
       ? this.newProduct.images
       : [finalImage];
 
+    const materialsArray = (this.newProduct.materialsStr || '')
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter((s: string) => s !== '');
+
+    const validSpecs = (this.newProduct.specifications || [])
+      .filter((s: any) => s.label && s.label.trim() !== '' && s.value && s.value.trim() !== '');
+
     const payload = {
       ...this.newProduct,
+      name: this.newProduct.name.trim(),
+      price: Number(this.newProduct.price),
+      stockQuantity: Number(this.newProduct.stockQuantity) || 0,
+      description: this.newProduct.description.trim(),
       image: finalImage,
-      images: imagesList
+      images: imagesList,
+      materials: materialsArray,
+      careGuide: this.newProduct.careGuide || '',
+      shippingInfo: this.newProduct.shippingInfo || '',
+      specifications: validSpecs
     };
 
+    let createdProductId: any = null;
     try {
       const token = this.authService.getToken();
-      await fetch(API_ENDPOINTS.ADMIN.PRODUCTS, {
+      const res = await fetch(API_ENDPOINTS.ADMIN.PRODUCTS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2443,20 +2780,29 @@ export class AdminComponent implements OnInit {
         },
         body: JSON.stringify(payload)
       });
+      const data = await res.json();
+      if (data && data.data && data.data.id) {
+        createdProductId = data.data.id;
+      }
     } catch (err) {
       // Offline fallback
     }
 
     const createdMockProduct = this.mockDataService.addProduct({
-      name: this.newProduct.name,
+      id: createdProductId || undefined,
+      name: this.newProduct.name.trim(),
       category: this.newProduct.category,
       price: Number(this.newProduct.price),
       compareAtPrice: this.newProduct.compareAtPrice ? Number(this.newProduct.compareAtPrice) : undefined,
       badge: (this.newProduct.badge as 'NEW' | 'SALE' | 'FEATURED' | 'BESTSELLER') || undefined,
       image: finalImage,
       images: imagesList,
-      stockQuantity: this.newProduct.stockQuantity,
-      description: this.newProduct.description
+      stockQuantity: Number(this.newProduct.stockQuantity) || 0,
+      description: this.newProduct.description.trim(),
+      materials: materialsArray,
+      careGuide: this.newProduct.careGuide || '',
+      shippingInfo: this.newProduct.shippingInfo || '',
+      specifications: validSpecs
     });
 
     const createdItem: ProductCardData = {
@@ -2480,14 +2826,21 @@ export class AdminComponent implements OnInit {
     this.newSystemFileName = '';
     this.newProduct = {
       name: '',
-      category: 'Rings',
-      price: 45000,
-      compareAtPrice: 52000,
+      category: '',
+      price: '',
+      compareAtPrice: '',
       badge: 'NEW',
-      stockQuantity: 10,
-      image: '/assets/images/placeholder-rings.svg',
-      images: ['/assets/images/placeholder-rings.svg', '/assets/images/placeholder-jewellery.svg'],
-      description: ''
+      stockQuantity: '',
+      image: '',
+      images: [],
+      description: '',
+      materialsStr: '18K Warm Gold, Sterling Silver, Rose Gold',
+      careGuide: 'Handle with care. Store in protective velvet pouch after use.',
+      shippingInfo: 'Complimentary insured express delivery within 3-5 business days.',
+      specifications: [
+        { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' },
+        { label: 'Certification', value: 'BIS Hallmarked Gold' }
+      ]
     };
     this.showToast(`Jewellery creation "${createdName}" published to catalog!`, 'success');
   }
@@ -2512,9 +2865,48 @@ export class AdminComponent implements OnInit {
     }
   }
 
+  showCreateAdminModal: boolean = false;
+  showUpdatePasswordModal: boolean = false;
+  editingAdminUser: any = null;
+  newPasswordInput: string = '';
+  showNewPasswordInputText: boolean = false;
+  updatePasswordErrorMessage: string = '';
+
+  async loadAdminUsers(): Promise<void> {
+    try {
+      const token = this.authService.getToken();
+      const res = await fetch(API_ENDPOINTS.ADMIN.USERS, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        this.createdAdminUsers = data.data.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role || 'ADMIN',
+          createdAt: u.createdAt || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          status: 'ACTIVE'
+        }));
+        this.cdr.detectChanges();
+        return;
+      }
+    } catch (err) {
+      // Fallback
+    }
+
+    const savedAdmins = localStorage.getItem('arista_created_admins');
+    if (savedAdmins) {
+      try {
+        this.createdAdminUsers = JSON.parse(savedAdmins);
+      } catch {
+        this.createdAdminUsers = [];
+      }
+    }
+  }
+
   async onCreateAdmin(event: Event): Promise<void> {
     event.preventDefault();
-    this.newAdminSuccessMessage = '';
     this.newAdminErrorMessage = '';
 
     if (!this.newAdminForm.name || !this.newAdminForm.email || !this.newAdminForm.password) {
@@ -2522,52 +2914,194 @@ export class AdminComponent implements OnInit {
       return;
     }
 
-    if (this.createdAdminUsers.length >= 1) {
-      this.newAdminErrorMessage = 'Maximum Limit Reached: Only 1 additional Admin User account is allowed.';
+    try {
+      const token = this.authService.getToken();
+      const res = await fetch(API_ENDPOINTS.ADMIN.USERS, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(this.newAdminForm)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        this.showToast(data.message || 'New Admin user registered successfully!', 'success');
+        this.newAdminForm = { name: '', email: '', password: '' };
+        this.showCreateAdminModal = false;
+        this.loadAdminUsers();
+        return;
+      } else {
+        this.newAdminErrorMessage = data.message || 'Failed to create admin user.';
+      }
+    } catch (err) {
+      this.newAdminErrorMessage = 'Failed to connect to backend server.';
+    }
+  }
+
+  openUpdatePasswordModal(user: any): void {
+    this.editingAdminUser = user;
+    this.newPasswordInput = '';
+    this.updatePasswordErrorMessage = '';
+    this.showUpdatePasswordModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeUpdatePasswordModal(): void {
+    this.showUpdatePasswordModal = false;
+    this.editingAdminUser = null;
+    this.newPasswordInput = '';
+    this.cdr.detectChanges();
+  }
+
+  async onUpdateAdminPassword(event: Event): Promise<void> {
+    event.preventDefault();
+    if (!this.editingAdminUser || !this.newPasswordInput || this.newPasswordInput.trim().length < 4) {
+      this.updatePasswordErrorMessage = 'Password must be at least 4 characters long.';
+      this.cdr.detectChanges();
       return;
     }
 
-    const res = await this.authService.createAdminUser(
-      this.newAdminForm.name,
-      this.newAdminForm.email,
-      this.newAdminForm.password
-    );
-
-    if (res.success) {
-      this.newAdminErrorMessage = '';
-      this.newAdminSuccessMessage = res.message || 'Secondary Admin user registered successfully!';
-
-      const newAdminObj = {
-        id: Date.now(),
-        name: this.newAdminForm.name,
-        email: this.newAdminForm.email,
-        role: 'ADMIN',
-        createdAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
-        status: 'ACTIVE'
-      };
-      this.createdAdminUsers = [...this.createdAdminUsers, newAdminObj];
-      localStorage.setItem('arista_created_admins', JSON.stringify(this.createdAdminUsers));
-
-      this.newAdminForm = { name: '', email: '', password: '' };
-    } else {
-      this.newAdminSuccessMessage = '';
-      this.newAdminErrorMessage = res.message;
+    try {
+      const token = this.authService.getToken();
+      const res = await fetch(API_ENDPOINTS.ADMIN.USER_PASSWORD(this.editingAdminUser.id), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          password: this.newPasswordInput.trim(),
+          email: this.editingAdminUser.email,
+          name: this.editingAdminUser.name
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        this.showToast(`Password updated successfully for admin "${this.editingAdminUser.name}"!`, 'success');
+        this.closeUpdatePasswordModal();
+        return;
+      } else {
+        this.updatePasswordErrorMessage = data.message || 'Failed to update password.';
+      }
+    } catch (err) {
+      this.updatePasswordErrorMessage = 'Failed to connect to backend server.';
     }
+    this.cdr.detectChanges();
   }
 
-  deleteAdminUser(adminId: number): void {
+  async deleteAdminUser(adminId: number): Promise<void> {
+    const adminObj = this.createdAdminUsers.find(a => a.id === adminId);
+    const adminName = adminObj ? adminObj.name : `Admin #${adminId}`;
+
+    try {
+      const token = this.authService.getToken();
+      await fetch(API_ENDPOINTS.ADMIN.USER_BY_ID(adminId), {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+    } catch (err) {
+      // Fallback
+    }
+
     this.createdAdminUsers = this.createdAdminUsers.filter(a => a.id !== adminId);
     localStorage.setItem('arista_created_admins', JSON.stringify(this.createdAdminUsers));
-    this.newAdminErrorMessage = '';
-    this.newAdminSuccessMessage = 'Admin user account revoked and removed successfully.';
+    this.showToast(`Admin user account "${adminName}" revoked and removed.`, 'success');
+    this.loadAdminUsers();
   }
 
-  deleteProduct(productId: number): void {
-    const item = this.products.find(p => p.id === productId);
-    const name = item ? item.name : `ID ${productId}`;
-    this.products = this.products.filter(p => p.id !== productId);
-    this.mockDataService.deleteProduct(productId);
-    this.showToast(`Jewellery product "${name}" deleted from storefront.`, 'success');
+  promptDeleteProduct(product: ProductCardData): void {
+    this.deleteTarget = {
+      type: 'product',
+      id: product.id,
+      name: product.name
+    };
+    this.cdr.detectChanges();
+  }
+
+  promptDeleteCategory(category: Category): void {
+    this.deleteTarget = {
+      type: 'category',
+      id: category.id,
+      name: category.name
+    };
+    this.cdr.detectChanges();
+  }
+
+  promptDeleteAdminUser(admin: any): void {
+    this.deleteTarget = {
+      type: 'user',
+      id: admin.id,
+      name: admin.name || admin.email
+    };
+    this.cdr.detectChanges();
+  }
+
+  cancelDelete(): void {
+    this.deleteTarget = null;
+    this.cdr.detectChanges();
+  }
+
+  async confirmDelete(): Promise<void> {
+    if (!this.deleteTarget) return;
+
+    const { type, id, name } = this.deleteTarget;
+    this.deleteTarget = null;
+    const targetStr = String(id);
+
+    if (type === 'product') {
+      try {
+        const token = this.authService.getToken();
+        await fetch(API_ENDPOINTS.ADMIN.PRODUCT_BY_ID(id), {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        // Offline fallback
+      }
+
+      this.products = this.products.filter(p => String(p.id) !== targetStr);
+      this.mockDataService.deleteProduct(id);
+      this.showToast(`Jewellery product "${name}" deleted from catalog.`, 'success');
+      this.cdr.detectChanges();
+    } else if (type === 'category') {
+      try {
+        const token = this.authService.getToken();
+        await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(id), {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        // Offline fallback
+      }
+
+      this.categories = this.categories.filter(c => String(c.id) !== targetStr && c.slug !== targetStr);
+      this.mockDataService.deleteCategory(id);
+      this.showToast(`Category "${name}" removed from catalog.`, 'success');
+      this.cdr.detectChanges();
+    } else if (type === 'user') {
+      try {
+        const token = this.authService.getToken();
+        await fetch(API_ENDPOINTS.ADMIN.USER_BY_ID(id), {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+      } catch (err) {
+        // Offline fallback
+      }
+
+      this.createdAdminUsers = this.createdAdminUsers.filter(a => String(a.id) !== targetStr);
+      localStorage.setItem('arista_created_admins', JSON.stringify(this.createdAdminUsers));
+      this.showToast(`Admin user account "${name}" revoked and removed.`, 'success');
+      this.loadAdminUsers();
+    }
   }
 
   updateOrderStatus(order: any, event: Event): void {
@@ -2610,25 +3144,38 @@ export class AdminComponent implements OnInit {
     this.categoryErrorMessage = '';
     this.categorySuccessMessage = '';
 
-    if (!this.newCategory.name.trim()) {
-      this.categoryErrorMessage = 'Please enter a category name.';
+    if (!this.newCategory.name || !this.newCategory.name.trim()) {
+      this.categoryErrorMessage = 'Category Name is mandatory.';
+      this.showToast('Category Name is mandatory.', 'error');
       return;
     }
-    if (!this.newCategory.slug.trim()) {
-      this.categoryErrorMessage = 'Please enter a category slug.';
+    if (!this.newCategory.slug || !this.newCategory.slug.trim()) {
+      this.categoryErrorMessage = 'Category Slug is mandatory.';
+      this.showToast('Category Slug is mandatory.', 'error');
+      return;
+    }
+    if (!this.newCategory.image || !this.newCategory.image.trim()) {
+      this.categoryErrorMessage = 'Category Image is mandatory.';
+      this.showToast('Category Image is mandatory.', 'error');
+      return;
+    }
+    if (!this.newCategory.description || !this.newCategory.description.trim()) {
+      this.categoryErrorMessage = 'Category Description is mandatory.';
+      this.showToast('Category Description is mandatory.', 'error');
       return;
     }
 
     const payload = {
       name: this.newCategory.name.trim(),
       slug: this.newCategory.slug.trim(),
-      description: this.newCategory.description.trim() || `${this.newCategory.name} Collection`,
-      image: this.newCategory.image || '/assets/images/hero-categories.jpg'
+      description: this.newCategory.description.trim(),
+      image: this.newCategory.image.trim()
     };
 
+    let createdCatId: any = null;
     try {
       const token = this.authService.getToken();
-      await fetch(API_ENDPOINTS.ADMIN.CATEGORIES, {
+      const res = await fetch(API_ENDPOINTS.ADMIN.CATEGORIES, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2636,12 +3183,17 @@ export class AdminComponent implements OnInit {
         },
         body: JSON.stringify(payload)
       });
+      const data = await res.json();
+      if (data && data.data && data.data.id) {
+        createdCatId = data.data.id;
+      }
     } catch (err) {
       // Offline fallback
     }
 
     const added = this.mockDataService.addCategory({
       ...payload,
+      id: createdCatId || undefined,
       featured: true
     });
 
@@ -2652,7 +3204,7 @@ export class AdminComponent implements OnInit {
       name: '',
       slug: '',
       description: '',
-      image: '/assets/images/hero-categories.jpg'
+      image: ''
     };
     this.newCategoryFileName = '';
     this.showToast(`Category "${catName}" published successfully!`, 'success');
@@ -2732,7 +3284,24 @@ export class AdminComponent implements OnInit {
 
   async updateCategory(event: Event): Promise<void> {
     event.preventDefault();
-    if (!this.editingCategory || !this.editingCategory.name) return;
+    if (!this.editingCategory) return;
+
+    if (!this.editingCategory.name || !this.editingCategory.name.trim()) {
+      this.showToast('Category Name is mandatory.', 'error');
+      return;
+    }
+    if (!this.editingCategory.slug || !this.editingCategory.slug.trim()) {
+      this.showToast('Category Slug is mandatory.', 'error');
+      return;
+    }
+    if (!this.editingCategory.image || !this.editingCategory.image.trim()) {
+      this.showToast('Category Image is mandatory.', 'error');
+      return;
+    }
+    if (!this.editingCategory.description || !this.editingCategory.description.trim()) {
+      this.showToast('Category Description is mandatory.', 'error');
+      return;
+    }
 
     const payload = {
       name: this.editingCategory.name.trim(),

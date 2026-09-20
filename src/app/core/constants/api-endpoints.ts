@@ -24,6 +24,8 @@ export const API_ENDPOINTS = {
     DASHBOARD: `${BASE_URL}/admin/dashboard`,
     PROFILE: `${BASE_URL}/admin/profile`,
     USERS: `${BASE_URL}/admin/users`,
+    USER_BY_ID: (id: string | number) => `${BASE_URL}/admin/users/${id}`,
+    USER_PASSWORD: (id: string | number) => `${BASE_URL}/admin/users/${id}/password`,
     PRODUCTS: `${BASE_URL}/admin/products`,
     PRODUCT_BY_ID: (id: string | number) => `${BASE_URL}/admin/products/${id}`,
     CATEGORIES: `${BASE_URL}/admin/categories`,

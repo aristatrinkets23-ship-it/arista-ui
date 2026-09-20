@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
@@ -37,7 +37,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
     <!-- Shop Control Toolbar & Filters -->
     <section class="section-padding">
       <div class="container">
-        <div class="shop-toolbar">
+        <div class="shop-toolbar" *ngIf="filterTabs.length > 1 || products.length > 0">
           <!-- Category Filter Tabs -->
           <div class="filter-tabs">
             <button
@@ -82,10 +82,10 @@ import { MockDataService } from '../../core/mock/mock-data.service';
         <!-- Empty State -->
         <app-empty-state
           *ngIf="!isLoading && products.length === 0"
-          title="No Creations Found"
-          description="We could not find any jewellery items matching your selected category."
-          actionText="View All Collections"
-          actionPath="/shop"
+          title="No Products Available"
+          description="There are currently no jewellery items or categories in the catalog. Add categories and products from the Admin Panel."
+          actionText="⚙ Go to Admin Panel to Add Products & Categories"
+          actionPath="/admin"
         ></app-empty-state>
       </div>
     </section>
@@ -243,18 +243,23 @@ export class ShopComponent implements OnInit {
   selectedCategory: string = 'all';
   selectedSort: string = 'featured';
 
-  filterTabs = [
-    { label: 'All Jewels', slug: 'all' },
-    { label: 'Rings', slug: 'rings' },
-    { label: 'Necklaces', slug: 'necklaces' },
-    { label: 'Earrings', slug: 'earrings' },
-    { label: 'Bracelets', slug: 'bracelets' }
+  filterTabs: { label: string; slug: string }[] = [
+    { label: 'All Jewels', slug: 'all' }
   ];
 
   private mockDataService = inject(MockDataService);
   private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
+    this.mockDataService.getCategories().subscribe(cats => {
+      this.filterTabs = [
+        { label: 'All Jewels', slug: 'all' },
+        ...cats.map(c => ({ label: c.name, slug: c.slug }))
+      ];
+      this.cdr.detectChanges();
+    });
+
     this.route.queryParams.subscribe(params => {
       const catParam = params['category'];
       if (catParam) {
@@ -269,6 +274,7 @@ export class ShopComponent implements OnInit {
     this.mockDataService.getProducts(this.selectedCategory, this.selectedSort).subscribe(prods => {
       this.products = prods;
       this.isLoading = false;
+      this.cdr.detectChanges();
     });
   }
 

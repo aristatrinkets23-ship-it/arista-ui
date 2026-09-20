@@ -198,12 +198,23 @@ import { CartService } from '../../core/services/cart.service';
 
     .desktop-nav {
       display: none;
-      gap: 28px;
+      gap: 20px;
     }
 
-    @media (min-width: 768px) {
-      .desktop-nav { display: flex; }
+    @media (min-width: 992px) {
+      .desktop-nav {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        white-space: nowrap;
+      }
       .mobile-toggle { display: none !important; }
+    }
+
+    @media (min-width: 1200px) {
+      .desktop-nav {
+        gap: 32px;
+      }
     }
 
     .nav-link {

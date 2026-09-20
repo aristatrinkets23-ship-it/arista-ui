@@ -28,7 +28,7 @@ import { MockDataService, getDefaultCategoryImage } from '../../core/mock/mock-d
     <!-- Categories Grid -->
     <section class="section-padding">
       <div class="container">
-        <div class="categories-list">
+        <div *ngIf="categories.length > 0" class="categories-list">
           <div *ngFor="let cat of categories; let i = index" class="cat-block" [class.reverse]="i % 2 !== 0">
             <div class="cat-image-box">
               <img
@@ -50,6 +50,15 @@ import { MockDataService, getDefaultCategoryImage } from '../../core/mock/mock-d
               </div>
             </div>
           </div>
+        </div>
+
+        <div *ngIf="categories.length === 0" class="empty-state-card" style="text-align: center; padding: 60px 24px; background: var(--brand-pearl-beige); border-radius: 16px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
+          <div style="font-size: 3rem; margin-bottom: 12px; color: var(--brand-warm-gold);">💎</div>
+          <h2 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.6rem; margin-bottom: 8px;">No Categories Found</h2>
+          <p style="color: #666; font-size: 0.95rem; margin-bottom: 24px; line-height: 1.6;">There are currently no categories added to the collection catalog. Please add categories and products from the admin panel.</p>
+          <a routerLink="/admin" style="padding: 12px 28px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.9rem; display: inline-block;">
+            ⚙ Go to Admin to Add Products & Categories
+          </a>
         </div>
       </div>
     </section>
