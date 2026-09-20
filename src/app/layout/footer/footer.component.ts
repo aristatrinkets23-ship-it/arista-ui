@@ -13,8 +13,8 @@ import { RouterLink } from '@angular/router';
         <div class="footer-col brand-col">
           <div class="footer-brand">
             <a routerLink="/" class="footer-logo-link" aria-label="Arista Trinkets">
-              <img src="/assets/images/logo-icon.jpeg" alt="Arista Icon" class="footer-logo-icon" width="36" height="36" ngSkipOversizedImageWarning />
-              <img src="/assets/images/logo.jpeg" alt="Arista Trinkets" class="footer-logo-img" width="130" height="40" ngSkipOversizedImageWarning />
+              <img src="/assets/images/logo-icon-transparent.png" alt="Arista Icon" class="footer-logo-icon" width="36" height="36" ngSkipOversizedImageWarning />
+              <img src="/assets/images/logo-transparent.png" alt="Arista Trinkets" class="footer-logo-img" width="130" height="40" ngSkipOversizedImageWarning />
             </a>
           </div>
           <p class="brand-tagline">
@@ -120,8 +120,7 @@ import { RouterLink } from '@angular/router';
       height: 42px;
       width: auto;
       object-fit: contain;
-      filter: invert(1) sepia(0.85) saturate(3.5) hue-rotate(5deg) brightness(1.2);
-      mix-blend-mode: screen;
+      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) brightness(0.9);
       position: relative;
       z-index: 2;
     }
@@ -130,8 +129,7 @@ import { RouterLink } from '@angular/router';
       height: 48px;
       width: auto;
       object-fit: contain;
-      filter: invert(1) sepia(0.85) saturate(3.5) hue-rotate(5deg) brightness(1.2);
-      mix-blend-mode: screen;
+      filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(5deg) brightness(0.9);
       margin-left: -12px;
       position: relative;
       z-index: 1;
