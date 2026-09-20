@@ -781,8 +781,130 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
         </form>
       </div>
     </div>
+
+    <!-- Logout Confirmation Modal Overlay -->
+    <div class="logout-modal-backdrop" *ngIf="showLogoutModal" (click)="cancelLogout()">
+      <div class="logout-modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-icon-wrap">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </div>
+        <h3 class="modal-title">Confirm Sign Out</h3>
+        <p class="modal-desc">Are you sure you want to sign out of the Arista Management Portal?</p>
+        <div class="modal-actions">
+          <button type="button" class="modal-btn-cancel" (click)="cancelLogout()">Cancel</button>
+          <button type="button" class="modal-btn-confirm" (click)="confirmLogout()">Sign Out &rarr;</button>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
+    .logout-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 18, 11, 0.75);
+      backdrop-filter: blur(5px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .logout-modal-card {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 32px 28px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+      animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-icon-wrap {
+      width: 52px;
+      height: 52px;
+      margin: 0 auto 16px auto;
+      background: var(--brand-pearl-beige);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--brand-warm-gold);
+      border: 1px solid rgba(207, 168, 116, 0.4);
+    }
+
+    .modal-title {
+      font-family: var(--font-serif);
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--brand-mocha-brown);
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      font-size: 0.92rem;
+      color: #666666;
+      line-height: 1.55;
+      margin-bottom: 24px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .modal-btn-cancel {
+      flex: 1;
+      padding: 12px 18px;
+      min-height: 44px;
+      border: 1px solid var(--color-border);
+      background: #FFFFFF;
+      color: var(--brand-mocha-brown);
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .modal-btn-cancel:hover {
+      background: var(--brand-pearl-beige);
+    }
+
+    .modal-btn-confirm {
+      flex: 1;
+      padding: 12px 18px;
+      min-height: 44px;
+      border: none;
+      background: #C62828;
+      color: #FFFFFF;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .modal-btn-confirm:hover {
+      background: #B71C1C;
+      transform: translateY(-1px);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     .toast-notification {
       position: fixed;
       top: 24px;
@@ -1505,6 +1627,7 @@ export class AdminComponent implements OnInit {
   showAddCategoryModal: boolean = false;
 
   adminUser: any = null;
+  showLogoutModal: boolean = false;
 
   editingProduct: any = null;
   editSuccessMessage: string = '';
@@ -1655,9 +1778,22 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  onLogout(): void {
+  openLogoutModal(): void {
+    this.showLogoutModal = true;
+  }
+
+  cancelLogout(): void {
+    this.showLogoutModal = false;
+  }
+
+  confirmLogout(): void {
+    this.showLogoutModal = false;
     this.authService.logout();
     this.router.navigate(['/admin/login']);
+  }
+
+  onLogout(): void {
+    this.openLogoutModal();
   }
 
   onTableImageError(event: Event): void {
