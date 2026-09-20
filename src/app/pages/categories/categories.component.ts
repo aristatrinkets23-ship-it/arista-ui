@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { Category } from '../../core/models/category.model';
-import { MockDataService } from '../../core/mock/mock-data.service';
+import { MockDataService, getDefaultCategoryImage } from '../../core/mock/mock-data.service';
 
 @Component({
   selector: 'app-categories',
@@ -12,13 +12,16 @@ import { MockDataService } from '../../core/mock/mock-data.service';
   imports: [CommonModule, RouterLink, SectionHeadingComponent, ButtonComponent],
   template: `
     <!-- Categories Hero -->
-    <section class="cat-hero text-center">
-      <div class="container">
-        <span class="hero-eyebrow">Explore By Category</span>
-        <h1 class="hero-title">Signature Jewellery Collections</h1>
-        <p class="hero-desc">
-          From solitaire diamond rings to delicate freshwater pearl drops, discover our masterfully sculpted collections.
-        </p>
+    <section class="cat-hero">
+      <div class="hero-bg-overlay"></div>
+      <div class="container hero-container">
+        <div class="hero-content">
+          <span class="hero-eyebrow">Explore By Category</span>
+          <h1 class="hero-title">Signature Jewellery Collections</h1>
+          <p class="hero-desc">
+            From solitaire diamond rings to delicate freshwater pearl drops, discover our masterfully sculpted collections.
+          </p>
+        </div>
       </div>
     </section>
 
@@ -28,7 +31,12 @@ import { MockDataService } from '../../core/mock/mock-data.service';
         <div class="categories-list">
           <div *ngFor="let cat of categories; let i = index" class="cat-block" [class.reverse]="i % 2 !== 0">
             <div class="cat-image-box">
-              <img [src]="cat.image" [alt]="cat.name" class="cat-img" />
+              <img
+                [src]="cat.image"
+                [alt]="cat.name"
+                (error)="onCatImageError($event, cat)"
+                class="cat-img"
+              />
               <div class="cat-badge">{{ cat.itemCount }} Unique Designs</div>
             </div>
             <div class="cat-details">
@@ -48,38 +56,72 @@ import { MockDataService } from '../../core/mock/mock-data.service';
   `,
   styles: [`
     .cat-hero {
-      background: linear-gradient(135deg, rgba(247, 233, 230, 0.9) 0%, rgba(242, 239, 232, 0.95) 100%), url('/assets/images/placeholder-banner.svg');
+      position: relative;
+      background-image: url('/assets/images/hero-categories.jpg');
       background-size: cover;
-      padding: 56px 0;
-      border-bottom: 1px solid var(--color-border);
+      background-position: center right;
+      background-repeat: no-repeat;
+      padding: 72px 0 60px 0;
+      min-height: 380px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--brand-warm-gold);
+      color: #FFFFFF;
     }
-    @media (min-width: 768px) {
-      .cat-hero { padding: 80px 0; }
+
+    .hero-bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg, 
+        rgba(26, 18, 11, 0.88) 0%, 
+        rgba(26, 18, 11, 0.65) 40%, 
+        rgba(26, 18, 11, 0.3) 70%, 
+        rgba(26, 18, 11, 0.05) 100%
+      );
+      pointer-events: none;
+    }
+
+    .hero-container {
+      position: relative;
+      z-index: 2;
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    .hero-content {
+      max-width: 600px;
+      text-align: left;
     }
 
     .hero-eyebrow {
       font-size: 0.82rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
       color: var(--brand-warm-gold);
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
     .hero-title {
       font-family: var(--font-serif);
-      font-size: clamp(2rem, 5vw, 3.4rem);
-      color: var(--brand-mocha-brown);
-      margin-bottom: 12px;
+      font-size: clamp(2.2rem, 4.2vw, 3.4rem);
+      color: #FFFFFF;
+      margin-bottom: 14px;
+      line-height: 1.15;
+      font-weight: 700;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     }
 
     .hero-desc {
       font-size: 1.05rem;
-      color: #555555;
-      max-width: 640px;
-      margin: 0 auto;
-      line-height: 1.6;
+      color: #F3ECE4;
+      line-height: 1.65;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
     }
 
     .categories-list {
@@ -112,6 +154,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
         padding: 40px;
         gap: 48px;
       }
+
       .cat-block.reverse .cat-image-box {
         order: 2;
       }
@@ -122,24 +165,29 @@ import { MockDataService } from '../../core/mock/mock-data.service';
 
     .cat-image-box {
       position: relative;
-      aspect-ratio: 1 / 1;
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-sm);
       overflow: hidden;
-      background-color: var(--brand-pearl-beige);
-      border: 1px solid var(--color-border);
+      aspect-ratio: 4/3;
+      background: var(--brand-pearl-beige);
     }
 
     .cat-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform var(--transition-normal);
+    }
+
+    .cat-block:hover .cat-img {
+      transform: scale(1.04);
     }
 
     .cat-badge {
       position: absolute;
       top: 16px;
       left: 16px;
-      background-color: var(--brand-mocha-brown);
+      background: rgba(44, 34, 25, 0.85);
+      backdrop-filter: blur(4px);
       color: var(--brand-warm-gold);
       font-size: 0.75rem;
       font-weight: 700;
@@ -183,5 +231,12 @@ export class CategoriesComponent implements OnInit {
     this.mockDataService.getCategories().subscribe(cats => {
       this.categories = cats;
     });
+  }
+
+  onCatImageError(event: Event, cat?: Category): void {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement) {
+      imgElement.src = getDefaultCategoryImage(cat?.slug || cat?.name);
+    }
   }
 }

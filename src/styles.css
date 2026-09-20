@@ -10,6 +10,12 @@
   outline-offset: 3px;
 }
 
+.nav-link:focus, .nav-link:focus-visible, .nav-link.active {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 /* Global Reset & Link Styling */
 a, a:visited, a:active {
   color: inherit;
@@ -108,7 +114,7 @@ a.btn,
 }
 
 /* ==========================================================================
-   Global Utility Classes & Hero Banner Alignment
+   Global Utility Classes
    ========================================================================== */
 .text-center {
   text-align: center !important;
@@ -122,55 +128,32 @@ a.btn,
   text-align: right !important;
 }
 
-/* Page Hero Shared Banner System (Centered Alignment Across All Pages) */
-.shop-hero,
-.cat-hero,
-.about-hero,
-.contact-hero,
-.cart-hero,
-.account-hero,
-.checkout-hero,
-.page-hero {
-  text-align: center !important;
+/* ==========================================================================
+   LUXURY SCROLL REVEAL & MICRO-INTERACTION ANIMATIONS
+   ========================================================================== */
+html {
+  scroll-behavior: smooth;
 }
 
-.shop-hero .container,
-.cat-hero .container,
-.about-hero .container,
-.contact-hero .container,
-.cart-hero .container,
-.account-hero .container,
-.checkout-hero .container,
-.page-hero .container {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
-  text-align: center !important;
+.reveal {
+  opacity: 0;
+  transform: translateY(32px);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
 }
 
-.shop-hero .hero-title,
-.cat-hero .hero-title,
-.about-hero .hero-title,
-.contact-hero .hero-title,
-.cart-hero .hero-title,
-.account-hero .hero-title,
-.checkout-hero .hero-title,
-.page-hero .hero-title {
-  text-align: center !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
+.reveal.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.shop-hero .hero-desc,
-.cat-hero .hero-desc,
-.about-hero .hero-desc,
-.contact-hero .hero-desc,
-.cart-hero .hero-desc,
-.account-hero .hero-desc,
-.checkout-hero .hero-desc,
-.page-hero .hero-desc {
-  text-align: center !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
+/* Staggered Delay Animations */
+app-product-card:nth-child(1), .category-card:nth-child(1), .pillar-card:nth-child(1) { transition-delay: 0.04s; }
+app-product-card:nth-child(2), .category-card:nth-child(2), .pillar-card:nth-child(2) { transition-delay: 0.1s; }
+app-product-card:nth-child(3), .category-card:nth-child(3), .pillar-card:nth-child(3) { transition-delay: 0.16s; }
+app-product-card:nth-child(4), .category-card:nth-child(4) { transition-delay: 0.22s; }
+
+/* Global Luxury Card Hover Effects */
+.category-card, app-product-card, .pillar-card, .info-card, .form-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }

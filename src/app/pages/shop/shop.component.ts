@@ -21,13 +21,16 @@ import { MockDataService } from '../../core/mock/mock-data.service';
   ],
   template: `
     <!-- Shop Page Header -->
-    <section class="shop-hero text-center">
-      <div class="container">
-        <span class="hero-eyebrow">The Complete Collection</span>
-        <h1 class="hero-title">Fine & Fashion Jewellery</h1>
-        <p class="hero-desc">
-          Explore handcrafted gold rings, layered necklaces, pearl drop earrings, and diamond cuff bracelets.
-        </p>
+    <section class="shop-hero">
+      <div class="hero-bg-overlay"></div>
+      <div class="container hero-container">
+        <div class="hero-content">
+          <span class="hero-eyebrow">The Complete Collection</span>
+          <h1 class="hero-title">Fine & Fashion Jewellery</h1>
+          <p class="hero-desc">
+            Explore handcrafted gold rings, layered necklaces, pearl drop earrings, and diamond cuff bracelets.
+          </p>
+        </div>
       </div>
     </section>
 
@@ -89,38 +92,72 @@ import { MockDataService } from '../../core/mock/mock-data.service';
   `,
   styles: [`
     .shop-hero {
-      background: linear-gradient(135deg, rgba(247, 233, 230, 0.9) 0%, rgba(242, 239, 232, 0.95) 100%), url('/assets/images/placeholder-banner.svg');
+      position: relative;
+      background-image: url('/assets/images/hero-shop.jpg');
       background-size: cover;
-      padding: 56px 0;
-      border-bottom: 1px solid var(--color-border);
+      background-position: center right;
+      background-repeat: no-repeat;
+      padding: 72px 0 60px 0;
+      min-height: 380px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--brand-warm-gold);
+      color: #FFFFFF;
     }
-    @media (min-width: 768px) {
-      .shop-hero { padding: 80px 0; }
+
+    .hero-bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg, 
+        rgba(26, 18, 11, 0.88) 0%, 
+        rgba(26, 18, 11, 0.65) 40%, 
+        rgba(26, 18, 11, 0.3) 70%, 
+        rgba(26, 18, 11, 0.05) 100%
+      );
+      pointer-events: none;
+    }
+
+    .hero-container {
+      position: relative;
+      z-index: 2;
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    .hero-content {
+      max-width: 600px;
+      text-align: left;
     }
 
     .hero-eyebrow {
       font-size: 0.82rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
       color: var(--brand-warm-gold);
       display: block;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
     .hero-title {
       font-family: var(--font-serif);
-      font-size: clamp(2rem, 5vw, 3.4rem);
-      color: var(--brand-mocha-brown);
-      margin-bottom: 12px;
+      font-size: clamp(2.2rem, 4.2vw, 3.4rem);
+      color: #FFFFFF;
+      margin-bottom: 14px;
+      line-height: 1.15;
+      font-weight: 700;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
     }
 
     .hero-desc {
       font-size: 1.05rem;
-      color: #555555;
-      max-width: 640px;
-      margin: 0 auto;
-      line-height: 1.6;
+      color: #F3ECE4;
+      line-height: 1.65;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
     }
 
     .shop-toolbar {

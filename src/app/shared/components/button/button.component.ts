@@ -86,6 +86,20 @@ import { CommonModule } from '@angular/common';
       color: #FFFFFF;
     }
 
+    .btn-outline-light {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      color: #FFFFFF;
+      backdrop-filter: blur(4px);
+    }
+    .btn-outline-light:hover:not(:disabled) {
+      background-color: var(--brand-warm-gold);
+      border-color: var(--brand-warm-gold);
+      color: var(--brand-mocha-brown);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(207, 168, 116, 0.4);
+    }
+
     .btn-ghost {
       background: transparent;
       color: var(--brand-mocha-brown);
@@ -112,7 +126,7 @@ import { CommonModule } from '@angular/common';
   `]
 })
 export class ButtonComponent {
-  @Input() variant: 'primary' | 'secondary' | 'outline' | 'ghost' = 'primary';
+  @Input() variant: 'primary' | 'secondary' | 'outline' | 'outline-light' | 'ghost' = 'primary';
   @Input() size: 'sm' | 'md' | 'lg' = 'md';
   @Input() type: 'button' | 'submit' | 'reset' = 'button';
   @Input() disabled: boolean = false;

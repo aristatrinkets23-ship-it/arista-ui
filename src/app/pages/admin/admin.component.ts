@@ -2,8 +2,9 @@ import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MockDataService } from '../../core/mock/mock-data.service';
+import { MockDataService, getDefaultCategoryImage } from '../../core/mock/mock-data.service';
 import { ProductCardData } from '../../core/models/product-card-data.model';
+import { Category } from '../../core/models/category.model';
 import { AuthService } from '../../core/services/auth.service';
 
 const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
@@ -49,15 +50,15 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
 
           <div class="metric-card">
-            <span class="metric-label">Total Completed Orders</span>
-            <span class="metric-value">12</span>
-            <span class="metric-sub">+3 Orders Today</span>
+            <span class="metric-label">Total Categories</span>
+            <span class="metric-value">{{ categories.length }}</span>
+            <span class="metric-sub">Collections Active</span>
           </div>
 
           <div class="metric-card">
-            <span class="metric-label">Total Store Revenue</span>
-            <span class="metric-value">₹2,54,000</span>
-            <span class="metric-sub">Verified via Razorpay</span>
+            <span class="metric-label">Total Completed Orders</span>
+            <span class="metric-value">12</span>
+            <span class="metric-sub">+3 Orders Today</span>
           </div>
 
           <div class="metric-card warning">
@@ -80,10 +81,10 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           <button
             type="button"
             class="tab-btn"
-            [class.active]="activeTab === 'add-product'"
-            (click)="activeTab = 'add-product'"
+            [class.active]="activeTab === 'categories'"
+            (click)="activeTab = 'categories'"
           >
-            + Add New Jewellery Piece
+            Categories ({{ categories.length }})
           </button>
           <button
             type="button"
@@ -99,12 +100,18 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             [class.active]="activeTab === 'credentials'"
             (click)="activeTab = 'credentials'"
           >
-            ⚙ Admin Credentials & Security
+            ⚙ Admin Credentials
           </button>
         </div>
 
         <!-- TAB 1: PRODUCT CATALOG TABLE -->
         <div *ngIf="activeTab === 'products'" class="tab-content">
+          <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.2rem;">Product Catalog ({{ products.length }})</h3>
+            <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="showAddProductModal = true">
+              + Add New Jewellery Piece
+            </button>
+          </div>
           <div class="table-responsive">
             <table class="admin-table">
               <thead>
@@ -159,99 +166,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
         </div>
 
-        <!-- TAB 2: ADD PRODUCT FORM -->
-        <div *ngIf="activeTab === 'add-product'" class="tab-content">
-          <div class="form-card">
-            <h2 class="form-title">Add New Jewellery Creation to Catalog</h2>
-            <div class="success-banner" *ngIf="successMessage">
-              ✓ {{ successMessage }}
-            </div>
-
-            <form (submit)="saveProduct($event)" class="product-form">
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Product Name *</label>
-                  <input type="text" [(ngModel)]="newProduct.name" name="name" placeholder="e.g. Royal Heritage Ruby Pendant" required />
-                </div>
-                <div class="form-group">
-                  <label>Category *</label>
-                  <select [(ngModel)]="newProduct.category" name="category" required>
-                    <option value="Rings">Rings</option>
-                    <option value="Necklaces">Necklaces</option>
-                    <option value="Earrings">Earrings</option>
-                    <option value="Bracelets">Bracelets</option>
-                  </select>
-                </div>
-              </div>
-
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Price (₹ INR) *</label>
-                  <input type="number" [(ngModel)]="newProduct.price" name="price" placeholder="45000" required />
-                </div>
-                <div class="form-group">
-                  <label>Compare-At Original Price (₹ INR)</label>
-                  <input type="number" [(ngModel)]="newProduct.compareAtPrice" name="compareAtPrice" placeholder="52000" />
-                </div>
-                <div class="form-group">
-                  <label>Badge Highlight Tag</label>
-                  <select [(ngModel)]="newProduct.badge" name="badge">
-                    <option value="">None</option>
-                    <option value="FEATURED">FEATURED</option>
-                    <option value="NEW">NEW</option>
-                    <option value="SALE">SALE</option>
-                    <option value="BESTSELLER">BESTSELLER</option>
-                  </select>
-                </div>
-              </div>
-
-              <!-- UPLOAD PHOTO FROM DEVICE & INITIAL STOCK QUANTITY ROW -->
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Upload your photo (Select from device/computer) *</label>
-                  <input
-                    #newFileInput
-                    type="file"
-                    accept="image/*"
-                    (change)="onFileSelected($event, 'new')"
-                    class="custom-file-input"
-                  />
-                  <div class="system-file-badge" *ngIf="newSystemFileName || isDataUrl(newProduct.image)" style="margin-top: 6px;">
-                    <span>✓ Selected Photo: <strong>{{ newSystemFileName || 'Local Photo File' }}</strong></span>
-                    <button type="button" class="btn-clear-file" (click)="clearSystemFile('new')">✕ Clear</button>
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label>INITIAL STOCK QUANTITY</label>
-                  <input type="number" [(ngModel)]="newProduct.stockQuantity" name="stockQuantity" placeholder="10" />
-                </div>
-              </div>
-
-              <!-- Live Image Preview Box -->
-              <div class="preview-box">
-                <span class="preview-label">Live Image Preview:</span>
-                <div class="preview-img-container">
-                  <img
-                    [src]="newProduct.image || defaultImage"
-                    (error)="onPreviewImageError($event)"
-                    alt="Product Preview"
-                    class="preview-img"
-                  />
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label>Product Description & Atelier Craft Notes</label>
-                <textarea rows="4" [(ngModel)]="newProduct.description" name="description" placeholder="Describe the gold karatage, diamond clarity, craftsmanship..."></textarea>
-              </div>
-
-              <button type="submit" class="btn-save">+ Publish Product to Storefront</button>
-            </form>
-          </div>
-        </div>
-
-        <!-- TAB 3: CUSTOMER ORDERS TABLE -->
+        <!-- TAB 2: CUSTOMER ORDERS TABLE -->
         <div *ngIf="activeTab === 'orders'" class="tab-content">
           <div class="table-responsive">
             <table class="admin-table">
@@ -468,6 +383,55 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
         </div>
 
+        <!-- TAB: CATEGORIES CATALOG TABLE -->
+        <div *ngIf="activeTab === 'categories'" class="tab-content">
+          <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.2rem;">Collection Categories ({{ categories.length }})</h3>
+            <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="showAddCategoryModal = true">
+              + Add New Category
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Poster</th>
+                  <th>Category Name</th>
+                  <th>Slug / Path</th>
+                  <th>Description</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let cat of categories">
+                  <td>
+                    <img [src]="cat.image" [alt]="cat.name" (error)="onTableImageError($event)" class="table-thumb" style="width: 54px; height: 54px; object-fit: cover; border-radius: 8px;" />
+                  </td>
+                  <td>
+                    <strong>{{ cat.name }}</strong>
+                  </td>
+                  <td>
+                    <code>/shop?category={{ cat.slug }}</code>
+                  </td>
+                  <td>
+                    <span class="table-desc" style="max-width: 320px; display: inline-block;">{{ cat.description }}</span>
+                  </td>
+                  <td>
+                    <span class="badge-status success">{{ cat.featured ? 'FEATURED' : 'ACTIVE' }}</span>
+                  </td>
+                  <td>
+                    <div class="action-btns">
+                      <button type="button" class="btn-action edit" (click)="editCategory(cat)">Edit</button>
+                      <button type="button" class="btn-action delete" (click)="deleteCategory(cat.id)">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </section>
 
@@ -553,6 +517,266 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           <div class="modal-footer">
             <button type="button" class="btn-cancel" (click)="closeEditModal()">Cancel</button>
             <button type="submit" class="btn-save" style="margin-top:0;">Save Product Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- EDIT CATEGORY MODAL OVERLAY POPUP -->
+    <div *ngIf="editingCategory" class="modal-backdrop" (click)="closeEditCategoryModal()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="form-title" style="margin:0;">Edit Category Details ({{ editingCategory.name }})</h2>
+          <button type="button" class="btn-close" (click)="closeEditCategoryModal()">&times;</button>
+        </div>
+
+        <div class="success-banner" *ngIf="editCategorySuccessMessage" style="margin-top:16px;">
+          ✓ {{ editCategorySuccessMessage }}
+        </div>
+
+        <form (submit)="updateCategory($event)" class="product-form" style="margin-top: 16px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category Name *</label>
+              <input
+                type="text"
+                [ngModel]="editingCategory.name"
+                (ngModelChange)="onEditCategoryNameChange($event)"
+                name="editCatName"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Category Slug (URL Path) *</label>
+              <input type="text" [(ngModel)]="editingCategory.slug" name="editCatSlug" required />
+            </div>
+          </div>
+
+          <!-- MAIN POSTER IMAGE SELECTOR FOR EDIT -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Upload Category Main Poster (Select from device/computer) *</label>
+            <input
+              #editCatFileInput
+              type="file"
+              accept="image/*"
+              (change)="onEditCategoryFileSelected($event)"
+              class="custom-file-input"
+            />
+            <div class="system-file-badge" *ngIf="editCategoryFileName || isDataUrl(editingCategory.image)" style="margin-top: 6px;">
+              <span>✓ Selected Category Photo: <strong>{{ editCategoryFileName || 'Local Photo File' }}</strong></span>
+              <button type="button" class="btn-clear-file" (click)="clearCategoryFile('edit')">✕ Clear</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Collection Description *</label>
+            <textarea
+              rows="4"
+              [(ngModel)]="editingCategory.description"
+              name="editCatDescription"
+              placeholder="Describe this collection..."
+            ></textarea>
+          </div>
+
+          <!-- Live Poster Card Preview -->
+          <div class="preview-box">
+            <span class="preview-label">Storefront Poster Preview:</span>
+            <div class="preview-img-container" style="aspect-ratio: 16/9; max-width: 380px;">
+              <img
+                [src]="editingCategory.image || defaultImage"
+                (error)="onPreviewImageError($event)"
+                alt="Category Edit Preview"
+                class="preview-img"
+              />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="closeEditCategoryModal()">Cancel</button>
+            <button type="submit" class="btn-save" style="margin-top:0;">Save Category Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADD PRODUCT MODAL OVERLAY POPUP -->
+    <div *ngIf="showAddProductModal" class="modal-backdrop" (click)="showAddProductModal = false">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="form-title" style="margin:0;">+ Add New Jewellery Creation to Catalog</h2>
+          <button type="button" class="btn-close" (click)="showAddProductModal = false">&times;</button>
+        </div>
+
+        <div class="success-banner" *ngIf="successMessage" style="margin-top:16px;">
+          ✓ {{ successMessage }}
+        </div>
+
+        <form (submit)="saveProduct($event)" class="product-form" style="margin-top: 16px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Product Name *</label>
+              <input type="text" [(ngModel)]="newProduct.name" name="name" placeholder="e.g. Royal Heritage Ruby Pendant" required />
+            </div>
+            <div class="form-group">
+              <label>Category *</label>
+              <select [(ngModel)]="newProduct.category" name="category" required>
+                <option *ngFor="let cat of categories" [value]="cat.name">{{ cat.name }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Price (₹ INR) *</label>
+              <input type="number" [(ngModel)]="newProduct.price" name="price" placeholder="45000" required />
+            </div>
+            <div class="form-group">
+              <label>Compare-At Original Price (₹ INR)</label>
+              <input type="number" [(ngModel)]="newProduct.compareAtPrice" name="compareAtPrice" placeholder="52000" />
+            </div>
+            <div class="form-group">
+              <label>Badge Highlight Tag</label>
+              <select [(ngModel)]="newProduct.badge" name="badge">
+                <option value="">None</option>
+                <option value="FEATURED">FEATURED</option>
+                <option value="NEW">NEW</option>
+                <option value="SALE">SALE</option>
+                <option value="BESTSELLER">BESTSELLER</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- UPLOAD PHOTO FROM DEVICE & INITIAL STOCK QUANTITY ROW -->
+          <div class="form-row">
+            <div class="form-group">
+              <label>Upload your photo (Select from device/computer) *</label>
+              <input
+                #newFileInput
+                type="file"
+                accept="image/*"
+                (change)="onFileSelected($event, 'new')"
+                class="custom-file-input"
+              />
+              <div class="system-file-badge" *ngIf="newSystemFileName || isDataUrl(newProduct.image)" style="margin-top: 6px;">
+                <span>✓ Selected Photo: <strong>{{ newSystemFileName || 'Local Photo File' }}</strong></span>
+                <button type="button" class="btn-clear-file" (click)="clearSystemFile('new')">✕ Clear</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>INITIAL STOCK QUANTITY</label>
+              <input type="number" [(ngModel)]="newProduct.stockQuantity" name="stockQuantity" placeholder="10" />
+            </div>
+          </div>
+
+          <!-- Live Image Preview Box -->
+          <div class="preview-box">
+            <span class="preview-label">Live Image Preview:</span>
+            <div class="preview-img-container">
+              <img
+                [src]="newProduct.image || defaultImage"
+                (error)="onPreviewImageError($event)"
+                alt="Product Preview"
+                class="preview-img"
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Product Description & Atelier Craft Notes</label>
+            <textarea rows="4" [(ngModel)]="newProduct.description" name="description" placeholder="Describe the gold karatage, diamond clarity, craftsmanship..."></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="showAddProductModal = false">Cancel</button>
+            <button type="submit" class="btn-save" style="margin-top:0;">+ Publish Product to Storefront</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ADD CATEGORY MODAL OVERLAY POPUP -->
+    <div *ngIf="showAddCategoryModal" class="modal-backdrop" (click)="showAddCategoryModal = false">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h2 class="form-title" style="margin:0;">+ Add New Collection Category</h2>
+          <button type="button" class="btn-close" (click)="showAddCategoryModal = false">&times;</button>
+        </div>
+
+        <div class="success-banner" *ngIf="categorySuccessMessage" style="margin-top:16px;">
+          ✓ {{ categorySuccessMessage }}
+        </div>
+        <div class="error-banner" *ngIf="categoryErrorMessage" style="margin-top:16px;">
+          ✕ {{ categoryErrorMessage }}
+        </div>
+
+        <form (submit)="onAddCategory($event)" class="product-form" style="margin-top: 16px;">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Category Name *</label>
+              <input
+                type="text"
+                [ngModel]="newCategory.name"
+                (ngModelChange)="onCategoryNameChange($event)"
+                name="catName"
+                placeholder="e.g. Diamond Pendants"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label>Category Slug (URL Path) *</label>
+              <input
+                type="text"
+                [(ngModel)]="newCategory.slug"
+                name="catSlug"
+                placeholder="e.g. diamond-pendants"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- MAIN POSTER IMAGE SELECTOR FROM DEVICE -->
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Upload Category Main Poster (Select from device/computer) *</label>
+            <input
+              #catFileInput
+              type="file"
+              accept="image/*"
+              (change)="onCategoryFileSelected($event)"
+              class="custom-file-input"
+            />
+            <div class="system-file-badge" *ngIf="newCategoryFileName || isDataUrl(newCategory.image)" style="margin-top: 6px;">
+              <span>✓ Selected Category Photo: <strong>{{ newCategoryFileName || 'Local Photo File' }}</strong></span>
+              <button type="button" class="btn-clear-file" (click)="clearCategoryFile('new')">✕ Clear</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Collection Description *</label>
+            <textarea
+              rows="4"
+              [(ngModel)]="newCategory.description"
+              name="catDescription"
+              placeholder="Describe this collection's craftsmanship, materials, and aesthetic appeal..."
+            ></textarea>
+          </div>
+
+          <!-- Live Poster Card Preview -->
+          <div class="preview-box">
+            <span class="preview-label">Storefront Poster Preview:</span>
+            <div class="preview-img-container" style="aspect-ratio: 16/9; max-width: 380px;">
+              <img
+                [src]="newCategory.image || defaultImage"
+                (error)="onPreviewImageError($event)"
+                alt="Category Poster Preview"
+                class="preview-img"
+              />
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-cancel" (click)="showAddCategoryModal = false">Cancel</button>
+            <button type="submit" class="btn-save" style="margin-top:0;">+ Publish Category to Storefront</button>
           </div>
         </form>
       </div>
@@ -1272,9 +1496,13 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 })
 export class AdminComponent implements OnInit {
   defaultImage = DEFAULT_FALLBACK_IMAGE;
-  activeTab: 'products' | 'add-product' | 'orders' | 'credentials' = 'products';
+  activeTab: 'products' | 'add-product' | 'categories' | 'add-category' | 'orders' | 'credentials' = 'products';
   products: ProductCardData[] = [];
+  categories: Category[] = [];
   successMessage: string = '';
+
+  showAddProductModal: boolean = false;
+  showAddCategoryModal: boolean = false;
 
   adminUser: any = null;
 
@@ -1283,6 +1511,21 @@ export class AdminComponent implements OnInit {
 
   newSystemFileName: string = '';
   editSystemFileName: string = '';
+
+  editingCategory: any = null;
+  editCategoryFileName: string = '';
+  editCategorySuccessMessage: string = '';
+
+  newCategoryFileName: string = '';
+  categorySuccessMessage: string = '';
+  categoryErrorMessage: string = '';
+
+  newCategory = {
+    name: '',
+    slug: '',
+    description: '',
+    image: '/assets/images/hero-categories.jpg'
+  };
 
   profileForm = {
     name: '',
@@ -1405,6 +1648,10 @@ export class AdminComponent implements OnInit {
           image: img || this.defaultImage
         };
       });
+    });
+
+    this.mockDataService.getCategories().subscribe(cats => {
+      this.categories = cats;
     });
   }
 
@@ -1622,23 +1869,22 @@ export class AdminComponent implements OnInit {
     };
 
     this.products = [createdItem, ...this.products];
-    this.successMessage = `Jewellery creation "${this.newProduct.name}" published successfully!`;
+    const createdName = this.newProduct.name;
 
-    setTimeout(() => {
-      this.successMessage = '';
-      this.activeTab = 'products';
-      this.newSystemFileName = '';
-      this.newProduct = {
-        name: '',
-        category: 'Rings',
-        price: 45000,
-        compareAtPrice: 52000,
-        badge: 'NEW',
-        stockQuantity: 10,
-        image: '/assets/images/placeholder-rings.svg',
-        description: ''
-      };
-    }, 1800);
+    this.showAddProductModal = false;
+    this.successMessage = '';
+    this.newSystemFileName = '';
+    this.newProduct = {
+      name: '',
+      category: 'Rings',
+      price: 45000,
+      compareAtPrice: 52000,
+      badge: 'NEW',
+      stockQuantity: 10,
+      image: '/assets/images/placeholder-rings.svg',
+      description: ''
+    };
+    this.showToast(`Jewellery creation "${createdName}" published to catalog!`, 'success');
   }
 
   async onUpdateProfile(event: Event): Promise<void> {
@@ -1722,5 +1968,167 @@ export class AdminComponent implements OnInit {
   updateOrderStatus(order: any, event: Event): void {
     const select = event.target as HTMLSelectElement;
     order.status = select.value;
+  }
+
+  onCategoryNameChange(name: string): void {
+    this.newCategory.name = name;
+    if (name) {
+      this.newCategory.slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+  }
+
+  onCategoryPosterPresetSelect(event: Event, fileInputEl: HTMLInputElement): void {
+    const select = event.target as HTMLSelectElement;
+    if (select.value === 'UPLOAD_SYSTEM') {
+      fileInputEl.click();
+    } else if (select.value) {
+      this.newCategory.image = select.value;
+      this.newCategoryFileName = '';
+    }
+  }
+
+  onCategoryFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this.newCategoryFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.newCategory.image = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  onAddCategory(event: Event): void {
+    event.preventDefault();
+    this.categoryErrorMessage = '';
+    this.categorySuccessMessage = '';
+
+    if (!this.newCategory.name.trim()) {
+      this.categoryErrorMessage = 'Please enter a category name.';
+      return;
+    }
+    if (!this.newCategory.slug.trim()) {
+      this.categoryErrorMessage = 'Please enter a category slug.';
+      return;
+    }
+
+    const added = this.mockDataService.addCategory({
+      name: this.newCategory.name.trim(),
+      slug: this.newCategory.slug.trim(),
+      description: this.newCategory.description.trim() || `${this.newCategory.name} Collection`,
+      image: this.newCategory.image || '/assets/images/hero-categories.jpg',
+      featured: true
+    });
+
+    const catName = added.name;
+    this.showAddCategoryModal = false;
+    this.categorySuccessMessage = '';
+    this.newCategory = {
+      name: '',
+      slug: '',
+      description: '',
+      image: '/assets/images/hero-categories.jpg'
+    };
+    this.newCategoryFileName = '';
+    this.showToast(`Category "${catName}" published successfully!`, 'success');
+  }
+
+  deleteCategory(id: number | string): void {
+    const cat = this.categories.find(c => c.id === id);
+    const name = cat ? cat.name : `ID ${id}`;
+    this.mockDataService.deleteCategory(id);
+    this.showToast(`Category "${name}" removed from catalog.`, 'success');
+  }
+
+  editCategory(category: Category): void {
+    this.editingCategory = {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      image: category.image,
+      featured: category.featured !== undefined ? category.featured : true
+    };
+    this.editCategoryFileName = '';
+    this.editCategorySuccessMessage = '';
+  }
+
+  closeEditCategoryModal(): void {
+    this.editingCategory = null;
+    this.editCategoryFileName = '';
+    this.editCategorySuccessMessage = '';
+  }
+
+  onEditCategoryNameChange(name: string): void {
+    if (this.editingCategory) {
+      this.editingCategory.name = name;
+      if (name) {
+        this.editingCategory.slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      }
+    }
+  }
+
+  onEditCategoryPosterPresetSelect(event: Event, fileInputEl: HTMLInputElement): void {
+    const select = event.target as HTMLSelectElement;
+    if (select.value === 'UPLOAD_SYSTEM') {
+      fileInputEl.click();
+    } else if (select.value && this.editingCategory) {
+      this.editingCategory.image = select.value;
+      this.editCategoryFileName = '';
+    }
+  }
+
+  onEditCategoryFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0] && this.editingCategory) {
+      const file = input.files[0];
+      this.editCategoryFileName = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.editingCategory.image = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  updateCategory(event: Event): void {
+    event.preventDefault();
+    if (!this.editingCategory || !this.editingCategory.name) return;
+
+    this.mockDataService.updateCategory(this.editingCategory.id, {
+      name: this.editingCategory.name.trim(),
+      slug: this.editingCategory.slug.trim(),
+      description: this.editingCategory.description.trim(),
+      image: this.editingCategory.image,
+      featured: this.editingCategory.featured
+    });
+
+    const idx = this.categories.findIndex(c => c.id === this.editingCategory.id);
+    if (idx !== -1) {
+      this.categories[idx] = {
+        ...this.categories[idx],
+        name: this.editingCategory.name.trim(),
+        slug: this.editingCategory.slug.trim(),
+        description: this.editingCategory.description.trim(),
+        image: this.editingCategory.image,
+        featured: this.editingCategory.featured
+      };
+    }
+
+    const name = this.editingCategory.name;
+    this.closeEditCategoryModal();
+    this.showToast(`Category "${name}" updated successfully!`, 'success');
+  }
+
+  clearCategoryFile(targetForm: 'new' | 'edit'): void {
+    if (targetForm === 'new') {
+      this.newCategoryFileName = '';
+      this.newCategory.image = getDefaultCategoryImage(this.newCategory.name);
+    } else if (this.editingCategory) {
+      this.editCategoryFileName = '';
+      this.editingCategory.image = getDefaultCategoryImage(this.editingCategory.name);
+    }
   }
 }

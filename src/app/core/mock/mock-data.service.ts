@@ -6,12 +6,23 @@ import { Category } from '../models/category.model';
 import { CartService } from '../services/cart.service';
 
 const STORAGE_KEY_PRODUCTS = 'arista_mock_products';
+const STORAGE_KEY_CATEGORIES = 'arista_mock_categories';
+
+export function getDefaultCategoryImage(nameOrSlug?: string): string {
+  if (!nameOrSlug) return '/assets/images/placeholder-jewellery.svg';
+  const s = nameOrSlug.toLowerCase();
+  if (s.includes('ring')) return '/assets/images/placeholder-rings.svg';
+  if (s.includes('necklace') || s.includes('pendant') || s.includes('choker')) return '/assets/images/placeholder-necklaces.svg';
+  if (s.includes('earring') || s.includes('stud') || s.includes('hoop')) return '/assets/images/placeholder-earrings.svg';
+  if (s.includes('bracelet') || s.includes('bangle') || s.includes('cuff')) return '/assets/images/placeholder-bracelets.svg';
+  return '/assets/images/placeholder-jewellery.svg';
+}
 
 @Injectable({
   providedIn: 'root'
 })
 export class MockDataService {
-  private categories: Category[] = [
+  private initialCategories: Category[] = [
     {
       id: 'cat-rings',
       name: 'Rings',
@@ -49,6 +60,8 @@ export class MockDataService {
       featured: true
     }
   ];
+
+  private categories: Category[] = [];
 
   private initialProducts: Product[] = [
     {
@@ -226,7 +239,44 @@ export class MockDataService {
   private cartService = inject(CartService);
 
   constructor() {
+    this.loadCategoriesFromStorage();
     this.loadProductsFromStorage();
+  }
+
+  private loadCategoriesFromStorage(): void {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_CATEGORIES);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.categories = parsed.map((cat: Category) => {
+            let img = cat.image ? cat.image.trim() : '';
+            if (!img || img === '') {
+              img = getDefaultCategoryImage(cat.slug || cat.name);
+            } else if (!img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
+              img = '/' + img;
+            }
+            return {
+              ...cat,
+              image: img
+            };
+          });
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to parse arista_mock_categories from localStorage:', err);
+    }
+    this.categories = [...this.initialCategories];
+    this.saveCategoriesToStorage();
+  }
+
+  private saveCategoriesToStorage(): void {
+    try {
+      localStorage.setItem(STORAGE_KEY_CATEGORIES, JSON.stringify(this.categories));
+    } catch (err) {
+      console.warn('Failed to save arista_mock_categories to localStorage:', err);
+    }
   }
 
   private loadProductsFromStorage(): void {
@@ -256,6 +306,51 @@ export class MockDataService {
 
   getCategories(): Observable<Category[]> {
     return of(this.categories);
+  }
+
+  addCategory(newCat: Partial<Category>): Category {
+    const slug = (newCat.slug || newCat.name || 'category-' + Date.now()).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    const id = 'cat-' + slug;
+    const defaultImg = getDefaultCategoryImage(slug);
+
+    const fullCat: Category = {
+      id,
+      name: newCat.name || 'New Collection',
+      slug,
+      description: newCat.description || 'Exquisite fine jewellery collection by Arista Trinkets.',
+      image: newCat.image && newCat.image.trim() !== '' ? newCat.image.trim() : defaultImg,
+      itemCount: newCat.itemCount || 0,
+      featured: newCat.featured !== undefined ? newCat.featured : true,
+      heroBanner: newCat.heroBanner || newCat.image || defaultImg
+    };
+
+    const index = this.categories.findIndex(c => c.slug === slug || c.id === id);
+    if (index !== -1) {
+      this.categories[index] = fullCat;
+    } else {
+      this.categories.unshift(fullCat);
+    }
+
+    this.saveCategoriesToStorage();
+    return fullCat;
+  }
+
+  deleteCategory(id: string | number): void {
+    this.categories = this.categories.filter(c => c.id !== id && c.slug !== id);
+    this.saveCategoriesToStorage();
+  }
+
+  updateCategory(id: string | number, updated: Partial<Category>): void {
+    const index = this.categories.findIndex(c => c.id === id || c.slug === id);
+    if (index !== -1) {
+      const existing = this.categories[index];
+      this.categories[index] = {
+        ...existing,
+        ...updated,
+        heroBanner: updated.image || updated.heroBanner || existing.heroBanner
+      };
+      this.saveCategoriesToStorage();
+    }
   }
 
   getCategoryBySlug(slug: string): Observable<Category | undefined> {
