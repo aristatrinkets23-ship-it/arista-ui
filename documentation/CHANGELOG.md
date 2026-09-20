@@ -1,5 +1,43 @@
 # Arista Jewellery E-commerce - Change Log
 
+## [2026-09-20] Multi-Image Admin Product Upload & Storefront Slideshow Gallery
+
+### Tasks & Enhancements Completed
+- **Admin Panel Multi-Image Upload & Gallery Manager**:
+  - Added multi-file photo uploader (`<input type="file" multiple accept="image/*">`) in both **Add Product** and **Edit Product** modals in `AdminComponent`.
+  - Added direct Image URL input for pasting web links.
+  - Built an interactive multi-photo gallery manager grid displaying thumbnail cards with:
+    - Primary Main Cover tag (`★ Main`).
+    - Slide reordering buttons (`‹`, `›`).
+    - Photo removal button (`✕`).
+  - Preserved `images: string[]` across `MockDataService` and updated MySQL backend API (`UPDATE product_images WHERE product_id = ?`).
+- **Storefront Product Detail Interactive Slideshow (`ProductDetailComponent`)**:
+  - Implemented main gallery image slider with Prev (`‹`) and Next (`›`) glassmorphism navigation arrows.
+  - Added slide counter badge (`1 / 4`) and slide pagination dot indicators.
+  - Interactive thumbnail strip highlighting current active slide index.
+- **Product Card Interactive Image Slider (`ProductCardComponent`)**:
+  - Added slide arrows (`‹`, `›`) and pagination dots on product cards on hover for items with multiple images.
+- **Unified Brand Logo & Favicon Optimization**:
+  - Composited `logo-icon.jpeg` emblem `(a)` and `logo.jpeg` text mark `arista TRINKETS JEWELLERY` into `full-logo-transparent.png` with background removed.
+  - Fine-tuned emblem-to-text spacing after monogram `(a)` emblem.
+  - Compact height scaling: `32px` desktop / `28px` mobile in header (`header.component.ts`) and `32px` warm-gold mask in footer (`footer.component.ts`).
+  - Created transparent `favicon.png` icon and updated `index.html`.
+  - Cleaned up unused image files in `src/assets/images/`.
+
+### Files Modified
+- `frontend/src/app/pages/admin/admin.component.ts` — Added multi-file upload, image URL input, thumbnail grid, and `images` payload handling
+- `frontend/src/app/pages/product-detail/product-detail.component.ts` — Built interactive product detail slideshow with navigation arrows, dots, and counter badge
+- `frontend/src/app/shared/components/product-card/product-card.component.ts` — Added hover slide arrows and pagination dots to product cards
+- `frontend/src/app/core/models/product-card-data.model.ts` — Added `images?: string[]` property
+- `frontend/src/app/core/mock/mock-data.service.ts` — Preserved `images` array in `addProduct` and `updateProduct`
+- `backend/src/controllers/admin.controller.ts` — Updated MySQL `updateProduct` handler to update `product_images` table
+- `frontend/src/app/layout/header/header.component.ts` — Used `full-logo-transparent.png` with compact `32px`/`28px` height
+- `frontend/src/app/layout/footer/footer.component.ts` — Used `full-logo-transparent.png` mask with `var(--brand-warm-gold)`
+- `frontend/src/index.html` — Linked transparent `favicon.png` icon
+- `documentation/CHANGELOG.md` — Updated changelog documentation
+
+---
+
 ## [2026-09-20] 8K Master Goldsmith Craft Image for Artisanal Excellence Section
 
 ### Tasks & Enhancements Completed

@@ -487,32 +487,52 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             </div>
           </div>
 
-          <!-- UPLOAD YOUR PHOTO FROM DEVICE FIELD -->
-          <div class="form-group" style="margin-top: 14px;">
-            <label>Upload your photo (Select from device/computer) *</label>
-            <input
-              #editFileInput
-              type="file"
-              accept="image/*"
-              (change)="onFileSelected($event, 'edit')"
-              class="custom-file-input"
-            />
-            <div class="system-file-badge" *ngIf="editSystemFileName || isDataUrl(editingProduct.image)" style="margin-top: 6px;">
-              <span>✓ Selected Photo: <strong>{{ editSystemFileName || 'Local Photo File' }}</strong></span>
-              <button type="button" class="btn-clear-file" (click)="clearSystemFile('edit')">✕ Clear</button>
-            </div>
-          </div>
+          <!-- MULTI-IMAGE SLIDESHOW GALLERY MANAGER (EDIT FORM) -->
+          <div class="form-group gallery-manage-section">
+            <label class="gallery-manage-header">
+              <span>📸 Product Slideshow & Gallery Images</span>
+              <span class="img-count-badge">
+                {{ (editingProduct.images?.length || 0) }} Image(s)
+              </span>
+            </label>
+            <p style="font-size: 0.78rem; color: #666; margin: 0 0 12px 0;">
+              Upload or add multiple photos for this product. Customers will see them as an interactive slide gallery on the storefront.
+            </p>
 
-          <!-- Live Image Preview Box -->
-          <div class="preview-box">
-            <span class="preview-label">Live Image Preview:</span>
-            <div class="preview-img-container">
-              <img
-                [src]="editingProduct.image || defaultImage"
-                (error)="onPreviewImageError($event)"
-                alt="Edit Preview"
-                class="preview-img"
-              />
+            <!-- File Upload & Add URL Row -->
+            <div class="gallery-upload-bar">
+              <label class="gallery-upload-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                + Upload Multiple Image Files
+                <input type="file" multiple accept="image/*" (change)="onMultipleFilesSelected($event, 'edit')" style="display: none;" />
+              </label>
+
+              <div class="gallery-url-group">
+                <input #editUrlInput type="text" placeholder="Or paste image URL (https://... or /assets/...)" class="gallery-url-input" />
+                <button type="button" class="gallery-add-url-btn" (click)="addImageUrl('edit', editUrlInput.value); editUrlInput.value = ''">
+                  + Add URL
+                </button>
+              </div>
+            </div>
+
+            <!-- Gallery Thumbnails Grid -->
+            <div *ngIf="editingProduct.images && editingProduct.images.length > 0" class="gallery-grid">
+              <div *ngFor="let imgUrl of editingProduct.images; let i = index" class="gallery-thumb-card">
+                <span *ngIf="i === 0" class="thumb-badge main">Main Cover</span>
+                <span *ngIf="i > 0" class="thumb-badge secondary">#{{ i + 1 }}</span>
+                <button type="button" class="thumb-delete-btn" (click)="removeProductImage('edit', i)" title="Remove photo">&times;</button>
+                <img [src]="imgUrl || defaultImage" (error)="onPreviewImageError($event)" class="thumb-img" />
+                <div class="thumb-card-actions">
+                  <button *ngIf="i > 0" type="button" class="pill-btn-main" (click)="setPrimaryProductImage('edit', i)" title="Set as primary main cover image">★ Main</button>
+                  <span *ngIf="i === 0" class="primary-cover-label">★ Cover</span>
+                  <button *ngIf="i > 0" type="button" class="pill-btn-nav" (click)="moveProductImage('edit', i, 'left')" title="Move left">‹</button>
+                  <button *ngIf="i < (editingProduct.images?.length || 0) - 1" type="button" class="pill-btn-nav" (click)="moveProductImage('edit', i, 'right')" title="Move right">›</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -648,39 +668,57 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             </div>
           </div>
 
-          <!-- UPLOAD PHOTO FROM DEVICE & INITIAL STOCK QUANTITY ROW -->
-          <div class="form-row">
-            <div class="form-group">
-              <label>Upload your photo (Select from device/computer) *</label>
-              <input
-                #newFileInput
-                type="file"
-                accept="image/*"
-                (change)="onFileSelected($event, 'new')"
-                class="custom-file-input"
-              />
-              <div class="system-file-badge" *ngIf="newSystemFileName || isDataUrl(newProduct.image)" style="margin-top: 6px;">
-                <span>✓ Selected Photo: <strong>{{ newSystemFileName || 'Local Photo File' }}</strong></span>
-                <button type="button" class="btn-clear-file" (click)="clearSystemFile('new')">✕ Clear</button>
+          <div class="form-group" style="margin-top: 14px;">
+            <label>Initial Stock Quantity</label>
+            <input type="number" [(ngModel)]="newProduct.stockQuantity" name="stockQuantity" placeholder="10" />
+          </div>
+
+          <!-- MULTI-IMAGE SLIDESHOW GALLERY MANAGER (ADD FORM) -->
+          <div class="form-group gallery-manage-section">
+            <label class="gallery-manage-header">
+              <span>📸 Product Slideshow & Gallery Images</span>
+              <span class="img-count-badge">
+                {{ (newProduct.images?.length || 0) }} Image(s)
+              </span>
+            </label>
+            <p style="font-size: 0.78rem; color: #666; margin: 0 0 12px 0;">
+              Upload or add multiple photos for this product. Storefront customers will see them as an interactive slide gallery.
+            </p>
+
+            <!-- File Upload & Add URL Row -->
+            <div class="gallery-upload-bar">
+              <label class="gallery-upload-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                  <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                + Upload Multiple Image Files
+                <input type="file" multiple accept="image/*" (change)="onMultipleFilesSelected($event, 'new')" style="display: none;" />
+              </label>
+
+              <div class="gallery-url-group">
+                <input #newUrlInput type="text" placeholder="Or paste image URL (https://... or /assets/...)" class="gallery-url-input" />
+                <button type="button" class="gallery-add-url-btn" (click)="addImageUrl('new', newUrlInput.value); newUrlInput.value = ''">
+                  + Add URL
+                </button>
               </div>
             </div>
 
-            <div class="form-group">
-              <label>INITIAL STOCK QUANTITY</label>
-              <input type="number" [(ngModel)]="newProduct.stockQuantity" name="stockQuantity" placeholder="10" />
-            </div>
-          </div>
-
-          <!-- Live Image Preview Box -->
-          <div class="preview-box">
-            <span class="preview-label">Live Image Preview:</span>
-            <div class="preview-img-container">
-              <img
-                [src]="newProduct.image || defaultImage"
-                (error)="onPreviewImageError($event)"
-                alt="Product Preview"
-                class="preview-img"
-              />
+            <!-- Gallery Thumbnails Grid -->
+            <div *ngIf="newProduct.images && newProduct.images.length > 0" class="gallery-grid">
+              <div *ngFor="let imgUrl of newProduct.images; let i = index" class="gallery-thumb-card">
+                <span *ngIf="i === 0" class="thumb-badge main">Main Cover</span>
+                <span *ngIf="i > 0" class="thumb-badge secondary">#{{ i + 1 }}</span>
+                <button type="button" class="thumb-delete-btn" (click)="removeProductImage('new', i)" title="Remove photo">&times;</button>
+                <img [src]="imgUrl || defaultImage" (error)="onPreviewImageError($event)" class="thumb-img" />
+                <div class="thumb-card-actions">
+                  <button *ngIf="i > 0" type="button" class="pill-btn-main" (click)="setPrimaryProductImage('new', i)" title="Set as primary main cover image">★ Main</button>
+                  <span *ngIf="i === 0" class="primary-cover-label">★ Cover</span>
+                  <button *ngIf="i > 0" type="button" class="pill-btn-nav" (click)="moveProductImage('new', i, 'left')" title="Move left">‹</button>
+                  <button *ngIf="i < (newProduct.images?.length || 0) - 1" type="button" class="pill-btn-nav" (click)="moveProductImage('new', i, 'right')" title="Move right">›</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1620,6 +1658,258 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     .btn-toggle-eye:hover {
       opacity: 1;
     }
+
+    /* Multi-Image Gallery Manager UI Styling */
+    .gallery-manage-section {
+      margin-top: 18px;
+      border: 1px dashed rgba(207, 168, 116, 0.6);
+      padding: 16px;
+      border-radius: 10px;
+      background: rgba(207, 168, 116, 0.04);
+      transition: border-color 0.2s;
+    }
+
+    .gallery-manage-header {
+      font-weight: 700;
+      color: var(--brand-mocha-brown);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .img-count-badge {
+      background: var(--brand-warm-gold);
+      color: #1A120B;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .gallery-upload-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .gallery-upload-btn {
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 6px;
+      background: var(--brand-mocha-brown);
+      color: #FFFFFF;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .gallery-upload-btn:hover {
+      background: #2D1E14;
+      transform: translateY(-1px);
+    }
+
+    .gallery-url-group {
+      display: flex;
+      gap: 6px;
+      flex: 1;
+      min-width: 240px;
+      height: 38px;
+    }
+
+    .gallery-url-input {
+      flex: 1;
+      height: 38px;
+      border: 1px solid #D5C9BD;
+      border-radius: 6px;
+      padding: 0 12px;
+      font-size: 0.82rem;
+      outline: none;
+      background: #FFFFFF;
+      color: #333333;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .gallery-url-input:focus {
+      border-color: var(--brand-warm-gold);
+      box-shadow: 0 0 0 3px rgba(207, 168, 116, 0.18);
+    }
+
+    .gallery-add-url-btn {
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 6px;
+      background: var(--brand-warm-gold);
+      color: #1A120B;
+      font-size: 0.8rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+    .gallery-add-url-btn:hover {
+      background: #B8925E;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .gallery-thumb-card {
+      position: relative;
+      border: 1px solid #E2D9CF;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #FFFFFF;
+      padding: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .gallery-thumb-card:hover {
+      border-color: var(--brand-warm-gold);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .thumb-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      font-size: 0.62rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      z-index: 3;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      line-height: 1;
+    }
+    .thumb-badge.main {
+      background: var(--brand-warm-gold);
+      color: #1A120B;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+    }
+    .thumb-badge.secondary {
+      background: rgba(26, 18, 11, 0.7);
+      color: #FFFFFF;
+      backdrop-filter: blur(2px);
+    }
+
+    .thumb-delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(220, 53, 69, 0.88);
+      color: #FFFFFF;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 4;
+      line-height: 1;
+      padding: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      transition: all 0.2s ease;
+    }
+    .thumb-delete-btn:hover {
+      background: #DC3545;
+      transform: scale(1.15);
+    }
+
+    .thumb-img {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 6px;
+      display: block;
+      background: #F7F5F2;
+    }
+
+    .thumb-card-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+      width: 100%;
+      justify-content: center;
+      align-items: center;
+      height: 24px;
+    }
+
+    .pill-btn-main {
+      flex: 1;
+      font-size: 0.65rem;
+      font-weight: 600;
+      background: rgba(207, 168, 116, 0.15);
+      color: #5B4636;
+      border: 1px solid rgba(207, 168, 116, 0.4);
+      border-radius: 4px;
+      padding: 0 4px;
+      cursor: pointer;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .pill-btn-main:hover {
+      background: var(--brand-warm-gold);
+      color: #1A120B;
+      border-color: var(--brand-warm-gold);
+    }
+
+    .pill-btn-nav {
+      width: 22px;
+      height: 22px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: #F7F5F2;
+      color: #5B4636;
+      border: 1px solid #E2D9CF;
+      border-radius: 4px;
+      padding: 0;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: all 0.15s ease;
+    }
+    .pill-btn-nav:hover {
+      background: var(--brand-mocha-brown);
+      color: #FFFFFF;
+      border-color: var(--brand-mocha-brown);
+    }
+
+    .primary-cover-label {
+      flex: 1;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #8C6A3C;
+      text-align: center;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      line-height: 22px;
+    }
   `]
 })
 export class AdminComponent implements OnInit {
@@ -1691,6 +1981,7 @@ export class AdminComponent implements OnInit {
     badge: 'NEW',
     stockQuantity: 10,
     image: '/assets/images/placeholder-rings.svg',
+    images: ['/assets/images/placeholder-rings.svg', '/assets/images/placeholder-jewellery.svg'],
     description: ''
   };
 
@@ -1836,13 +2127,116 @@ export class AdminComponent implements OnInit {
         if (targetForm === 'new') {
           this.newProduct.image = result;
           this.newSystemFileName = fileName;
+          if (!this.newProduct.images) this.newProduct.images = [];
+          if (!this.newProduct.images.includes(result)) {
+            this.newProduct.images.unshift(result);
+          }
         } else if (this.editingProduct) {
           this.editingProduct.image = result;
           this.editSystemFileName = fileName;
+          if (!this.editingProduct.images) this.editingProduct.images = [];
+          if (!this.editingProduct.images.includes(result)) {
+            this.editingProduct.images.unshift(result);
+          }
         }
+        this.cdr.detectChanges();
       };
       reader.readAsDataURL(file);
     }
+  }
+
+  onMultipleFilesSelected(event: Event, targetForm: 'new' | 'edit'): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const filesArr = Array.from(input.files);
+      filesArr.forEach((file) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          if (targetForm === 'new') {
+            if (!this.newProduct.images) this.newProduct.images = [];
+            this.newProduct.images.push(result);
+            if (!this.newProduct.image || this.newProduct.image === '/assets/images/placeholder-rings.svg') {
+              this.newProduct.image = result;
+            }
+          } else if (this.editingProduct) {
+            if (!this.editingProduct.images) this.editingProduct.images = [];
+            this.editingProduct.images.push(result);
+            if (!this.editingProduct.image || this.editingProduct.image === '/assets/images/placeholder-rings.svg') {
+              this.editingProduct.image = result;
+            }
+          }
+          this.cdr.detectChanges();
+        };
+        reader.readAsDataURL(file);
+      });
+      input.value = '';
+    }
+  }
+
+  addImageUrl(targetForm: 'new' | 'edit', url: string): void {
+    if (!url || url.trim() === '') return;
+    const cleanUrl = url.trim();
+    if (targetForm === 'new') {
+      if (!this.newProduct.images) this.newProduct.images = [];
+      this.newProduct.images.push(cleanUrl);
+      if (!this.newProduct.image || this.newProduct.image === '/assets/images/placeholder-rings.svg') {
+        this.newProduct.image = cleanUrl;
+      }
+    } else if (this.editingProduct) {
+      if (!this.editingProduct.images) this.editingProduct.images = [];
+      this.editingProduct.images.push(cleanUrl);
+      if (!this.editingProduct.image || this.editingProduct.image === '/assets/images/placeholder-rings.svg') {
+        this.editingProduct.image = cleanUrl;
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  removeProductImage(targetForm: 'new' | 'edit', index: number): void {
+    if (targetForm === 'new' && this.newProduct.images) {
+      this.newProduct.images.splice(index, 1);
+      if (this.newProduct.images.length > 0) {
+        this.newProduct.image = this.newProduct.images[0];
+      } else {
+        this.newProduct.image = '/assets/images/placeholder-rings.svg';
+      }
+    } else if (this.editingProduct && this.editingProduct.images) {
+      this.editingProduct.images.splice(index, 1);
+      if (this.editingProduct.images.length > 0) {
+        this.editingProduct.image = this.editingProduct.images[0];
+      } else {
+        this.editingProduct.image = '/assets/images/placeholder-rings.svg';
+      }
+    }
+    this.cdr.detectChanges();
+  }
+
+  setPrimaryProductImage(targetForm: 'new' | 'edit', index: number): void {
+    if (targetForm === 'new' && this.newProduct.images) {
+      const selected = this.newProduct.images.splice(index, 1)[0];
+      this.newProduct.images.unshift(selected);
+      this.newProduct.image = selected;
+    } else if (this.editingProduct && this.editingProduct.images) {
+      const selected = this.editingProduct.images.splice(index, 1)[0];
+      this.editingProduct.images.unshift(selected);
+      this.editingProduct.image = selected;
+    }
+    this.cdr.detectChanges();
+  }
+
+  moveProductImage(targetForm: 'new' | 'edit', index: number, direction: 'left' | 'right'): void {
+    const list = targetForm === 'new' ? this.newProduct.images : (this.editingProduct ? this.editingProduct.images : null);
+    if (!list) return;
+    const targetIdx = direction === 'left' ? index - 1 : index + 1;
+    if (targetIdx >= 0 && targetIdx < list.length) {
+      const temp = list[index];
+      list[index] = list[targetIdx];
+      list[targetIdx] = temp;
+      if (targetForm === 'new') this.newProduct.image = list[0];
+      if (this.editingProduct) this.editingProduct.image = list[0];
+    }
+    this.cdr.detectChanges();
   }
 
   clearSystemFile(targetForm: 'new' | 'edit'): void {
@@ -1859,11 +2253,15 @@ export class AdminComponent implements OnInit {
     return !!url && url.startsWith('data:');
   }
 
-  editProduct(product: ProductCardData): void {
+  editProduct(product: any): void {
     let img = product.image ? product.image.trim() : '';
     if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
       img = '/' + img;
     }
+
+    let imagesList: string[] = Array.isArray(product.images) && product.images.length > 0 
+      ? [...product.images] 
+      : (img ? [img] : ['/assets/images/placeholder-rings.svg']);
 
     this.editingProduct = {
       id: product.id,
@@ -1873,8 +2271,9 @@ export class AdminComponent implements OnInit {
       compareAtPrice: product.compareAtPrice || null,
       badge: product.badge || '',
       image: img || '/assets/images/placeholder-rings.svg',
-      stockQuantity: 10,
-      description: ''
+      images: imagesList,
+      stockQuantity: product.stockQuantity || 10,
+      description: product.description || ''
     };
     this.editSuccessMessage = '';
     this.editSystemFileName = '';
@@ -1898,9 +2297,14 @@ export class AdminComponent implements OnInit {
       finalImage = '/' + finalImage;
     }
 
+    const imagesList = this.editingProduct.images && this.editingProduct.images.length > 0
+      ? this.editingProduct.images
+      : [finalImage];
+
     const payload = {
       ...this.editingProduct,
-      image: finalImage
+      image: finalImage,
+      images: imagesList
     };
 
     let notificationMsg = `Product ID ${this.editingProduct.id} updated successfully.`;
@@ -1933,6 +2337,7 @@ export class AdminComponent implements OnInit {
       compareAtPrice: this.editingProduct.compareAtPrice ? Number(this.editingProduct.compareAtPrice) : undefined,
       badge: (this.editingProduct.badge as any) || undefined,
       image: finalImage,
+      images: imagesList,
       stockQuantity: this.editingProduct.stockQuantity,
       description: this.editingProduct.description
     });
@@ -1947,7 +2352,8 @@ export class AdminComponent implements OnInit {
         price: Number(this.editingProduct.price),
         compareAtPrice: this.editingProduct.compareAtPrice ? Number(this.editingProduct.compareAtPrice) : undefined,
         badge: (this.editingProduct.badge as any) || undefined,
-        image: finalImage
+        image: finalImage,
+        images: imagesList
       };
     }
 
@@ -1970,9 +2376,14 @@ export class AdminComponent implements OnInit {
       finalImage = '/' + finalImage;
     }
 
+    const imagesList = this.newProduct.images && this.newProduct.images.length > 0
+      ? this.newProduct.images
+      : [finalImage];
+
     const payload = {
       ...this.newProduct,
-      image: finalImage
+      image: finalImage,
+      images: imagesList
     };
 
     try {
@@ -1996,6 +2407,7 @@ export class AdminComponent implements OnInit {
       compareAtPrice: this.newProduct.compareAtPrice ? Number(this.newProduct.compareAtPrice) : undefined,
       badge: (this.newProduct.badge as 'NEW' | 'SALE' | 'FEATURED' | 'BESTSELLER') || undefined,
       image: finalImage,
+      images: imagesList,
       stockQuantity: this.newProduct.stockQuantity,
       description: this.newProduct.description
     });
@@ -2009,6 +2421,7 @@ export class AdminComponent implements OnInit {
       compareAtPrice: createdMockProduct.compareAtPrice,
       badge: createdMockProduct.badge,
       image: createdMockProduct.image,
+      images: imagesList,
       available: true
     };
 
@@ -2026,6 +2439,7 @@ export class AdminComponent implements OnInit {
       badge: 'NEW',
       stockQuantity: 10,
       image: '/assets/images/placeholder-rings.svg',
+      images: ['/assets/images/placeholder-rings.svg', '/assets/images/placeholder-jewellery.svg'],
       description: ''
     };
     this.showToast(`Jewellery creation "${createdName}" published to catalog!`, 'success');

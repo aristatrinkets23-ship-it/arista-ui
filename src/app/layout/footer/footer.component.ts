@@ -12,9 +12,8 @@ import { RouterLink } from '@angular/router';
         <!-- Brand Column -->
         <div class="footer-col brand-col">
           <div class="footer-brand">
-            <a routerLink="/" class="footer-logo-link" aria-label="Arista Trinkets">
-              <span class="footer-logo-icon" role="img" aria-label="Arista Monogram"></span>
-              <span class="footer-logo-img" role="img" aria-label="Arista Trinkets Fine Jewellery"></span>
+            <a routerLink="/" class="footer-logo-link" aria-label="Arista Trinkets Home">
+              <span class="footer-logo-full" role="img" aria-label="Arista Trinkets Fine Jewellery"></span>
             </a>
           </div>
           <p class="brand-tagline">
@@ -116,41 +115,19 @@ import { RouterLink } from '@angular/router';
       opacity: 0.92;
     }
 
-    .footer-logo-icon {
+    .footer-logo-full {
       display: inline-block;
-      width: 50px;
-      height: 50px;
+      width: 105px;
+      height: 32px;
       background-color: var(--brand-warm-gold);
-      -webkit-mask-image: url('/assets/images/logo-icon-transparent.png');
-      mask-image: url('/assets/images/logo-icon-transparent.png');
-      -webkit-mask-size: contain;
-      mask-size: contain;
-      -webkit-mask-repeat: no-repeat;
-      mask-repeat: no-repeat;
-      -webkit-mask-position: center;
-      mask-position: center;
-      filter: drop-shadow(0 0 0.5px var(--brand-warm-gold)) drop-shadow(0 0 0.5px var(--brand-warm-gold));
-      position: relative;
-      z-index: 2;
-    }
-
-    .footer-logo-img {
-      display: inline-block;
-      width: 175px;
-      height: 56px;
-      background-color: var(--brand-warm-gold);
-      -webkit-mask-image: url('/assets/images/logo-transparent.png');
-      mask-image: url('/assets/images/logo-transparent.png');
+      -webkit-mask-image: url('/assets/images/full-logo-transparent.png');
+      mask-image: url('/assets/images/full-logo-transparent.png');
       -webkit-mask-size: contain;
       mask-size: contain;
       -webkit-mask-repeat: no-repeat;
       mask-repeat: no-repeat;
       -webkit-mask-position: center left;
       mask-position: center left;
-      filter: drop-shadow(0 0 0.5px var(--brand-warm-gold)) drop-shadow(0 0 0.5px var(--brand-warm-gold));
-      margin-left: -8px;
-      position: relative;
-      z-index: 1;
     }
 
     .brand-tagline {

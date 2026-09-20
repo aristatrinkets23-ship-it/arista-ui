@@ -497,7 +497,7 @@ export class MockDataService {
       name: newProd.name || 'New Jewellery Creation',
       slug,
       image,
-      images: [image, '/assets/images/placeholder-jewellery.svg'],
+      images: newProd.images && newProd.images.length > 0 ? newProd.images : [image, '/assets/images/placeholder-jewellery.svg'],
       price: Number(newProd.price) || 0,
       compareAtPrice: newProd.compareAtPrice ? Number(newProd.compareAtPrice) : undefined,
       badge: (newProd.badge as any) || undefined,
@@ -529,6 +529,7 @@ export class MockDataService {
       const name = updated.name !== undefined ? updated.name : existing.name;
       const slug = name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : existing.slug;
       const image = updated.image !== undefined ? updated.image : existing.image;
+      const images = updated.images && updated.images.length > 0 ? updated.images : (image ? [image, ...(existing.images || []).slice(1)] : existing.images);
 
       this.products[index] = {
         ...existing,
@@ -536,7 +537,7 @@ export class MockDataService {
         name,
         slug,
         image,
-        images: image ? [image, '/assets/images/placeholder-jewellery.svg'] : existing.images,
+        images,
         price: updated.price !== undefined ? Number(updated.price) : existing.price,
         compareAtPrice: updated.compareAtPrice !== undefined ? (updated.compareAtPrice ? Number(updated.compareAtPrice) : undefined) : existing.compareAtPrice,
         badge: updated.badge !== undefined ? (updated.badge as any) : existing.badge,

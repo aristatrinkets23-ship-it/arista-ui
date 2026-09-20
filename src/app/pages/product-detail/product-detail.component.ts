@@ -26,23 +26,56 @@ import { CartService } from '../../core/services/cart.service';
       <!-- Main Product Grid -->
       <section class="section-padding">
         <div class="container product-main-grid">
-          <!-- Image Gallery Column -->
+          <!-- Image Gallery Column (Interactive Slideshow) -->
           <div class="gallery-column">
             <div class="main-image-wrapper">
               <span *ngIf="product.badge" class="badge-overlay">
                 <app-badge [variant]="getBadgeVariant(product.badge)">{{ product.badge }}</app-badge>
               </span>
+
+              <!-- Slide Main Image -->
               <img [src]="selectedImage || '/assets/images/placeholder-jewellery.svg'" (error)="onImageError()" [alt]="product.name" class="main-img" />
+
+              <!-- Prev / Next Navigation Arrows -->
+              <ng-container *ngIf="productImages.length > 1">
+                <button type="button" class="slide-nav-btn prev-btn" (click)="prevSlide()" aria-label="Previous product image">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                  </svg>
+                </button>
+                <button type="button" class="slide-nav-btn next-btn" (click)="nextSlide()" aria-label="Next product image">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+
+                <!-- Slide Counter Badge -->
+                <span class="slide-counter-badge">
+                  {{ currentImageIndex + 1 }} / {{ productImages.length }}
+                </span>
+
+                <!-- Slide Indicator Dots -->
+                <div class="slide-dots">
+                  <span
+                    *ngFor="let img of productImages; let i = index"
+                    class="dot-pill"
+                    [class.active]="currentImageIndex === i"
+                    (click)="selectSlide(i)"
+                  ></span>
+                </div>
+              </ng-container>
             </div>
-            <div *ngIf="product.images && product.images.length > 1" class="thumb-list">
+
+            <!-- Thumbnail Strip -->
+            <div *ngIf="productImages.length > 1" class="thumb-list">
               <button
-                *ngFor="let img of product.images"
+                *ngFor="let img of productImages; let i = index"
                 type="button"
-                [class.active]="selectedImage === img"
-                (click)="selectedImage = img"
+                [class.active]="currentImageIndex === i"
+                (click)="selectSlide(i)"
                 class="thumb-btn"
               >
-                <img [src]="img" (error)="onImageError()" [alt]="product.name" class="thumb-img" />
+                <img [src]="img" (error)="onImageError()" [alt]="product.name + ' image ' + (i + 1)" class="thumb-img" />
               </button>
             </div>
           </div>
@@ -192,6 +225,82 @@ import { CartService } from '../../core/services/cart.service';
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: opacity 0.3s ease;
+    }
+
+    .slide-nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 5;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(91, 70, 54, 0.15);
+      color: var(--brand-mocha-brown);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(91, 70, 54, 0.12);
+      transition: all var(--transition-fast);
+      opacity: 0.85;
+    }
+
+    .main-image-wrapper:hover .slide-nav-btn {
+      opacity: 1;
+    }
+
+    .slide-nav-btn:hover {
+      background-color: var(--brand-warm-gold);
+      color: #FFFFFF;
+      border-color: var(--brand-warm-gold);
+      transform: translateY(-50%) scale(1.08);
+    }
+
+    .prev-btn { left: 12px; }
+    .next-btn { right: 12px; }
+
+    .slide-counter-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 5;
+      background-color: rgba(26, 18, 11, 0.72);
+      backdrop-filter: blur(4px);
+      color: #FFFFFF;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      letter-spacing: 1px;
+    }
+
+    .slide-dots {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot-pill {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .dot-pill.active {
+      width: 22px;
+      border-radius: 10px;
+      background-color: var(--brand-warm-gold);
     }
 
     .badge-overlay {
@@ -450,6 +559,7 @@ export class ProductDetailComponent implements OnInit {
   product?: Product;
   relatedProducts: ProductCardData[] = [];
   selectedImage: string = '';
+  currentImageIndex: number = 0;
   selectedMetal: string = '18K Warm Gold';
   quantity: number = 1;
   openAcc: string = 'spec';
@@ -460,6 +570,16 @@ export class ProductDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private mockDataService = inject(MockDataService);
   private cartService = inject(CartService);
+
+  get productImages(): string[] {
+    if (this.product && this.product.images && this.product.images.length > 0) {
+      return this.product.images;
+    }
+    if (this.product && this.product.image) {
+      return [this.product.image];
+    }
+    return ['/assets/images/placeholder-jewellery.svg'];
+  }
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -476,6 +596,7 @@ export class ProductDetailComponent implements OnInit {
     this.mockDataService.getProductBySlug(slug).subscribe(p => {
       if (p) {
         this.product = p;
+        this.currentImageIndex = 0;
         this.selectedImage = p.image || '/assets/images/placeholder-jewellery.svg';
         this.selectedMetal = p.metalType || '18K Warm Gold';
         this.quantity = 1;
@@ -486,6 +607,28 @@ export class ProductDetailComponent implements OnInit {
         });
       }
     });
+  }
+
+  nextSlide(): void {
+    const images = this.productImages;
+    if (images.length <= 1) return;
+    this.currentImageIndex = (this.currentImageIndex + 1) % images.length;
+    this.selectedImage = images[this.currentImageIndex];
+  }
+
+  prevSlide(): void {
+    const images = this.productImages;
+    if (images.length <= 1) return;
+    this.currentImageIndex = (this.currentImageIndex - 1 + images.length) % images.length;
+    this.selectedImage = images[this.currentImageIndex];
+  }
+
+  selectSlide(index: number): void {
+    const images = this.productImages;
+    if (index >= 0 && index < images.length) {
+      this.currentImageIndex = index;
+      this.selectedImage = images[index];
+    }
   }
 
   increaseQty(): void {

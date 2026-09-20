@@ -7,6 +7,7 @@ export interface ProductCardData {
   compareAtPrice?: number;
   badge?: 'NEW' | 'SALE' | 'FEATURED' | 'BESTSELLER' | 'LOW STOCK';
   category?: string;
+  images?: string[];
   available: boolean;
   ratingAverage?: number;
   reviewCount?: number;

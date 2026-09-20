@@ -27,6 +27,26 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
             class="product-image"
           />
         </a>
+
+        <!-- Card Image Slide Arrows & Dots -->
+        <ng-container *ngIf="productImages.length > 1">
+          <button type="button" class="card-slide-btn card-prev" (click)="prevCardSlide($event)" aria-label="Previous image">
+            ‹
+          </button>
+          <button type="button" class="card-slide-btn card-next" (click)="nextCardSlide($event)" aria-label="Next image">
+            ›
+          </button>
+
+          <div class="card-slide-dots">
+            <span
+              *ngFor="let img of productImages; let i = index"
+              class="card-dot"
+              [class.active]="currentImageIndex === i"
+              (click)="selectCardSlide($event, i)"
+            ></span>
+          </div>
+        </ng-container>
+
         <button
           type="button"
           class="wishlist-btn"
@@ -115,6 +135,67 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
 
     .product-card:hover .product-image {
       transform: scale(1.05);
+    }
+
+    .card-slide-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 3;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: var(--brand-mocha-brown);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+      opacity: 0;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+    .product-card:hover .card-slide-btn {
+      opacity: 0.9;
+    }
+    .card-slide-btn:hover {
+      opacity: 1 !important;
+      background-color: var(--brand-warm-gold);
+      color: #FFFFFF;
+      transform: translateY(-50%) scale(1.1);
+    }
+    .card-prev { left: 6px; }
+    .card-next { right: 6px; }
+
+    .card-slide-dots {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+    .product-card:hover .card-slide-dots {
+      opacity: 1;
+    }
+    .card-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .card-dot.active {
+      width: 14px;
+      border-radius: 6px;
+      background-color: var(--brand-warm-gold);
     }
 
     .badge-overlay {
@@ -272,11 +353,22 @@ export class ProductCardComponent implements OnInit, OnDestroy {
   @Output() wishlistToggle = new EventEmitter<ProductCardData>();
 
   currentImage: string = DEFAULT_IMAGE;
+  currentImageIndex: number = 0;
   isAdded: boolean = false;
   private cartSub!: Subscription;
 
   private cartService = inject(CartService);
   private cdr = inject(ChangeDetectorRef);
+
+  get productImages(): string[] {
+    if (this.product && this.product.images && this.product.images.length > 0) {
+      return this.product.images;
+    }
+    if (this.product && this.product.image) {
+      return [this.product.image];
+    }
+    return [DEFAULT_IMAGE];
+  }
 
   ngOnInit(): void {
     if (this.product && this.product.image && this.product.image.trim() !== '') {
@@ -309,6 +401,34 @@ export class ProductCardComponent implements OnInit, OnDestroy {
 
   onImageError(): void {
     this.currentImage = DEFAULT_IMAGE;
+  }
+
+  nextCardSlide(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const imgs = this.productImages;
+    if (imgs.length <= 1) return;
+    this.currentImageIndex = (this.currentImageIndex + 1) % imgs.length;
+    this.currentImage = imgs[this.currentImageIndex];
+  }
+
+  prevCardSlide(event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const imgs = this.productImages;
+    if (imgs.length <= 1) return;
+    this.currentImageIndex = (this.currentImageIndex - 1 + imgs.length) % imgs.length;
+    this.currentImage = imgs[this.currentImageIndex];
+  }
+
+  selectCardSlide(event: Event, index: number): void {
+    event.stopPropagation();
+    event.preventDefault();
+    const imgs = this.productImages;
+    if (index >= 0 && index < imgs.length) {
+      this.currentImageIndex = index;
+      this.currentImage = imgs[index];
+    }
   }
 
   onWishlistToggle(event: Event): void {

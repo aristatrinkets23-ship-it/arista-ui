@@ -22,8 +22,10 @@ import { CartService } from '../../core/services/cart.service';
           </svg>
         </button>
 
-        <!-- Brand Logo (Icon + Full Brand Mark) -->
-        <a routerLink="/" class="brand-logo" aria-label="Arista Trinkets Home"><img src="/assets/images/logo-icon.jpeg" alt="Arista Monogram Icon" class="brand-logo-icon" width="60" height="60" ngSkipOversizedImageWarning /><img src="/assets/images/logo.jpeg" alt="Arista Trinkets Jewellery" class="brand-logo-img" width="220" height="80" ngSkipOversizedImageWarning /></a>
+        <!-- Brand Logo (Unified Emblem + Brand Mark) -->
+        <a routerLink="/" class="brand-logo" aria-label="Arista Trinkets Home">
+          <img src="/assets/images/full-logo-transparent.png" alt="Arista Trinkets Fine Jewellery" class="brand-logo-img" width="134" height="42" ngSkipOversizedImageWarning />
+        </a>
 
         <!-- Desktop Navigation Bar -->
         <nav class="desktop-nav">
@@ -70,8 +72,7 @@ import { CartService } from '../../core/services/cart.service';
     <div class="mobile-drawer" [class.open]="isMobileNavOpen">
       <div class="drawer-header">
         <a routerLink="/" (click)="toggleMobileNav()" class="drawer-logo" aria-label="Arista Trinkets Home">
-          <img src="/assets/images/logo-icon.jpeg" alt="Arista Monogram Icon" class="drawer-logo-icon" width="40" height="40" ngSkipOversizedImageWarning />
-          <img src="/assets/images/logo.jpeg" alt="Arista Trinkets Jewellery" class="drawer-logo-img" width="140" height="45" ngSkipOversizedImageWarning />
+          <img src="/assets/images/full-logo-transparent.png" alt="Arista Trinkets Fine Jewellery" class="drawer-logo-img" width="115" height="36" ngSkipOversizedImageWarning />
         </a>
         <button type="button" class="close-btn" (click)="toggleMobileNav()" aria-label="Close menu">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -172,33 +173,15 @@ import { CartService } from '../../core/services/cart.service';
       text-decoration: none;
     }
 
-    .brand-logo-icon {
-      height: 48px;
-      width: auto;
-      object-fit: contain;
-      mix-blend-mode: multiply;
-      border-radius: 50%;
-      position: relative;
-      z-index: 2;
-    }
-
     .brand-logo-img {
-      height: 54px;
+      height: 28px;
       width: auto;
       object-fit: contain;
-      mix-blend-mode: multiply;
-      margin-left: -14px;
-      position: relative;
-      z-index: 1;
     }
 
     @media (min-width: 768px) {
-      .brand-logo-icon {
-        height: 56px;
-      }
       .brand-logo-img {
-        height: 64px;
-        margin-left: -18px;
+        height: 32px;
       }
     }
 
@@ -373,24 +356,10 @@ import { CartService } from '../../core/services/cart.service';
       text-decoration: none;
     }
 
-    .drawer-logo-icon {
-      height: 38px;
-      width: auto;
-      object-fit: contain;
-      mix-blend-mode: multiply;
-      border-radius: 50%;
-      position: relative;
-      z-index: 2;
-    }
-
     .drawer-logo-img {
-      height: 42px;
+      height: 28px;
       width: auto;
       object-fit: contain;
-      mix-blend-mode: multiply;
-      margin-left: -10px;
-      position: relative;
-      z-index: 1;
     }
 
     .close-btn {
