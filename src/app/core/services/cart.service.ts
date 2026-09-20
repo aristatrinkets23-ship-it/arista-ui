@@ -40,6 +40,39 @@ export class CartService {
   addToCart(product: ProductCardData, quantity: number = 1, selectedMetal?: string): void {
     const currentItems = [...this.currentCart.items];
     const addQty = Math.max(1, Number(quantity) || 1);
+
+    // Fetch fresh product data from localStorage to capture image changes
+    let freshImage = product.image;
+    let freshPrice = product.price;
+    let freshName = product.name;
+    let freshCategory = product.category;
+
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const storedMockData = localStorage.getItem('arista_mock_products');
+        if (storedMockData) {
+          const parsed = JSON.parse(storedMockData);
+          if (Array.isArray(parsed)) {
+            const match = parsed.find(p => String(p.id) === String(product.id) || (product.slug && p.slug === product.slug));
+            if (match) {
+              if (match.image) freshImage = match.image;
+              if (match.price !== undefined) freshPrice = Number(match.price);
+              if (match.name) freshName = match.name;
+              if (match.category) freshCategory = match.category;
+            }
+          }
+        }
+      }
+    } catch {}
+
+    const updatedProduct = {
+      ...product,
+      name: freshName,
+      price: freshPrice,
+      image: freshImage || '/assets/images/placeholder-jewellery.svg',
+      category: freshCategory
+    };
+
     const existingIndex = currentItems.findIndex(item => 
       String(item.product.id) === String(product.id) || (product.slug && item.product.slug === product.slug)
     );
@@ -49,16 +82,17 @@ export class CartService {
       const newQty = (Number(existing.quantity) || 0) + addQty;
       currentItems[existingIndex] = {
         ...existing,
+        product: updatedProduct,
         selectedMetal: selectedMetal || existing.selectedMetal,
         quantity: newQty,
-        subtotal: (Number(product.price) || 0) * newQty
+        subtotal: freshPrice * newQty
       };
     } else {
       currentItems.push({
-        product,
+        product: updatedProduct,
         quantity: addQty,
         selectedMetal: selectedMetal || '18K Warm Gold',
-        subtotal: (Number(product.price) || 0) * addQty
+        subtotal: freshPrice * addQty
       });
     }
 
@@ -97,6 +131,11 @@ export class CartService {
     this.saveAndUpdate([]);
   }
 
+  syncCartWithMockProducts(): void {
+    const currentItems = this.loadCartFromStorage();
+    this.saveAndUpdate(currentItems);
+  }
+
   private saveAndUpdate(items: CartItem[]): void {
     this.saveCartToStorage(items);
     this.cartSubject.next(this.calculateSummary(items));
@@ -105,17 +144,59 @@ export class CartService {
   private loadCartFromStorage(): CartItem[] {
     try {
       if (typeof localStorage !== 'undefined') {
-        const saved = localStorage.getItem(this.STORAGE_KEY);
-        if (saved !== null) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) {
-            return parsed;
+        const savedCart = localStorage.getItem(this.STORAGE_KEY);
+        const storedMockProductsData = localStorage.getItem('arista_mock_products');
+        let mockProductsMap: Map<string, any> = new Map();
+
+        if (storedMockProductsData) {
+          try {
+            const parsedMock = JSON.parse(storedMockProductsData);
+            if (Array.isArray(parsedMock)) {
+              parsedMock.forEach(p => {
+                if (p.id !== undefined) mockProductsMap.set(String(p.id), p);
+                if (p.slug) mockProductsMap.set(String(p.slug), p);
+              });
+            }
+          } catch {}
+        }
+
+        if (savedCart !== null) {
+          const parsedCart = JSON.parse(savedCart);
+          if (Array.isArray(parsedCart)) {
+            // Sync cart items with fresh product data from mockProductsMap
+            const syncedItems: CartItem[] = parsedCart.map(item => {
+              if (item && item.product) {
+                const targetKey = String(item.product.id || item.product.slug);
+                const freshProd = mockProductsMap.get(targetKey) || mockProductsMap.get(String(item.product.slug));
+                if (freshProd) {
+                  const updatedImage = freshProd.image || item.product.image;
+                  const updatedPrice = freshProd.price !== undefined ? Number(freshProd.price) : item.product.price;
+                  const updatedQty = Number(item.quantity) || 1;
+                  return {
+                    ...item,
+                    product: {
+                      ...item.product,
+                      name: freshProd.name || item.product.name,
+                      price: updatedPrice,
+                      image: updatedImage,
+                      category: freshProd.category || item.product.category,
+                      badge: freshProd.badge || item.product.badge
+                    },
+                    subtotal: updatedPrice * updatedQty
+                  };
+                }
+              }
+              return item;
+            });
+            this.saveCartToStorage(syncedItems);
+            return syncedItems;
           }
         }
       }
     } catch (e) {
       console.warn('Could not load cart from localStorage:', e);
     }
+
     const defaultItems: CartItem[] = [
       {
         product: {

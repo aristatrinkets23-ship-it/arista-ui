@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -13,6 +13,13 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   template: `
+    <!-- Floating Toast Notification Banner -->
+    <div class="toast-notification" *ngIf="toastMessage" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
+      <span class="toast-icon">{{ toastType === 'success' ? '✓' : '✕' }}</span>
+      <span class="toast-text">{{ toastMessage }}</span>
+      <button type="button" class="btn-close-toast" (click)="toastMessage = ''">&times;</button>
+    </div>
+
     <!-- Admin Top Header Banner -->
     <section class="admin-hero">
       <div class="container hero-content">
@@ -219,17 +226,6 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   <label>INITIAL STOCK QUANTITY</label>
                   <input type="number" [(ngModel)]="newProduct.stockQuantity" name="stockQuantity" placeholder="10" />
                 </div>
-              </div>
-
-              <!-- OR CUSTOM WEB IMAGE URL OVERRIDE -->
-              <div class="form-group" style="margin-top: 14px;">
-                <label>Or Enter Custom Web Image URL</label>
-                <input
-                  type="text"
-                  [(ngModel)]="newProduct.image"
-                  name="customUrl"
-                  placeholder="https://images.unsplash.com/... or data:image/..."
-                />
               </div>
 
               <!-- Live Image Preview Box -->
@@ -541,17 +537,6 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             </div>
           </div>
 
-          <!-- OR CUSTOM WEB IMAGE URL OVERRIDE -->
-          <div class="form-group" style="margin-top: 14px;">
-            <label>Or Enter Custom Web Image URL</label>
-            <input
-              type="text"
-              [(ngModel)]="editingProduct.image"
-              name="editCustomUrl"
-              placeholder="https://images.unsplash.com/... or data:image/..."
-            />
-          </div>
-
           <!-- Live Image Preview Box -->
           <div class="preview-box">
             <span class="preview-label">Live Image Preview:</span>
@@ -574,6 +559,65 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
   `,
   styles: [`
+    .toast-notification {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 99999;
+      padding: 14px 24px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .toast-notification.success {
+      background: #1B5E20;
+      color: #FFFFFF;
+      border: 1px solid #4CAF50;
+    }
+
+    .toast-notification.error {
+      background: #B71C1C;
+      color: #FFFFFF;
+      border: 1px solid #EF5350;
+    }
+
+    .toast-icon {
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .btn-close-toast {
+      background: transparent;
+      border: none;
+      color: currentColor;
+      font-size: 1.3rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0 4px;
+      opacity: 0.8;
+      transition: opacity var(--transition-fast);
+    }
+    .btn-close-toast:hover {
+      opacity: 1;
+    }
+
     .admin-hero {
       background: var(--brand-mocha-brown);
       color: #FFFFFF;
@@ -624,8 +668,8 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       text-decoration: none;
       font-size: 0.88rem;
       border: 1px solid var(--brand-warm-gold);
-      padding: 8px 16px;
-      border-radius: var(--radius-sm);
+      padding: 8px 20px;
+      border-radius: 50px;
       transition: all var(--transition-fast);
     }
 
@@ -640,8 +684,8 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       border: none;
       font-weight: 600;
       font-size: 0.88rem;
-      padding: 8px 16px;
-      border-radius: var(--radius-sm);
+      padding: 8px 20px;
+      border-radius: 50px;
       cursor: pointer;
       transition: background var(--transition-fast);
     }
@@ -730,8 +774,8 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       font-weight: 600;
       font-size: 0.88rem;
       color: var(--brand-mocha-brown);
-      padding: 10px 18px;
-      border-radius: var(--radius-sm);
+      padding: 10px 22px;
+      border-radius: 50px;
       cursor: pointer;
       white-space: nowrap;
       transition: all var(--transition-fast);
@@ -835,14 +879,17 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     .action-btns { display: flex; gap: 8px; }
     .btn-action {
       border: none;
-      padding: 6px 12px;
-      border-radius: var(--radius-sm);
+      padding: 6px 16px;
+      border-radius: 50px;
       font-size: 0.78rem;
       font-weight: 600;
       cursor: pointer;
+      transition: all var(--transition-fast);
     }
     .btn-action.edit { background: var(--brand-pearl-beige); color: var(--brand-mocha-brown); }
+    .btn-action.edit:hover { background: var(--brand-warm-gold); }
     .btn-action.delete { background: #FFEBEE; color: #C62828; }
+    .btn-action.delete:hover { background: #FFCDD2; }
 
     @media (max-width: 576px) {
       .form-card { padding: 18px 14px; }
@@ -926,8 +973,8 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       background: var(--brand-pearl-beige);
       color: var(--brand-mocha-brown);
       border: 1px solid var(--color-border);
-      padding: 6px 14px;
-      border-radius: 16px;
+      padding: 6px 18px;
+      border-radius: 50px;
       font-weight: 600;
       cursor: pointer;
       margin-right: 12px;
@@ -1036,14 +1083,16 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
-      padding: 14px;
+      padding: 12px 28px;
       border: none;
-      border-radius: var(--radius-sm);
+      border-radius: 50px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       margin-top: 12px;
+      transition: all var(--transition-fast);
+      box-shadow: 0 4px 12px rgba(197, 160, 110, 0.25);
     }
-    .btn-save:hover { background-color: #E2B882; }
+    .btn-save:hover { background-color: #E2B882; transform: translateY(-1px); }
 
     .credentials-grid {
       display: grid;
@@ -1135,10 +1184,14 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       background: var(--brand-pearl-beige);
       color: var(--brand-mocha-brown);
       border: 1px solid var(--color-border);
-      padding: 10px 20px;
-      border-radius: var(--radius-sm);
+      padding: 10px 24px;
+      border-radius: 50px;
       font-weight: 600;
       cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .btn-cancel:hover {
+      background: var(--brand-warm-gold);
     }
 
     .password-field-wrapper {
@@ -1302,9 +1355,28 @@ export class AdminComponent implements OnInit {
     }
   ];
 
+  toastMessage: string = '';
+  toastType: 'success' | 'error' = 'success';
+  toastTimeout: any = null;
+
   private mockDataService = inject(MockDataService);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
+  showToast(message: string, type: 'success' | 'error' = 'success'): void {
+    this.toastMessage = message;
+    this.toastType = type;
+    this.cdr.detectChanges();
+
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+    }
+    this.toastTimeout = setTimeout(() => {
+      this.toastMessage = '';
+      this.cdr.detectChanges();
+    }, 4000);
+  }
 
   ngOnInit(): void {
     this.adminUser = this.authService.currentUser();
@@ -1440,9 +1512,12 @@ export class AdminComponent implements OnInit {
       image: finalImage
     };
 
+    let notificationMsg = `Product ID ${this.editingProduct.id} updated successfully.`;
+    let isSuccess = true;
+
     try {
       const token = this.authService.getToken();
-      await fetch(`http://localhost:5000/api/v1/admin/products/${this.editingProduct.id}`, {
+      const res = await fetch(`http://localhost:5000/api/v1/admin/products/${this.editingProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1450,6 +1525,11 @@ export class AdminComponent implements OnInit {
         },
         body: JSON.stringify(payload)
       });
+      const data = await res.json();
+      if (data && data.message) {
+        notificationMsg = data.message;
+      }
+      isSuccess = res.ok && (data.success !== false);
     } catch (err) {
       // Offline fallback
     }
@@ -1480,11 +1560,11 @@ export class AdminComponent implements OnInit {
       };
     }
 
-    this.editSuccessMessage = `Jewellery item "${this.editingProduct.name}" updated successfully!`;
+    // CLOSE POPUP MODAL IMMEDIATELY
+    this.closeEditModal();
 
-    setTimeout(() => {
-      this.closeEditModal();
-    }, 1200);
+    // SHOW API RESPONSE AS TOAST NOTIFICATION
+    this.showToast(notificationMsg, isSuccess ? 'success' : 'error');
   }
 
   async saveProduct(event: Event): Promise<void> {
@@ -1632,8 +1712,11 @@ export class AdminComponent implements OnInit {
   }
 
   deleteProduct(productId: number): void {
+    const item = this.products.find(p => p.id === productId);
+    const name = item ? item.name : `ID ${productId}`;
     this.products = this.products.filter(p => p.id !== productId);
     this.mockDataService.deleteProduct(productId);
+    this.showToast(`Jewellery product "${name}" deleted from storefront.`, 'success');
   }
 
   updateOrderStatus(order: any, event: Event): void {

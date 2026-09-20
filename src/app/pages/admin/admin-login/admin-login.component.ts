@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
@@ -201,39 +201,50 @@ import { AuthService } from '../../../core/services/auth.service';
       right: 10px;
       background: transparent;
       border: none;
+      outline: none;
+      border-radius: 50%;
       font-size: 1.15rem;
       cursor: pointer;
-      padding: 4px;
+      padding: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       opacity: 0.75;
-      transition: opacity var(--transition-fast);
+      transition: all var(--transition-fast);
       user-select: none;
     }
 
     .btn-toggle-eye:hover {
       opacity: 1;
+      background: rgba(197, 160, 110, 0.1);
     }
 
     .btn-login {
       background: var(--brand-mocha-brown);
       color: var(--brand-pearl-beige);
       border: none;
-      padding: 14px;
-      border-radius: var(--radius-sm);
-      font-weight: 700;
-      font-size: 0.92rem;
+      padding: 10px 24px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.82rem;
       text-transform: uppercase;
       letter-spacing: 1px;
       cursor: pointer;
       transition: all var(--transition-fast);
-      margin-top: 8px;
+      margin: 14px auto 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      box-shadow: 0 4px 12px rgba(67, 52, 34, 0.18);
     }
 
     .btn-login:hover:not(:disabled) {
       background: var(--brand-warm-gold);
       color: var(--brand-mocha-brown);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(197, 160, 110, 0.35);
     }
 
     .btn-login:disabled {
@@ -271,6 +282,7 @@ export class AdminLoginComponent implements OnInit {
   private authService = inject(AuthService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     // If already logged in as admin, navigate directly to admin dashboard
@@ -291,6 +303,7 @@ export class AdminLoginComponent implements OnInit {
     event.preventDefault();
     this.errorMessage = '';
     this.loading = true;
+    this.cdr.detectChanges();
 
     try {
       const result = await this.authService.login(this.email, this.password);
@@ -310,6 +323,8 @@ export class AdminLoginComponent implements OnInit {
       this.errorMessage = 'An error occurred during authentication. Please try again.';
     } finally {
       this.loading = false;
+      this.cdr.detectChanges();
     }
   }
 }
+

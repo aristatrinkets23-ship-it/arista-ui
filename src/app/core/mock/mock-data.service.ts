@@ -1,8 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { ProductCardData } from '../models/product-card-data.model';
 import { Product } from '../models/product.model';
 import { Category } from '../models/category.model';
+import { CartService } from '../services/cart.service';
+
+const STORAGE_KEY_PRODUCTS = 'arista_mock_products';
 
 @Injectable({
   providedIn: 'root'
@@ -47,7 +50,7 @@ export class MockDataService {
     }
   ];
 
-  private products: Product[] = [
+  private initialProducts: Product[] = [
     {
       id: 1,
       name: 'Eternal Solitaire Diamond Ring',
@@ -219,6 +222,38 @@ export class MockDataService {
     }
   ];
 
+  private products: Product[] = [];
+  private cartService = inject(CartService);
+
+  constructor() {
+    this.loadProductsFromStorage();
+  }
+
+  private loadProductsFromStorage(): void {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_PRODUCTS);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          this.products = parsed;
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to parse arista_mock_products from localStorage:', err);
+    }
+    this.products = [...this.initialProducts];
+    this.saveProductsToStorage();
+  }
+
+  private saveProductsToStorage(): void {
+    try {
+      localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(this.products));
+    } catch (err) {
+      console.warn('Failed to save arista_mock_products to localStorage:', err);
+    }
+  }
+
   getCategories(): Observable<Category[]> {
     return of(this.categories);
   }
@@ -296,16 +331,18 @@ export class MockDataService {
     };
 
     this.products.unshift(fullProduct);
+    this.saveProductsToStorage();
     return fullProduct;
   }
 
   updateProduct(id: number, updated: Partial<Product>): void {
-    const index = this.products.findIndex(p => p.id === id);
+    const targetIdNum = Number(id);
+    const index = this.products.findIndex(p => p.id === targetIdNum || p.id.toString() === id.toString());
     if (index !== -1) {
       const existing = this.products[index];
-      const name = updated.name || existing.name;
-      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      const image = updated.image || existing.image || '/assets/images/placeholder-jewellery.svg';
+      const name = updated.name !== undefined ? updated.name : existing.name;
+      const slug = name ? name.toLowerCase().replace(/[^a-z0-9]+/g, '-') : existing.slug;
+      const image = updated.image !== undefined ? updated.image : existing.image;
 
       this.products[index] = {
         ...existing,
@@ -313,16 +350,27 @@ export class MockDataService {
         name,
         slug,
         image,
-        images: [image, '/assets/images/placeholder-jewellery.svg'],
-        price: updated.price ? Number(updated.price) : existing.price,
-        compareAtPrice: updated.compareAtPrice ? Number(updated.compareAtPrice) : existing.compareAtPrice,
-        badge: (updated.badge as any) !== undefined ? (updated.badge as any) : existing.badge,
-        category: updated.category || existing.category
+        images: image ? [image, '/assets/images/placeholder-jewellery.svg'] : existing.images,
+        price: updated.price !== undefined ? Number(updated.price) : existing.price,
+        compareAtPrice: updated.compareAtPrice !== undefined ? (updated.compareAtPrice ? Number(updated.compareAtPrice) : undefined) : existing.compareAtPrice,
+        badge: updated.badge !== undefined ? (updated.badge as any) : existing.badge,
+        category: updated.category !== undefined ? updated.category : existing.category,
+        stockQuantity: updated.stockQuantity !== undefined ? Number(updated.stockQuantity) : existing.stockQuantity,
+        description: updated.description !== undefined ? updated.description : existing.description
       };
+      this.saveProductsToStorage();
+      try {
+        this.cartService.syncCartWithMockProducts();
+      } catch {}
     }
   }
 
   deleteProduct(id: number): void {
-    this.products = this.products.filter(p => p.id !== id);
+    const targetIdNum = Number(id);
+    this.products = this.products.filter(p => p.id !== targetIdNum && p.id.toString() !== id.toString());
+    this.saveProductsToStorage();
+    try {
+      this.cartService.syncCartWithMockProducts();
+    } catch {}
   }
 }

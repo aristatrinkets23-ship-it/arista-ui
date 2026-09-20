@@ -78,15 +78,28 @@ export class AuthService {
         return { success: false, message: data.message || 'Invalid email or password.' };
       }
     } catch (err) {
-      // Offline fallback for demo / standalone operation
-      const isAdminEmail = email.toLowerCase().includes('admin');
-      const mockRole = isAdminEmail ? 'ADMIN' : 'CUSTOMER';
-      const mockName = isAdminEmail ? 'Arista Store Administrator' : 'Valued Collector';
-      const mockUser: User = { id: isAdminEmail ? 99 : 1, name: mockName, email, role: mockRole };
-      const mockToken = 'mock_jwt_token_' + Date.now();
+      // Offline fallback for demo / standalone operation with STRICT password validation
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = password.trim();
+      const isAdminEmail = cleanEmail.includes('admin') || cleanEmail === 'admin@aristatrinkets.com';
 
-      this.setSession(mockUser, mockToken);
-      return { success: true, message: 'Signed in successfully (Offline Mode).', user: mockUser };
+      if (isAdminEmail) {
+        if (cleanPassword !== 'admin123') {
+          return { success: false, message: 'Invalid admin password. Access denied.' };
+        }
+        const mockUser: User = { id: 99, name: 'Arista Store Administrator', email: cleanEmail, role: 'ADMIN' };
+        const mockToken = 'mock_jwt_token_' + Date.now();
+        this.setSession(mockUser, mockToken);
+        return { success: true, message: 'Signed in successfully (Offline Mode).', user: mockUser };
+      } else {
+        if (cleanPassword !== 'customer123' && cleanPassword !== 'password123') {
+          return { success: false, message: 'Invalid email or password.' };
+        }
+        const mockUser: User = { id: 1, name: 'Valued Collector', email: cleanEmail, role: 'CUSTOMER' };
+        const mockToken = 'mock_jwt_token_' + Date.now();
+        this.setSession(mockUser, mockToken);
+        return { success: true, message: 'Signed in successfully (Offline Mode).', user: mockUser };
+      }
     }
   }
 
