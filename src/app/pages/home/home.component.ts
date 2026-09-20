@@ -251,23 +251,29 @@ import { MockDataService } from '../../core/mock/mock-data.service';
   `,
   styles: [`
     .hero-section {
-      background: linear-gradient(135deg, rgba(247, 233, 230, 0.88) 0%, rgba(242, 239, 232, 0.92) 50%, rgba(232, 227, 243, 0.88) 100%), url('/assets/images/placeholder-banner.svg');
+      position: relative;
+      background: linear-gradient(135deg, rgba(35, 26, 18, 0.58) 0%, rgba(20, 14, 10, 0.48) 50%, rgba(35, 26, 18, 0.62) 100%), url('/assets/images/hero-banner.jpg');
       background-size: cover;
-      background-position: center;
-      padding: 56px 0;
+      background-position: center center;
+      background-repeat: no-repeat;
+      padding: 64px 0;
       text-align: center;
-      border-bottom: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--brand-warm-gold);
+      color: #FFFFFF;
+      box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.35);
     }
 
     @media (min-width: 768px) {
       .hero-section {
-        padding: 92px 0;
+        padding: 104px 0 96px 0;
       }
     }
 
     .hero-content {
-      max-width: 800px;
+      max-width: 820px;
       margin: 0 auto;
+      position: relative;
+      z-index: 2;
     }
 
     .hero-subtitle {
@@ -275,29 +281,32 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       font-size: var(--font-size-eyebrow);
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 2.5px;
+      letter-spacing: 3px;
       color: var(--brand-warm-gold);
-      margin-bottom: 8px;
+      margin-bottom: 12px;
       display: block;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
     }
 
     .hero-title {
       font-family: var(--font-serif);
       font-size: var(--font-size-hero-title);
-      color: var(--brand-mocha-brown);
-      margin-bottom: 16px;
+      color: #FFFFFF;
+      margin-bottom: 18px;
       line-height: 1.15;
       font-weight: 700;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     }
 
     .hero-description {
       font-size: var(--font-size-hero-body);
-      color: #4A3A2C;
-      margin-bottom: 32px;
-      line-height: 1.6;
-      max-width: 640px;
+      color: #F3ECE4;
+      margin-bottom: 34px;
+      line-height: 1.65;
+      max-width: 660px;
       margin-left: auto;
       margin-right: auto;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
     .hero-actions {
@@ -317,14 +326,14 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 20px;
-      margin-top: 36px;
-      padding: 12px 28px;
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(207, 168, 116, 0.4);
+      gap: 24px;
+      margin-top: 42px;
+      padding: 12px 32px;
+      background: rgba(30, 22, 16, 0.82);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--brand-warm-gold);
       border-radius: var(--radius-full);
-      box-shadow: 0 4px 20px rgba(91, 70, 54, 0.08);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
       max-width: 100%;
       flex-wrap: wrap;
     }
@@ -333,7 +342,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       display: flex;
       align-items: center;
       gap: 10px;
-      color: var(--brand-mocha-brown);
+      color: #FFFFFF;
     }
 
     .feature-item svg {
@@ -352,24 +361,24 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 1px;
-      color: var(--brand-mocha-brown);
+      color: var(--brand-warm-gold);
     }
 
     .feature-text span {
       font-size: 0.68rem;
-      color: #776655;
+      color: #E2D7CC;
     }
 
     .feature-divider {
       width: 1px;
       height: 24px;
-      background-color: rgba(207, 168, 116, 0.4);
+      background-color: rgba(226, 184, 130, 0.4);
     }
 
     @media (max-width: 640px) {
       .hero-feature-bar {
         gap: 12px;
-        padding: 10px 16px;
+        padding: 10px 18px;
       }
       .feature-divider {
         display: none;
