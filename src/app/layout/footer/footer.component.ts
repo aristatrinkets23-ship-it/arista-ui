@@ -108,26 +108,33 @@ import { RouterLink } from '@angular/router';
       align-items: center;
       gap: 0;
       text-decoration: none;
-      background: #FFFFFF;
-      padding: 6px 14px;
-      border-radius: var(--radius-full);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      padding: 4px 0;
+      transition: transform var(--transition-fast), opacity var(--transition-fast);
+    }
+    .footer-logo-link:hover {
+      transform: translateY(-1px);
+      opacity: 0.92;
     }
 
     .footer-logo-icon {
-      height: 30px;
+      height: 42px;
       width: auto;
       object-fit: contain;
-      mix-blend-mode: multiply;
-      border-radius: 50%;
+      filter: invert(1) sepia(0.8) saturate(3) hue-rotate(5deg) brightness(1.25);
+      mix-blend-mode: screen;
+      position: relative;
+      z-index: 2;
     }
 
     .footer-logo-img {
-      height: 34px;
+      height: 48px;
       width: auto;
       object-fit: contain;
-      mix-blend-mode: multiply;
-      margin-left: -8px;
+      filter: invert(1) sepia(0.8) saturate(3) hue-rotate(5deg) brightness(1.25);
+      mix-blend-mode: screen;
+      margin-left: -12px;
+      position: relative;
+      z-index: 1;
     }
 
     .brand-tagline {
