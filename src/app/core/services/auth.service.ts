@@ -1,4 +1,5 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { API_ENDPOINTS } from '../constants/api-endpoints';
 
 export interface User {
   id: number;
@@ -9,7 +10,6 @@ export interface User {
 
 const TOKEN_KEY = 'arista_auth_token';
 const USER_KEY = 'arista_auth_user';
-const API_BASE_URL = 'http://localhost:5000/api/v1';
 
 @Injectable({
   providedIn: 'root'
@@ -62,7 +62,7 @@ export class AuthService {
 
   async login(email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -108,7 +108,7 @@ export class AuthService {
     if (!token) return false;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(API_ENDPOINTS.AUTH.ME, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -132,7 +132,7 @@ export class AuthService {
     if (!token) return false;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/verify`, {
+      const response = await fetch(API_ENDPOINTS.ADMIN.VERIFY, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -149,7 +149,7 @@ export class AuthService {
   async updateAdminProfile(name: string, email: string, newPassword?: string): Promise<{ success: boolean; message: string }> {
     const token = this.getToken();
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/profile`, {
+      const response = await fetch(API_ENDPOINTS.ADMIN.PROFILE, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +181,7 @@ export class AuthService {
   async createAdminUser(name: string, email: string, password: string): Promise<{ success: boolean; message: string }> {
     const token = this.getToken();
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/users`, {
+      const response = await fetch(API_ENDPOINTS.ADMIN.USERS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

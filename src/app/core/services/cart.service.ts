@@ -197,23 +197,7 @@ export class CartService {
       console.warn('Could not load cart from localStorage:', e);
     }
 
-    const defaultItems: CartItem[] = [
-      {
-        product: {
-          id: 1,
-          name: 'Eternal Solitaire Diamond Ring',
-          slug: 'eternal-solitaire-diamond-ring',
-          image: '/assets/images/placeholder-rings.svg',
-          price: 45000,
-          badge: 'FEATURED',
-          category: 'Rings',
-          available: true
-        },
-        quantity: 1,
-        selectedMetal: '18K Warm Gold',
-        subtotal: 45000
-      }
-    ];
+    const defaultItems: CartItem[] = [];
     this.saveCartToStorage(defaultItems);
     return defaultItems;
   }

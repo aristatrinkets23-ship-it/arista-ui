@@ -7,6 +7,8 @@ import { SectionHeadingComponent } from '../../shared/components/section-heading
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { CartSummary } from '../../core/models/cart.model';
 import { CartService } from '../../core/services/cart.service';
+import { AuthService } from '../../core/services/auth.service';
+import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
 declare var Razorpay: any;
 
@@ -35,41 +37,72 @@ declare var Razorpay: any;
         <div class="checkout-grid" *ngIf="!orderPlaced; else orderSuccess">
           <!-- Billing & Shipping Form -->
           <div class="form-container">
+            <!-- Member Login Banner (Visible if user is NOT logged in) -->
+            <div class="checkout-auth-banner" *ngIf="!isLoggedIn">
+              <div class="auth-banner-info">
+                <span class="auth-banner-eyebrow">Exclusively for Members</span>
+                <span class="auth-banner-title">Already an Arista Member?</span>
+                <span class="auth-banner-sub">Sign in to auto-fill details while keeping your cart intact.</span>
+              </div>
+              <button type="button" class="btn-auth-signin" (click)="showAuthModal = true">
+                Sign In &rarr;
+              </button>
+            </div>
+
+            <!-- Logged In Status Badge -->
+            <div class="logged-in-banner" *ngIf="isLoggedIn && currentUser">
+              <span>✓ Signed in as <strong>{{ currentUser.name }}</strong> ({{ currentUser.email }})</span>
+              <button type="button" class="btn-switch-user" (click)="onSignOutAndKeepData()">Switch Account</button>
+            </div>
+
             <h2 class="section-title">Shipping Address</h2>
             <form (submit)="placeOrder($event)" class="checkout-form">
               <div class="form-row">
                 <div class="form-group">
-                  <label>First Name</label>
-                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" required />
+                  <label>First Name *</label>
+                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" placeholder="e.g. Priya" required />
                 </div>
                 <div class="form-group">
-                  <label>Last Name</label>
-                  <input type="text" [(ngModel)]="shipping.lastName" name="lastName" required />
+                  <label>Last Name *</label>
+                  <input type="text" [(ngModel)]="shipping.lastName" name="lastName" placeholder="e.g. Sharma" required />
                 </div>
               </div>
 
               <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" [(ngModel)]="shipping.email" name="email" required />
+                <label>Email Address *</label>
+                <input type="email" [(ngModel)]="shipping.email" name="email" placeholder="name@example.com" required />
               </div>
 
               <div class="form-group">
-                <label>Street Address</label>
-                <input type="text" [(ngModel)]="shipping.address" name="address" required />
+                <label>Street Address *</label>
+                <input type="text" [(ngModel)]="shipping.address" name="address" placeholder="House/Flat No., Building, Street Name" required />
               </div>
 
               <div class="form-row">
                 <div class="form-group">
-                  <label>City</label>
-                  <input type="text" [(ngModel)]="shipping.city" name="city" required />
+                  <label>City *</label>
+                  <input type="text" [(ngModel)]="shipping.city" name="city" placeholder="e.g. Mumbai" required />
                 </div>
                 <div class="form-group">
-                  <label>State</label>
-                  <input type="text" [(ngModel)]="shipping.state" name="state" required />
+                  <label>State *</label>
+                  <input type="text" [(ngModel)]="shipping.state" name="state" placeholder="e.g. Maharashtra" required />
                 </div>
                 <div class="form-group">
-                  <label>PIN Code</label>
-                  <input type="text" [(ngModel)]="shipping.pincode" name="pincode" required />
+                  <label>PIN Code *</label>
+                  <input type="text" [(ngModel)]="shipping.pincode" name="pincode" placeholder="e.g. 400020" required />
+                </div>
+              </div>
+
+              <!-- Guest Option to Create Account -->
+              <div class="create-account-box" *ngIf="!isLoggedIn">
+                <label class="checkbox-label">
+                  <input type="checkbox" [(ngModel)]="createAccountChecked" name="createAccount" />
+                  <span>Create an Arista Member Account with this email for tracking orders & express checkout</span>
+                </label>
+
+                <div class="form-group mt-3" *ngIf="createAccountChecked">
+                  <label>Create Secret Password *</label>
+                  <input type="password" [(ngModel)]="accountPassword" name="accPassword" placeholder="Create a secure password" [required]="createAccountChecked" />
                 </div>
               </div>
 
@@ -93,7 +126,7 @@ declare var Razorpay: any;
               </div>
 
               <button type="submit" class="submit-btn" [disabled]="isProcessing">
-                {{ isProcessing ? 'Initializing Razorpay Gateway...' : 'Pay & Complete Order (₹' + (cart ? (cart.total | number) : '0') + ')' }}
+                {{ isProcessing ? 'Initializing Gateway...' : 'Pay & Complete Order (₹' + (cart ? (cart.total | number) : '0') + ')' }}
               </button>
             </form>
           </div>
@@ -150,6 +183,41 @@ declare var Razorpay: any;
             </div>
           </div>
         </ng-template>
+
+        <!-- INLINE AUTH MODAL POPUP FOR CHECKOUT -->
+        <div *ngIf="showAuthModal" class="modal-backdrop" (click)="showAuthModal = false">
+          <div class="modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2 class="form-title" style="margin:0;">Sign In to Express Checkout</h2>
+              <button type="button" class="btn-close" (click)="showAuthModal = false">&times;</button>
+            </div>
+
+            <p style="font-size: 0.88rem; color: #666; margin-top: 10px; line-height: 1.5;">
+              Sign in with your Arista Member credentials. Your typed address details and shopping bag items will be <strong>100% preserved</strong>!
+            </p>
+
+            <div class="error-banner" *ngIf="authErrorMessage" style="margin-top: 12px;">
+              ⚠ {{ authErrorMessage }}
+            </div>
+
+            <form (submit)="onInlineLogin($event)" class="checkout-form" style="margin-top: 16px;">
+              <div class="form-group">
+                <label>Email Address *</label>
+                <input type="email" [(ngModel)]="authModalEmail" name="authEmail" placeholder="admin@aristatrinkets.com" required />
+              </div>
+
+              <div class="form-group">
+                <label>Password *</label>
+                <input type="password" [(ngModel)]="authModalPassword" name="authPassword" placeholder="••••••••" required />
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; flex-wrap: wrap; gap: 12px;">
+                <button type="button" class="btn-cancel" (click)="showAuthModal = false">Continue as Guest</button>
+                <button type="submit" class="submit-btn" style="width: auto; padding: 10px 24px; margin: 0;">Sign In & Update Details &rarr;</button>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </section>
   `,
@@ -196,6 +264,142 @@ declare var Razorpay: any;
       border-radius: var(--radius-md);
       padding: 24px;
       box-shadow: var(--shadow-sm);
+    }
+
+    .checkout-auth-banner {
+      background: var(--brand-pearl-beige);
+      border: 1px solid var(--brand-warm-gold);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .auth-banner-eyebrow {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--brand-warm-gold);
+      display: block;
+    }
+    .auth-banner-title {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--brand-mocha-brown);
+      display: block;
+      margin: 2px 0;
+    }
+    .auth-banner-sub {
+      font-size: 0.82rem;
+      color: var(--color-text-secondary);
+      display: block;
+    }
+    .btn-auth-signin {
+      background: var(--brand-warm-gold);
+      color: var(--brand-mocha-brown);
+      border: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 10px 22px;
+      border-radius: 50px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+      box-shadow: 0 4px 12px rgba(207, 168, 116, 0.25);
+    }
+    .btn-auth-signin:hover {
+      background: #E2B882;
+      transform: translateY(-1px);
+    }
+
+    .logged-in-banner {
+      background: #E8F5E9;
+      border: 1px solid #A5D6A7;
+      color: #2E7D32;
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 24px;
+      font-size: 0.88rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .btn-switch-user {
+      background: transparent;
+      border: 1px solid #2E7D32;
+      color: #2E7D32;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 50px;
+      cursor: pointer;
+    }
+
+    .create-account-box {
+      background: var(--brand-pearl-beige);
+      border: 1px dashed var(--color-border);
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      margin-top: 8px;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--brand-mocha-brown);
+      cursor: pointer;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; padding: 16px;
+    }
+    .modal-card {
+      background: #FFFFFF;
+      border-radius: var(--radius-md);
+      width: 100%; max-width: 480px;
+      padding: 28px;
+      box-shadow: 0 16px 40px rgba(0,0,0,0.25);
+      border: 1px solid var(--brand-warm-gold);
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      border-bottom: 1px solid var(--color-border); padding-bottom: 12px;
+    }
+    .form-title {
+      font-family: var(--font-serif);
+      color: var(--brand-mocha-brown);
+      font-size: 1.35rem;
+    }
+    .btn-close {
+      background: transparent; border: none; font-size: 1.8rem;
+      line-height: 1; color: var(--brand-mocha-brown); cursor: pointer;
+    }
+    .btn-cancel {
+      background: var(--brand-pearl-beige);
+      color: var(--brand-mocha-brown);
+      border: 1px solid var(--color-border);
+      padding: 8px 18px;
+      border-radius: 50px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .error-banner {
+      background: #FFEBEE; color: #C62828; padding: 10px 14px;
+      border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;
     }
 
     .section-title, .summary-title {
@@ -444,22 +648,79 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   selectedPayment: string = 'razorpay';
   generatedOrderNumber: string = '';
 
+  isLoggedIn: boolean = false;
+  currentUser: any = null;
+  showAuthModal: boolean = false;
+  authModalEmail: string = '';
+  authModalPassword: string = '';
+  authErrorMessage: string = '';
+
+  createAccountChecked: boolean = false;
+  accountPassword: string = '';
+
   shipping = {
-    firstName: 'Priya',
-    lastName: 'Sharma',
-    email: 'priya.sharma@example.com',
-    address: '104 Marine Drive, Atelier Heights',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    pincode: '400020'
+    firstName: '',
+    lastName: '',
+    email: '',
+    address: '',
+    city: '',
+    state: '',
+    pincode: ''
   };
 
   private cartService = inject(CartService);
+  private authService = inject(AuthService);
 
   ngOnInit(): void {
     this.cartSub = this.cartService.cart$.subscribe(summary => {
       this.cart = summary;
     });
+
+    this.checkUserSession();
+  }
+
+  private checkUserSession(): void {
+    this.isLoggedIn = this.authService.isAuthenticated();
+    if (this.isLoggedIn) {
+      this.currentUser = this.authService.currentUser();
+      if (this.currentUser) {
+        const names = (this.currentUser.name || '').trim().split(' ');
+        this.shipping.firstName = this.shipping.firstName || names[0] || '';
+        this.shipping.lastName = this.shipping.lastName || names.slice(1).join(' ') || '';
+        this.shipping.email = this.shipping.email || this.currentUser.email || '';
+      }
+    }
+  }
+
+  async onInlineLogin(event: Event): Promise<void> {
+    event.preventDefault();
+    if (!this.authModalEmail || !this.authModalPassword) return;
+
+    this.authErrorMessage = '';
+    const res = await this.authService.login(this.authModalEmail, this.authModalPassword);
+    if (res.success && res.user) {
+      this.isLoggedIn = true;
+      this.currentUser = res.user;
+
+      // PRESERVE ANY TYPED ADDRESS DETAILS while updating Name and Email from profile
+      const names = (res.user.name || '').trim().split(' ');
+      this.shipping.firstName = names[0] || this.shipping.firstName;
+      this.shipping.lastName = names.slice(1).join(' ') || this.shipping.lastName;
+      this.shipping.email = res.user.email || this.shipping.email;
+
+      this.showAuthModal = false;
+      this.authModalEmail = '';
+      this.authModalPassword = '';
+    } else {
+      this.authErrorMessage = res.message || 'Invalid email or password.';
+    }
+  }
+
+  onSignOutAndKeepData(): void {
+    this.authService.logout();
+    this.isLoggedIn = false;
+    this.currentUser = null;
+    // NOTE: All typed address details (shipping.address, city, pincode, etc.) and cart items remain 100% intact!
   }
 
   ngOnDestroy(): void {
@@ -468,54 +729,89 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
   }
 
+  private loadRazorpayScript(): Promise<boolean> {
+    return new Promise((resolve) => {
+      if (typeof Razorpay !== 'undefined') {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }
+
   async placeOrder(event: Event): Promise<void> {
     event.preventDefault();
     this.isProcessing = true;
 
-    const totalAmount = this.cart ? this.cart.total : 45000;
-    this.generatedOrderNumber = `ART-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    if (this.selectedPayment === 'razorpay' && typeof Razorpay !== 'undefined') {
+    // If guest checked "Create an account", register them seamlessly in background
+    if (!this.isLoggedIn && this.createAccountChecked && this.accountPassword) {
       try {
-        const response = await fetch('http://localhost:5000/api/v1/orders/razorpay-order', {
+        const fullName = `${this.shipping.firstName} ${this.shipping.lastName}`.trim();
+        await fetch(API_ENDPOINTS.AUTH.REGISTER, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            amount: totalAmount,
-            receipt: this.generatedOrderNumber
+            name: fullName,
+            email: this.shipping.email,
+            password: this.accountPassword
           })
         });
-
-        const resData = await response.json();
-        if (resData && resData.success && resData.data) {
-          const options = {
-            key: resData.data.keyId || 'rzp_test_AristaTrinkets2026',
-            amount: resData.data.amount,
-            currency: 'INR',
-            name: 'Arista Trinkets Jewellery',
-            description: `Order ${this.generatedOrderNumber}`,
-            image: '/assets/images/logo-icon.jpeg',
-            order_id: resData.data.id,
-            handler: async (payRes: any) => {
-              await this.verifyRazorpayPayment(payRes);
-            },
-            prefill: {
-              name: `${this.shipping.firstName} ${this.shipping.lastName}`,
-              email: this.shipping.email,
-              contact: '9999999999'
-            },
-            theme: {
-              color: '#CFA874'
-            }
-          };
-
-          const rzp = new Razorpay(options);
-          rzp.open();
-          this.isProcessing = false;
-          return;
-        }
       } catch (err) {
-        // Fallback to local order completion if backend server is offline
+        // Non-blocking fallback
+      }
+    }
+
+    const totalAmount = this.cart ? this.cart.total : 45000;
+    this.generatedOrderNumber = `ART-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    if (this.selectedPayment === 'razorpay') {
+      await this.loadRazorpayScript();
+      if (typeof Razorpay !== 'undefined') {
+        try {
+          const response = await fetch(API_ENDPOINTS.ORDERS.RAZORPAY_ORDER, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              amount: totalAmount,
+              receipt: this.generatedOrderNumber
+            })
+          });
+
+          const resData = await response.json();
+          if (resData && resData.success && resData.data) {
+            const options = {
+              key: resData.data.keyId || 'rzp_test_AristaTrinkets2026',
+              amount: resData.data.amount,
+              currency: 'INR',
+              name: 'Arista Trinkets Jewellery',
+              description: `Order ${this.generatedOrderNumber}`,
+              image: '/assets/images/logo-icon.jpeg',
+              order_id: resData.data.id,
+              handler: async (payRes: any) => {
+                await this.verifyRazorpayPayment(payRes);
+              },
+              prefill: {
+                name: `${this.shipping.firstName} ${this.shipping.lastName}`,
+                email: this.shipping.email,
+                contact: '9999999999'
+              },
+              theme: {
+                color: '#CFA874'
+              }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.open();
+            this.isProcessing = false;
+            return;
+          }
+        } catch (err) {
+          // Fallback to local order completion if backend server is offline
+        }
       }
     }
 
@@ -528,7 +824,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   private async verifyRazorpayPayment(payRes: any): Promise<void> {
     try {
-      await fetch('http://localhost:5000/api/v1/orders/verify-payment', {
+      await fetch(API_ENDPOINTS.ORDERS.VERIFY_PAYMENT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

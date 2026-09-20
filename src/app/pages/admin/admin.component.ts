@@ -6,6 +6,8 @@ import { MockDataService, getDefaultCategoryImage } from '../../core/mock/mock-d
 import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Category } from '../../core/models/category.model';
 import { AuthService } from '../../core/services/auth.service';
+import { CartService } from '../../core/services/cart.service';
+import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
 const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
@@ -1731,6 +1733,7 @@ export class AdminComponent implements OnInit {
 
   private mockDataService = inject(MockDataService);
   private authService = inject(AuthService);
+  private cartService = inject(CartService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
@@ -1793,6 +1796,7 @@ export class AdminComponent implements OnInit {
   confirmLogout(): void {
     this.showLogoutModal = false;
     this.authService.logout();
+    this.cartService.clearCart();
     this.router.navigate(['/admin/login']);
   }
 
@@ -1904,7 +1908,7 @@ export class AdminComponent implements OnInit {
 
     try {
       const token = this.authService.getToken();
-      const res = await fetch(`http://localhost:5000/api/v1/admin/products/${this.editingProduct.id}`, {
+      const res = await fetch(API_ENDPOINTS.ADMIN.PRODUCT_BY_ID(this.editingProduct.id), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -1973,7 +1977,7 @@ export class AdminComponent implements OnInit {
 
     try {
       const token = this.authService.getToken();
-      await fetch('http://localhost:5000/api/v1/admin/products', {
+      await fetch(API_ENDPOINTS.ADMIN.PRODUCTS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2140,7 +2144,7 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  onAddCategory(event: Event): void {
+  async onAddCategory(event: Event): Promise<void> {
     event.preventDefault();
     this.categoryErrorMessage = '';
     this.categorySuccessMessage = '';
@@ -2154,11 +2158,29 @@ export class AdminComponent implements OnInit {
       return;
     }
 
-    const added = this.mockDataService.addCategory({
+    const payload = {
       name: this.newCategory.name.trim(),
       slug: this.newCategory.slug.trim(),
       description: this.newCategory.description.trim() || `${this.newCategory.name} Collection`,
-      image: this.newCategory.image || '/assets/images/hero-categories.jpg',
+      image: this.newCategory.image || '/assets/images/hero-categories.jpg'
+    };
+
+    try {
+      const token = this.authService.getToken();
+      await fetch(API_ENDPOINTS.ADMIN.CATEGORIES, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      // Offline fallback
+    }
+
+    const added = this.mockDataService.addCategory({
+      ...payload,
       featured: true
     });
 
@@ -2175,10 +2197,24 @@ export class AdminComponent implements OnInit {
     this.showToast(`Category "${catName}" published successfully!`, 'success');
   }
 
-  deleteCategory(id: number | string): void {
+  async deleteCategory(id: number | string): Promise<void> {
     const cat = this.categories.find(c => c.id === id);
     const name = cat ? cat.name : `ID ${id}`;
+
+    try {
+      const token = this.authService.getToken();
+      await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(id), {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+    } catch (err) {
+      // Offline fallback
+    }
+
     this.mockDataService.deleteCategory(id);
+    this.categories = this.categories.filter(c => c.id !== id);
     this.showToast(`Category "${name}" removed from catalog.`, 'success');
   }
 
@@ -2233,27 +2269,39 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  updateCategory(event: Event): void {
+  async updateCategory(event: Event): Promise<void> {
     event.preventDefault();
     if (!this.editingCategory || !this.editingCategory.name) return;
 
-    this.mockDataService.updateCategory(this.editingCategory.id, {
+    const payload = {
       name: this.editingCategory.name.trim(),
       slug: this.editingCategory.slug.trim(),
       description: this.editingCategory.description.trim(),
       image: this.editingCategory.image,
       featured: this.editingCategory.featured
-    });
+    };
+
+    try {
+      const token = this.authService.getToken();
+      await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(this.editingCategory.id), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      // Offline fallback
+    }
+
+    this.mockDataService.updateCategory(this.editingCategory.id, payload);
 
     const idx = this.categories.findIndex(c => c.id === this.editingCategory.id);
     if (idx !== -1) {
       this.categories[idx] = {
         ...this.categories[idx],
-        name: this.editingCategory.name.trim(),
-        slug: this.editingCategory.slug.trim(),
-        description: this.editingCategory.description.trim(),
-        image: this.editingCategory.image,
-        featured: this.editingCategory.featured
+        ...payload
       };
     }
 

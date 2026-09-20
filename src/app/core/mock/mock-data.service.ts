@@ -4,9 +4,10 @@ import { ProductCardData } from '../models/product-card-data.model';
 import { Product } from '../models/product.model';
 import { Category } from '../models/category.model';
 import { CartService } from '../services/cart.service';
+import { API_ENDPOINTS } from '../constants/api-endpoints';
 
-const STORAGE_KEY_PRODUCTS = 'arista_mock_products';
-const STORAGE_KEY_CATEGORIES = 'arista_mock_categories';
+const STORAGE_KEY_PRODUCTS = 'arista_mock_products_v2';
+const STORAGE_KEY_CATEGORIES = 'arista_mock_categories_v2';
 
 export function getDefaultCategoryImage(nameOrSlug?: string): string {
   if (!nameOrSlug) return '/assets/images/placeholder-jewellery.svg';
@@ -28,7 +29,7 @@ export class MockDataService {
       name: 'Rings',
       slug: 'rings',
       description: 'Handcrafted solitaire, halo, and eternity rings set in 18K gold and sterling silver.',
-      image: '/assets/images/placeholder-rings.svg',
+      image: '/assets/images/slideshow-couple-rings.jpg',
       itemCount: 42,
       featured: true
     },
@@ -37,7 +38,7 @@ export class MockDataService {
       name: 'Necklaces',
       slug: 'necklaces',
       description: 'Elegant chokers, pendants, and layered chains designed to accentuate every neckline.',
-      image: '/assets/images/placeholder-necklaces.svg',
+      image: '/assets/images/slideshow-girl-necklace.jpg',
       itemCount: 36,
       featured: true
     },
@@ -46,7 +47,7 @@ export class MockDataService {
       name: 'Earrings',
       slug: 'earrings',
       description: 'Luminous freshwater pearl drop earrings, diamond studs, and handcrafted gold hoops.',
-      image: '/assets/images/placeholder-earrings.svg',
+      image: '/assets/images/slideshow-earrings.jpg',
       itemCount: 28,
       featured: true
     },
@@ -55,7 +56,7 @@ export class MockDataService {
       name: 'Bracelets',
       slug: 'bracelets',
       description: 'Timeless diamond cuff bracelets, delicate tennis chains, and signature bangles.',
-      image: '/assets/images/placeholder-bracelets.svg',
+      image: '/assets/images/slideshow-bangles.jpg',
       itemCount: 24,
       featured: true
     }
@@ -68,10 +69,10 @@ export class MockDataService {
       id: 1,
       name: 'Eternal Solitaire Diamond Ring',
       slug: 'eternal-solitaire-diamond-ring',
-      image: '/assets/images/placeholder-rings.svg',
+      image: '/assets/images/slideshow-couple-rings.jpg',
       images: [
-        '/assets/images/placeholder-rings.svg',
-        '/assets/images/placeholder-jewellery.svg'
+        '/assets/images/slideshow-couple-rings.jpg',
+        '/assets/images/slideshow-rings.jpg'
       ],
       price: 45000,
       compareAtPrice: 52000,
@@ -98,10 +99,10 @@ export class MockDataService {
       id: 2,
       name: 'Royal Heritage Gold Choker',
       slug: 'royal-heritage-gold-choker',
-      image: '/assets/images/placeholder-necklaces.svg',
+      image: '/assets/images/slideshow-girl-necklace.jpg',
       images: [
-        '/assets/images/placeholder-necklaces.svg',
-        '/assets/images/placeholder-jewellery.svg'
+        '/assets/images/slideshow-girl-necklace.jpg',
+        '/assets/images/slideshow-ref-1.jpg'
       ],
       price: 89000,
       compareAtPrice: 95000,
@@ -126,10 +127,10 @@ export class MockDataService {
       id: 3,
       name: 'Celestial Pearl Drop Earrings',
       slug: 'celestial-pearl-drop-earrings',
-      image: '/assets/images/placeholder-earrings.svg',
+      image: '/assets/images/slideshow-earrings.jpg',
       images: [
-        '/assets/images/placeholder-earrings.svg',
-        '/assets/images/placeholder-jewellery.svg'
+        '/assets/images/slideshow-earrings.jpg',
+        '/assets/images/slideshow-1.jpg'
       ],
       price: 24500,
       compareAtPrice: 28000,
@@ -155,10 +156,10 @@ export class MockDataService {
       id: 4,
       name: 'Classic Diamond Cuff Bracelet',
       slug: 'classic-diamond-cuff-bracelet',
-      image: '/assets/images/placeholder-bracelets.svg',
+      image: '/assets/images/slideshow-bangles.jpg',
       images: [
-        '/assets/images/placeholder-bracelets.svg',
-        '/assets/images/placeholder-jewellery.svg'
+        '/assets/images/slideshow-bangles.jpg',
+        '/assets/images/slideshow-2.jpg'
       ],
       price: 62000,
       compareAtPrice: 68000,
@@ -184,10 +185,10 @@ export class MockDataService {
       id: 5,
       name: 'Rose Gold Eternity Band',
       slug: 'rose-gold-eternity-band',
-      image: '/assets/images/placeholder-rings.svg',
+      image: '/assets/images/slideshow-rings.jpg',
       images: [
-        '/assets/images/placeholder-rings.svg',
-        '/assets/images/placeholder-jewellery.svg'
+        '/assets/images/slideshow-rings.jpg',
+        '/assets/images/slideshow-couple-rings.jpg'
       ],
       price: 38500,
       badge: 'NEW',
@@ -211,10 +212,10 @@ export class MockDataService {
       id: 6,
       name: 'Layered Gold Coin Pendant',
       slug: 'layered-gold-coin-pendant',
-      image: '/assets/images/placeholder-necklaces.svg',
+      image: '/assets/images/slideshow-girl-necklace.jpg',
       images: [
-        '/assets/images/placeholder-necklaces.svg',
-        '/assets/images/placeholder-jewellery.svg'
+        '/assets/images/slideshow-girl-necklace.jpg',
+        '/assets/images/slideshow-ref-3.jpg'
       ],
       price: 31000,
       compareAtPrice: 35000,
@@ -241,6 +242,83 @@ export class MockDataService {
   constructor() {
     this.loadCategoriesFromStorage();
     this.loadProductsFromStorage();
+    this.refreshFromApi();
+  }
+
+  async refreshFromApi(): Promise<void> {
+    try {
+      const prodRes = await fetch(API_ENDPOINTS.PRODUCTS.LIST);
+      if (prodRes.ok) {
+        const prodData = await prodRes.json();
+        if (prodData && prodData.success && Array.isArray(prodData.data) && prodData.data.length > 0) {
+          const apiProducts = prodData.data.map((p: any) => {
+            let img = p.image ? p.image.trim() : '';
+            const catName = p.category_name || p.category || 'Rings';
+            const fallbackImg = getDefaultCategoryImage(catName);
+            if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
+              img = '/' + img;
+            }
+            const finalImg = img || fallbackImg;
+            return {
+              id: Number(p.id),
+              name: p.name,
+              slug: p.slug,
+              image: finalImg,
+              images: p.images || [finalImg],
+              price: Number(p.price),
+              compareAtPrice: p.compare_at_price ? Number(p.compare_at_price) : undefined,
+              badge: p.badge || undefined,
+              category: catName,
+              available: true,
+              inStock: Boolean(p.in_stock !== 0),
+              stockQuantity: Number(p.stock_quantity || 10),
+              description: p.description || '',
+              materials: p.materials ? (typeof p.materials === 'string' ? p.materials.split(',') : p.materials) : ['18K Warm Gold'],
+              careGuide: p.care_guide || '',
+              shippingInfo: p.shipping_info || '',
+              metalType: p.metal_type || '18K Warm Gold',
+              gemstone: p.gemstone || '',
+              specifications: p.specifications || []
+            };
+          });
+
+          // Merge API products with local mock products (keep newly added local items if offline)
+          this.products = apiProducts;
+          this.saveProductsToStorage();
+        }
+      }
+    } catch (err) {
+      // Backend offline fallback
+    }
+
+    try {
+      const catRes = await fetch(API_ENDPOINTS.PRODUCTS.CATEGORIES);
+      if (catRes.ok) {
+        const catData = await catRes.json();
+        if (catData && catData.success && Array.isArray(catData.data) && catData.data.length > 0) {
+          const apiCategories = catData.data.map((c: any) => {
+            let img = c.image ? c.image.trim() : '';
+            const fallbackImg = getDefaultCategoryImage(c.slug || c.name);
+            if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
+              img = '/' + img;
+            }
+            return {
+              id: c.id,
+              name: c.name,
+              slug: c.slug,
+              description: c.description || '',
+              image: img || fallbackImg,
+              itemCount: Number(c.item_count || 0),
+              featured: true
+            };
+          });
+          this.categories = apiCategories;
+          this.saveCategoriesToStorage();
+        }
+      }
+    } catch (err) {
+      // Backend offline fallback
+    }
   }
 
   private loadCategoriesFromStorage(): void {
@@ -285,12 +363,22 @@ export class MockDataService {
       if (data) {
         const parsed = JSON.parse(data);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          this.products = parsed;
+          this.products = parsed.map((p: Product) => {
+            // Auto-migrate old SVG placeholders to high-res photography
+            if (!p.image || p.image.endsWith('.svg') || p.image.includes('placeholder')) {
+              const defaultMatch = this.initialProducts.find(ip => ip.id === p.id || ip.slug === p.slug);
+              if (defaultMatch) {
+                return { ...p, image: defaultMatch.image };
+              }
+            }
+            return p;
+          });
+          this.saveProductsToStorage();
           return;
         }
       }
     } catch (err) {
-      console.warn('Failed to parse arista_mock_products from localStorage:', err);
+      console.warn('Failed to parse arista_mock_products_v2 from localStorage:', err);
     }
     this.products = [...this.initialProducts];
     this.saveProductsToStorage();
@@ -305,6 +393,7 @@ export class MockDataService {
   }
 
   getCategories(): Observable<Category[]> {
+    this.refreshFromApi();
     return of(this.categories);
   }
 
@@ -359,10 +448,12 @@ export class MockDataService {
   }
 
   getFeaturedProducts(): Observable<ProductCardData[]> {
+    this.refreshFromApi();
     return of(this.products.slice(0, 4));
   }
 
   getProducts(categorySlug?: string, sortBy?: string): Observable<ProductCardData[]> {
+    this.refreshFromApi();
     let result = [...this.products];
 
     if (categorySlug && categorySlug !== 'all') {

@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { AuthService } from '../../core/services/auth.service';
+import { CartService } from '../../core/services/cart.service';
 
 @Component({
   selector: 'app-account',
@@ -98,17 +99,27 @@ import { AuthService } from '../../core/services/auth.service';
           </form>
         </div>
 
-        <!-- Account Dashboard Placeholder Shell -->
+        <!-- Account Dashboard Shell -->
         <div *ngIf="activeTab === 'dashboard'" class="dashboard-shell">
           <div class="dash-welcome">
             <div class="dash-welcome-header">
               <div>
-                <h3>Welcome, {{ currentUser?.name || 'Valued Collector' }}</h3>
-                <p>Customer Account & Order History Portal</p>
+                <h3 style="margin: 0 0 6px 0;">Welcome, {{ currentUser?.name || 'Valued Collector' }}</h3>
+                <p style="margin: 0; color: #666; font-size: 0.9rem;">Customer Account & Order History Portal<span *ngIf="currentUser?.email"> ({{ currentUser.email }})</span></p>
               </div>
-              <button type="button" class="btn-dash-logout" (click)="openLogoutModal()">
-                Sign Out
-              </button>
+              <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                <a
+                  *ngIf="currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN'"
+                  routerLink="/admin"
+                  class="btn-admin-link"
+                  style="background: var(--brand-warm-gold); color: var(--brand-mocha-brown); text-decoration: none; font-weight: 700; font-size: 0.85rem; padding: 10px 20px; border-radius: 50px; display: inline-block;"
+                >
+                  Go to Admin Console &rarr;
+                </a>
+                <button type="button" class="btn-dash-logout" (click)="openLogoutModal()">
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
 
@@ -445,6 +456,7 @@ export class AccountComponent implements OnInit {
   showLogoutModal: boolean = false;
 
   private authService = inject(AuthService);
+  private cartService = inject(CartService);
   private router = inject(Router);
 
   ngOnInit(): void {
@@ -490,5 +502,12 @@ export class AccountComponent implements OnInit {
     event.preventDefault();
     alert('Account created successfully! Welcome to The Arista Club.');
     this.activeTab = 'dashboard';
+  }
+
+  onLogout(): void {
+    this.authService.logout();
+    this.cartService.clearCart();
+    this.currentUser = null;
+    this.activeTab = 'login';
   }
 }
