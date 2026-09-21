@@ -95,23 +95,49 @@ export class MockDataService {
             if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
               img = '/' + img;
             }
+            const prodCountForCat = (this.products || []).filter(p =>
+              p.category?.toLowerCase() === c.name?.toLowerCase() ||
+              p.category?.toLowerCase() === c.slug?.toLowerCase() ||
+              p.slug?.toLowerCase().includes(c.slug?.toLowerCase())
+            ).length;
+
+            const finalItemCount = (c.item_count !== undefined && c.item_count !== null && Number(c.item_count) > 0)
+              ? Number(c.item_count)
+              : prodCountForCat;
+
             return {
               id: c.id,
               name: c.name,
               slug: c.slug,
               description: c.description || '',
               image: img || fallbackImg,
-              itemCount: Number(c.item_count || 0),
+              itemCount: finalItemCount,
               featured: true
             };
           });
           this.categories = apiCategories;
+          this.updateCategoryItemCounts();
           this.saveCategoriesToStorage();
         }
       }
     } catch (err) {
       // Backend offline fallback
     }
+  }
+
+  private updateCategoryItemCounts(): void {
+    if (!this.categories || this.categories.length === 0) return;
+    this.categories = this.categories.map(cat => {
+      const count = (this.products || []).filter(p =>
+        p.category?.toLowerCase() === cat.name?.toLowerCase() ||
+        p.category?.toLowerCase() === cat.slug?.toLowerCase() ||
+        p.slug?.toLowerCase().includes(cat.slug?.toLowerCase())
+      ).length;
+      return {
+        ...cat,
+        itemCount: (cat.itemCount !== undefined && cat.itemCount > count) ? cat.itemCount : count
+      };
+    });
   }
 
   private loadCategoriesFromStorage(): void {
@@ -132,6 +158,7 @@ export class MockDataService {
               image: img
             };
           });
+          this.updateCategoryItemCounts();
           return;
         }
       }
@@ -174,6 +201,7 @@ export class MockDataService {
     } catch (err) {
       console.warn('Failed to save arista_mock_products to localStorage:', err);
     }
+    this.updateCategoryItemCounts();
     this.productsSubject.next(this.products);
   }
 

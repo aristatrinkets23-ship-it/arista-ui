@@ -37,7 +37,7 @@ import { MockDataService, getDefaultCategoryImage } from '../../core/mock/mock-d
                 (error)="onCatImageError($event, cat)"
                 class="cat-img"
               />
-              <div class="cat-badge">{{ cat.itemCount }} Unique Designs</div>
+              <div class="cat-badge">{{ cat.itemCount }} {{ cat.itemCount === 1 ? 'Unique Design' : 'Unique Designs' }}</div>
             </div>
             <div class="cat-details">
               <span class="cat-eyebrow">Collection {{ i + 1 }}</span>

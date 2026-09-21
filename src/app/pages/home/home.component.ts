@@ -152,7 +152,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
             </div>
             <div class="category-info">
               <h3 class="category-name">{{ cat.name }}</h3>
-              <span class="category-count">{{ cat.itemCount }} Items</span>
+              <span class="category-count">{{ cat.itemCount }} {{ cat.itemCount === 1 ? 'Item' : 'Items' }}</span>
               <span class="category-cta">SHOP COLLECTION &rarr;</span>
             </div>
           </a>
