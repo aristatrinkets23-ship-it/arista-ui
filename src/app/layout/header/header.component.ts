@@ -15,16 +15,16 @@ import { CartService } from '../../core/services/cart.service';
       <div class="container header-content">
         <!-- Mobile Menu Toggle Button -->
         <button type="button" class="mobile-toggle" (click)="toggleMobileNav()" aria-label="Toggle navigation menu">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="3" y1="12" x2="21" y2="12"></line>
             <line x1="3" y1="6" x2="21" y2="6"></line>
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
 
-        <!-- Brand Logo (Unified Emblem + Brand Mark) -->
+        <!-- Brand Logo -->
         <a routerLink="/" class="brand-logo" aria-label="Arista Trinkets Home">
-          <img src="/assets/images/full-logo-transparent.png" alt="Arista Trinkets Fine Jewellery" class="brand-logo-img" width="134" height="42" ngSkipOversizedImageWarning />
+          <img src="/assets/images/full-logo-transparent.png" alt="Arista Trinkets Fine Jewellery" class="brand-logo-img" width="168" height="52" ngSkipOversizedImageWarning />
         </a>
 
         <!-- Desktop Navigation Bar -->
@@ -43,21 +43,21 @@ import { CartService } from '../../core/services/cart.service';
         <!-- Action Icons (Search, Account, Bag) -->
         <div class="header-actions">
           <button type="button" class="action-btn" aria-label="Search items">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
           </button>
 
           <a routerLink="/account" class="action-btn" aria-label="Customer Account">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
               <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </a>
 
           <a routerLink="/cart" class="action-btn bag-btn" aria-label="Shopping Bag">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
               <line x1="3" y1="6" x2="21" y2="6"></line>
               <path d="M16 10a4 4 0 0 1-8 0"></path>
@@ -72,10 +72,10 @@ import { CartService } from '../../core/services/cart.service';
     <div class="mobile-drawer" [class.open]="isMobileNavOpen">
       <div class="drawer-header">
         <a routerLink="/" (click)="toggleMobileNav()" class="drawer-logo" aria-label="Arista Trinkets Home">
-          <img src="/assets/images/full-logo-transparent.png" alt="Arista Trinkets Fine Jewellery" class="drawer-logo-img" width="115" height="36" ngSkipOversizedImageWarning />
+          <img src="/assets/images/full-logo-transparent.png" alt="Arista Trinkets Fine Jewellery" class="drawer-logo-img" width="140" height="44" ngSkipOversizedImageWarning />
         </a>
         <button type="button" class="close-btn" (click)="toggleMobileNav()" aria-label="Close menu">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
@@ -103,10 +103,10 @@ import { CartService } from '../../core/services/cart.service';
         <div class="drawer-collections">
           <span class="drawer-section-title">Curated Collections</span>
           <div class="collection-tags">
-            <a routerLink="/categories" (click)="toggleMobileNav()" class="tag-pill">Rings</a>
-            <a routerLink="/categories" (click)="toggleMobileNav()" class="tag-pill">Necklaces</a>
-            <a routerLink="/categories" (click)="toggleMobileNav()" class="tag-pill">Earrings</a>
-            <a routerLink="/categories" (click)="toggleMobileNav()" class="tag-pill">Bracelets</a>
+            <a routerLink="/shop" [queryParams]="{ category: 'rings' }" (click)="toggleMobileNav()" class="tag-pill">Rings</a>
+            <a routerLink="/shop" [queryParams]="{ category: 'necklaces' }" (click)="toggleMobileNav()" class="tag-pill">Necklaces</a>
+            <a routerLink="/shop" [queryParams]="{ category: 'earrings' }" (click)="toggleMobileNav()" class="tag-pill">Earrings</a>
+            <a routerLink="/shop" [queryParams]="{ category: 'bracelets' }" (click)="toggleMobileNav()" class="tag-pill">Bracelets</a>
           </div>
         </div>
       </div>
@@ -146,23 +146,29 @@ import { CartService } from '../../core/services/cart.service';
     }
 
     .site-header {
-      background-color: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--color-border);
-      box-shadow: 0 4px 16px rgba(91, 70, 54, 0.08);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
       width: 100%;
+      z-index: 1000;
+      background-color: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(207, 168, 116, 0.25);
+      box-shadow: 0 4px 20px rgba(58, 46, 40, 0.07);
     }
 
     .header-content {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 72px;
+      height: 76px;
     }
 
     @media (min-width: 992px) {
       .header-content {
-        height: 84px;
+        height: 88px;
       }
     }
 
@@ -174,26 +180,34 @@ import { CartService } from '../../core/services/cart.service';
     }
 
     .brand-logo-img {
-      height: 28px;
+      height: 38px;
       width: auto;
       object-fit: contain;
     }
 
     @media (min-width: 768px) {
       .brand-logo-img {
-        height: 32px;
+        height: 46px;
       }
     }
 
     .mobile-toggle {
       background: transparent;
       border: none;
-      color: var(--brand-mocha-brown);
+      color: var(--brand-mocha-brown, #1A120B);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 6px;
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 50%;
+    }
+
+    .mobile-toggle:hover {
+      background-color: var(--brand-pearl-beige, #FAF7F2);
     }
 
     .desktop-nav {
@@ -205,7 +219,7 @@ import { CartService } from '../../core/services/cart.service';
       .desktop-nav {
         display: flex;
         align-items: center;
-        gap: 24px;
+        gap: 26px;
         white-space: nowrap;
       }
       .mobile-toggle { display: none !important; }
@@ -213,44 +227,35 @@ import { CartService } from '../../core/services/cart.service';
 
     @media (min-width: 1200px) {
       .desktop-nav {
-        gap: 32px;
+        gap: 34px;
       }
     }
 
     .nav-link {
-      font-family: var(--font-sans);
-      font-size: var(--font-size-nav);
+      font-family: var(--font-sans, 'Montserrat', sans-serif);
+      font-size: 0.82rem;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--brand-mocha-brown);
-      padding: 8px 2px;
+      letter-spacing: 0.12em;
+      color: var(--brand-mocha-brown, #1A120B);
+      padding: 10px 2px;
       position: relative;
       text-decoration: none;
       background: transparent !important;
       border: none !important;
       outline: none !important;
       box-shadow: none !important;
-      transition: color var(--transition-fast);
+      transition: color 0.25s ease;
       cursor: pointer;
     }
 
-    .nav-link:focus, .nav-link:active, .nav-link:focus-visible {
-      outline: none !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-
     .nav-link:hover {
-      color: var(--brand-warm-gold);
+      color: var(--brand-warm-gold, #CFA874);
     }
 
     .nav-link.active {
-      color: var(--brand-warm-gold);
+      color: var(--brand-warm-gold, #CFA874);
       font-weight: 700;
-      outline: none !important;
-      border: none !important;
-      box-shadow: none !important;
     }
 
     .nav-link.active::after {
@@ -260,14 +265,14 @@ import { CartService } from '../../core/services/cart.service';
       left: 0;
       width: 100%;
       height: 2.5px;
-      background-color: var(--brand-warm-gold);
+      background-color: var(--brand-warm-gold, #CFA874);
       border-radius: 2px;
     }
 
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 2px;
+      gap: 4px;
     }
 
     @media (min-width: 768px) {
@@ -279,54 +284,47 @@ import { CartService } from '../../core/services/cart.service';
     .action-btn {
       background: transparent;
       border: none;
-      color: var(--brand-mocha-brown);
+      color: var(--brand-mocha-brown, #1A120B);
       cursor: pointer;
       position: relative;
       width: 44px;
       height: 44px;
+      min-width: 44px;
+      min-height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 50%;
-      transition: all var(--transition-fast);
+      transition: all 0.25s ease;
+      overflow: visible;
     }
 
     .action-btn:hover {
-      color: var(--brand-warm-gold);
-      background-color: var(--brand-pearl-beige);
+      color: var(--brand-warm-gold, #CFA874);
+      background-color: var(--brand-pearl-beige, #FAF7F2);
+    }
+
+    .bag-btn {
+      overflow: visible !important;
     }
 
     .bag-count {
       position: absolute;
-      top: 6px;
-      right: 4px;
-      background-color: var(--brand-warm-gold);
-      color: var(--brand-mocha-brown);
-      font-size: 0.65rem;
+      top: 2px;
+      right: 2px;
+      background-color: var(--brand-warm-gold, #CFA874);
+      color: #1A120B;
+      font-size: 0.68rem;
       font-weight: 700;
-      width: 17px;
-      height: 17px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-
-    .mobile-toggle {
-      background: transparent;
-      border: none;
-      color: var(--brand-mocha-brown);
-      cursor: pointer;
-      width: 44px;
-      height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: var(--radius-sm);
-    }
-
-    .mobile-toggle:hover {
-      background-color: var(--brand-pearl-beige);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      border: 1.5px solid #FFFFFF;
+      z-index: 10;
     }
 
     /* Luxury Mobile Drawer */
@@ -338,17 +336,18 @@ import { CartService } from '../../core/services/cart.service';
       max-width: 88vw;
       height: 100vh;
       background-color: #FFFFFF;
-      z-index: 200;
+      z-index: 1200;
       transform: translateX(-100%);
       transition: transform var(--transition-normal);
       display: flex;
       flex-direction: column;
-      box-shadow: 10px 0 35px rgba(91, 70, 54, 0.16);
+      box-shadow: none; /* Stray left shadow fix */
       overflow-y: auto;
     }
 
     .mobile-drawer.open {
       transform: translateX(0);
+      box-shadow: 10px 0 35px rgba(26, 18, 11, 0.2);
     }
 
     .drawer-header {
@@ -363,7 +362,6 @@ import { CartService } from '../../core/services/cart.service';
     .drawer-logo {
       display: inline-flex;
       align-items: center;
-      gap: 0;
       text-decoration: none;
     }
 
@@ -529,7 +527,7 @@ import { CartService } from '../../core/services/cart.service';
       width: 100vw;
       height: 100vh;
       background-color: rgba(0, 0, 0, 0.45);
-      z-index: 199;
+      z-index: 1199;
       backdrop-filter: blur(2px);
     }
   `]
