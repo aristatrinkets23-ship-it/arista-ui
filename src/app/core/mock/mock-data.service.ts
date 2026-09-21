@@ -279,6 +279,26 @@ export class MockDataService {
     );
   }
 
+  getNewArrivals(): Observable<ProductCardData[]> {
+    this.refreshFromApi();
+    return this.productsSubject.pipe(
+      map(prods => {
+        const newOnly = prods.filter(p => p.badge && String(p.badge).toUpperCase() === 'NEW');
+        return newOnly.slice(0, 4);
+      })
+    );
+  }
+
+  getBestsellers(): Observable<ProductCardData[]> {
+    this.refreshFromApi();
+    return this.productsSubject.pipe(
+      map(prods => {
+        const bestsellers = prods.filter(p => p.badge && String(p.badge).toUpperCase() === 'BESTSELLER');
+        return bestsellers.slice(0, 6);
+      })
+    );
+  }
+
   getProducts(categorySlug?: string, sortBy?: string): Observable<ProductCardData[]> {
     this.refreshFromApi();
     return this.productsSubject.pipe(

@@ -7,6 +7,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Category } from '../../core/models/category.model';
 import { MockDataService } from '../../core/mock/mock-data.service';
+import { CartService } from '../../core/services/cart.service';
 
 @Component({
   selector: 'app-home',
@@ -205,27 +206,74 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       </div>
     </section>
 
-    <!-- Featured Products Section -->
-    <section class="section-padding">
+    <!-- Just Landed - New Arrivals Section (Ref: Arched Cards + View All Button) -->
+    <section class="section-padding new-arrivals-section">
       <div class="container">
-        <app-section-heading
-          subtitle="Customer Favorites"
-          title="Featured Creations"
-          align="center"
-        ></app-section-heading>
-
-        <div *ngIf="featuredProducts.length > 0" class="grid-products">
-          <app-product-card
-            *ngFor="let product of featuredProducts"
-            [product]="product"
-          ></app-product-card>
+        <div class="arrivals-header">
+          <span class="arrivals-eyebrow">JUST LANDED</span>
+          <h2 class="arrivals-title">New <em>Arrivals</em></h2>
+          <div class="arrivals-title-underline"></div>
         </div>
 
-        <div *ngIf="featuredProducts.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
-          <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">No Products in Catalog</h3>
-          <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Add jewellery pieces from the Admin Dashboard to feature them on the storefront.</p>
-          <a routerLink="/admin" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
-            ⚙ Go to Admin to Add Products & Categories
+        <div *ngIf="newArrivals.length > 0" class="arrivals-grid">
+          <div *ngFor="let product of newArrivals" class="arrival-arch-card">
+            <a [routerLink]="['/product', product.slug]" class="arrival-arch-link">
+              <!-- Top Pill Badge -->
+              <span class="arrival-pill-badge">
+                {{ product.badge || 'NEW' }}
+              </span>
+
+              <!-- Product Image -->
+              <img
+                [src]="product.image"
+                [alt]="product.name"
+                class="arrival-arch-img"
+                loading="lazy"
+                (error)="onImageError($event)"
+              />
+
+              <!-- Bottom Dark Gradient Overlay -->
+              <div class="arrival-arch-overlay"></div>
+
+              <!-- Floating Content over Gradient -->
+              <div class="arrival-arch-content">
+                <h3 class="arrival-arch-title">{{ product.name }}</h3>
+                <div class="arrival-arch-rating">
+                  <span class="star-icon">★</span> {{ product.ratingAverage || 4.8 }} | {{ product.reviewCount || 98 }}
+                </div>
+                <div class="arrival-arch-price">
+                  <span class="price-current">₹{{ product.price | number:'1.0-0' }}</span>
+                  <span class="price-original" *ngIf="product.compareAtPrice">₹{{ product.compareAtPrice | number:'1.0-0' }}</span>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <div *ngIf="newArrivals.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
+          <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">No New Arrivals Available</h3>
+          <p style="color: #666; font-size: 0.92rem;">New products will appear here automatically when added to the catalog.</p>
+        </div>
+
+        <!-- View All Button -->
+        <div class="arrivals-footer" *ngIf="newArrivals.length > 0">
+          <a routerLink="/shop" class="view-all-pill-btn">VIEW ALL</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Collection - The Diamond Edit Banner Section -->
+    <section class="diamond-edit-banner-section">
+      <div class="diamond-banner-overlay"></div>
+      <div class="container diamond-banner-container">
+        <div class="diamond-banner-content">
+          <span class="diamond-banner-eyebrow">FEATURED COLLECTION</span>
+          <h2 class="diamond-banner-title">The Diamond Edit</h2>
+          <p class="diamond-banner-desc">
+            A curated edit of statement diamond pieces &mdash; for the moments that call for a little more sparkle.
+          </p>
+          <a routerLink="/shop" class="diamond-banner-btn">
+            Explore the Collection &rarr;
           </a>
         </div>
       </div>
@@ -263,6 +311,40 @@ import { MockDataService } from '../../core/mock/mock-data.service';
               <app-button variant="secondary" size="md">Shop All Fine Jewellery &rarr;</app-button>
             </a>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Instagram / Bestsellers Showcase Section (@aristatrinkets) -->
+    <section class="section-padding insta-grid-section">
+      <div class="container">
+        <h2 class="insta-section-title">@aristatrinkets</h2>
+
+        <div *ngIf="bestsellerProducts.length > 0" class="insta-grid">
+          <a
+            *ngFor="let product of bestsellerProducts"
+            [routerLink]="['/product', product.slug]"
+            class="insta-card"
+          >
+            <img
+              [src]="product.image"
+              [alt]="product.name"
+              class="insta-img"
+              loading="lazy"
+              (error)="onImageError($event)"
+            />
+            <div class="insta-overlay">
+              <span class="insta-at-icon">@</span>
+            </div>
+          </a>
+        </div>
+
+        <div *ngIf="bestsellerProducts.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
+          <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">No Bestseller Products Tagged</h3>
+          <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Tag products with the BESTSELLER badge in the Admin Dashboard to feature them here.</p>
+          <a routerLink="/admin" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
+            ⚙ Go to Admin to Set BESTSELLER Badge
+          </a>
         </div>
       </div>
     </section>
@@ -652,6 +734,122 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       color: var(--brand-warm-gold, #D4AF37);
     }
 
+    /* Featured Collection - The Diamond Edit Banner Section */
+    .diamond-edit-banner-section {
+      position: relative;
+      background-image: url('/assets/images/diamond-edit-banner.jpg');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      padding: 64px 0;
+      overflow: hidden;
+      border-top: 1px solid rgba(207, 168, 116, 0.2);
+      border-bottom: 1px solid rgba(207, 168, 116, 0.2);
+    }
+
+    .diamond-banner-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        rgba(38, 28, 23, 0.82) 0%,
+        rgba(38, 28, 23, 0.62) 45%,
+        rgba(38, 28, 23, 0.25) 100%
+      );
+      pointer-events: none;
+    }
+
+    .diamond-banner-container {
+      position: relative;
+      z-index: 2;
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    .diamond-banner-content {
+      max-width: 520px;
+      text-align: left;
+    }
+
+    .diamond-banner-eyebrow {
+      display: block;
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.78rem;
+      letter-spacing: 0.28em;
+      color: var(--brand-warm-gold, #CFA874);
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    .diamond-banner-title {
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-style: italic;
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      color: #FFFFFF;
+      font-weight: 400;
+      margin: 0 0 16px 0;
+      line-height: 1.15;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    .diamond-banner-desc {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: clamp(0.92rem, 1.4vw, 1.05rem);
+      color: #E6DDD5;
+      line-height: 1.6;
+      margin-bottom: 28px;
+      font-weight: 300;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+    }
+
+    .diamond-banner-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      background-color: var(--brand-warm-gold, #CFA874);
+      color: #1A120B;
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 50px;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    .diamond-banner-btn:hover {
+      background-color: #E2BC86;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(207, 168, 116, 0.4);
+      color: #000000;
+    }
+
+    @media (max-width: 768px) {
+      .diamond-edit-banner-section {
+        min-height: 360px;
+        padding: 48px 0;
+      }
+      .diamond-banner-overlay {
+        background: linear-gradient(
+          180deg,
+          rgba(38, 28, 23, 0.85) 0%,
+          rgba(38, 28, 23, 0.68) 100%
+        );
+      }
+      .diamond-banner-content {
+        text-align: center;
+        margin: 0 auto;
+      }
+    }
+
     /* Editorial Section */
     .editorial-section {
       padding: 64px 0;
@@ -754,6 +952,106 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       height: 8px;
       border-radius: 50%;
       background-color: var(--brand-warm-gold);
+    }
+
+    /* Instagram / Bestsellers Showcase Section (@aristatrinkets) */
+    .insta-grid-section {
+      padding: 64px 0 72px 0;
+      background-color: var(--brand-pearl-beige, #FAF7F2);
+    }
+
+    .insta-section-title {
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-style: italic;
+      font-size: clamp(2.1rem, 4vw, 2.85rem);
+      color: var(--brand-warm-gold, #CFA874);
+      font-weight: 400;
+      text-align: center;
+      margin: 0 0 36px 0;
+      letter-spacing: -0.01em;
+    }
+
+    .insta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      max-width: 1080px;
+      margin: 0 auto;
+    }
+
+    @media (min-width: 768px) {
+      .insta-grid {
+        gap: 22px;
+      }
+    }
+
+    @media (max-width: 576px) {
+      .insta-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+    }
+
+    .insta-card {
+      position: relative;
+      display: block;
+      aspect-ratio: 1 / 1;
+      width: 100%;
+      border-radius: 4px;
+      overflow: hidden;
+      background-color: #1A120B;
+      text-decoration: none;
+      box-shadow: 0 4px 14px rgba(58, 46, 40, 0.08);
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .insta-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .insta-card:hover .insta-img {
+      transform: scale(1.08);
+    }
+
+    .insta-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(26, 18, 11, 0.42);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 2;
+    }
+
+    .insta-card:hover .insta-overlay {
+      opacity: 1;
+    }
+
+    .insta-at-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      color: #1A120B;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 1.3rem;
+      font-weight: 700;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      transform: scale(0.85);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .insta-card:hover .insta-at-icon {
+      transform: scale(1);
     }
 
     /* Shop by Occasion Accordion Styles */
@@ -900,6 +1198,259 @@ import { MockDataService } from '../../core/mock/mock-data.service';
     .occasion-card-btn:hover {
       color: #FFFFFF;
       transform: translateX(4px);
+    }
+
+    /* Just Landed - New Arrivals Section (Reference Replica: Arched Cards) */
+    .new-arrivals-section {
+      padding: 64px 0 60px 0;
+      background-color: #FDFBF7;
+    }
+
+    .arrivals-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .arrivals-eyebrow {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.28em;
+      color: var(--brand-warm-gold, #CFA874);
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .arrivals-title {
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-size: clamp(2.1rem, 4vw, 2.85rem);
+      color: var(--brand-mocha-brown, #3A2E28);
+      font-weight: 400;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .arrivals-title em {
+      font-style: italic;
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      color: var(--brand-warm-gold, #CFA874);
+      font-weight: 400;
+    }
+
+    .arrivals-title-underline {
+      width: 54px;
+      height: 1.5px;
+      background-color: var(--brand-warm-gold, #CFA874);
+      margin: 14px auto 0 auto;
+      border-radius: 2px;
+      opacity: 0.8;
+    }
+
+    .arrivals-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .arrivals-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 22px;
+      }
+    }
+
+    @media (min-width: 992px) {
+      .arrivals-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+      }
+    }
+
+    /* Arched Card Container */
+    .arrival-arch-card {
+      position: relative;
+      background-color: #FFFFFF;
+      border-radius: 140px 140px 24px 24px;
+      padding: 7px;
+      box-shadow: 0 8px 24px rgba(58, 46, 40, 0.07);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+      border: 1px solid rgba(207, 168, 116, 0.25);
+    }
+
+    .arrival-arch-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 36px rgba(58, 46, 40, 0.15);
+      border-color: var(--brand-warm-gold, #CFA874);
+    }
+
+    .arrival-arch-link {
+      display: block;
+      position: relative;
+      width: 100%;
+      height: 380px;
+      border-radius: 133px 133px 18px 18px;
+      overflow: hidden;
+      text-decoration: none;
+      background-color: #1A120B;
+    }
+
+    @media (max-width: 576px) {
+      .arrival-arch-card {
+        border-radius: 100px 100px 18px 18px;
+        padding: 5px;
+      }
+      .arrival-arch-link {
+        height: 310px;
+        border-radius: 95px 95px 14px 14px;
+      }
+    }
+
+    /* Top Pill Badge inside Arch */
+    .arrival-pill-badge {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      background: rgba(30, 22, 18, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: var(--brand-warm-gold, #CFA874);
+      border: 1px solid rgba(207, 168, 116, 0.35);
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 5px 16px;
+      border-radius: 50px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      white-space: nowrap;
+    }
+
+    /* Product Image */
+    .arrival-arch-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .arrival-arch-card:hover .arrival-arch-img {
+      transform: scale(1.08);
+    }
+
+    /* Bottom Dark Gradient Overlay */
+    .arrival-arch-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0) 35%,
+        rgba(26, 18, 11, 0.65) 65%,
+        rgba(26, 18, 11, 0.92) 100%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Floating Content over Gradient */
+    .arrival-arch-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 20px 16px;
+      z-index: 2;
+      text-align: center;
+      color: #FFFFFF;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .arrival-arch-title {
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: #FFFFFF;
+      margin: 0 0 6px 0;
+      line-height: 1.25;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .arrival-arch-rating {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.78rem;
+      color: #E2C799;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-weight: 500;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .arrival-arch-rating .star-icon {
+      color: #E2C799;
+      font-size: 0.82rem;
+    }
+
+    .arrival-arch-price {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    }
+
+    .arrival-arch-price .price-original {
+      font-size: 0.85rem;
+      font-weight: 400;
+      color: rgba(255, 255, 255, 0.65);
+      text-decoration: line-through;
+    }
+
+    /* Footer / View All Pill Button */
+    .arrivals-footer {
+      text-align: center;
+      margin-top: 44px;
+    }
+
+    .view-all-pill-btn {
+      display: inline-block;
+      padding: 12px 42px;
+      border: 1.5px solid var(--brand-mocha-brown, #3A2E28);
+      border-radius: 50px;
+      color: var(--brand-mocha-brown, #3A2E28);
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      text-decoration: none;
+      background-color: transparent;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .view-all-pill-btn:hover {
+      background-color: var(--brand-mocha-brown, #3A2E28);
+      color: #FFFFFF;
+      border-color: var(--brand-mocha-brown, #3A2E28);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(58, 46, 40, 0.2);
     }
 
     /* Video Slideshow Showcase Section */
@@ -1161,6 +1712,8 @@ import { MockDataService } from '../../core/mock/mock-data.service';
 export class HomeComponent implements OnInit, OnDestroy {
   categories: Category[] = [];
   featuredProducts: ProductCardData[] = [];
+  newArrivals: ProductCardData[] = [];
+  bestsellerProducts: ProductCardData[] = [];
   activeOccasionId = 'wedding';
 
   currentSlideIndex = 0;
@@ -1251,6 +1804,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   ];
 
   private mockDataService = inject(MockDataService);
+  private cartService = inject(CartService);
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
@@ -1262,7 +1816,28 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.featuredProducts = prods;
     });
 
+    this.mockDataService.getNewArrivals().subscribe(prods => {
+      this.newArrivals = prods;
+    });
+
+    this.mockDataService.getBestsellers().subscribe(prods => {
+      this.bestsellerProducts = prods;
+    });
+
     this.startSlideshowTimer();
+  }
+
+  addToBag(product: ProductCardData, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.cartService.addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      category: product.category,
+      slug: product.slug
+    } as any, 1);
   }
 
   ngOnDestroy(): void {
