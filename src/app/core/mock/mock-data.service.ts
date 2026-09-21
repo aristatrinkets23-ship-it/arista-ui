@@ -211,13 +211,24 @@ export class MockDataService {
   }
 
   addCategory(newCat: Partial<Category>): Category {
-    const slug = (newCat.slug || newCat.name || 'category-' + Date.now()).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    const rawName = (newCat.name || '').trim();
+    const slug = (newCat.slug || rawName || 'category-' + Date.now()).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-');
+    const lowerName = rawName.toLowerCase();
+
+    // Check case-insensitive duplicate name or slug
+    const duplicate = this.categories.find(c =>
+      c.name.trim().toLowerCase() === lowerName || c.slug.toLowerCase() === slug
+    );
+    if (duplicate && duplicate.id !== newCat.id) {
+      throw new Error(`Category "${rawName || slug}" already exists.`);
+    }
+
     const id = newCat.id ? newCat.id : 'cat-' + slug;
     const defaultImg = getDefaultCategoryImage(slug);
 
     const fullCat: Category = {
       id,
-      name: newCat.name || 'New Collection',
+      name: rawName || 'New Collection',
       slug,
       description: newCat.description || 'Exquisite fine jewellery collection by Arista Trinkets.',
       image: newCat.image && newCat.image.trim() !== '' ? newCat.image.trim() : defaultImg,

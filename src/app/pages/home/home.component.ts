@@ -132,30 +132,28 @@ import { MockDataService } from '../../core/mock/mock-data.service';
     </section>
 
     <!-- Featured Collections Grid -->
-    <section class="section-padding bg-pearl">
+    <!-- Shop by Category Section (Ref: arista-jewelery.pages.dev) -->
+    <section class="section-padding bg-pearl category-section">
       <div class="container">
-        <app-section-heading
-          subtitle="Curated Selection"
-          title="Browse By Category"
-          align="center"
-        ></app-section-heading>
+        <div class="cat-section-header">
+          <span class="cat-eyebrow">EXPLORE</span>
+          <h2 class="cat-section-title">Shop by <em>Category</em></h2>
+        </div>
 
-        <div *ngIf="categories.length > 0" class="category-grid">
-          <a
-            *ngFor="let cat of categories"
-            [routerLink]="['/shop']"
-            [queryParams]="{ category: cat.slug }"
-            class="category-card"
-          >
-            <div class="category-img-wrapper">
-              <img [src]="cat.image" [alt]="cat.name" class="category-img" loading="lazy" (error)="onImageError($event)" />
-            </div>
-            <div class="category-info">
-              <h3 class="category-name">{{ cat.name }}</h3>
-              <span class="category-count">{{ cat.itemCount }} {{ cat.itemCount === 1 ? 'Item' : 'Items' }}</span>
-              <span class="category-cta">SHOP COLLECTION &rarr;</span>
-            </div>
-          </a>
+        <div *ngIf="categories.length > 0" class="category-strip-container">
+          <div class="category-strip">
+            <a
+              *ngFor="let cat of categories"
+              [routerLink]="['/shop']"
+              [queryParams]="{ category: cat.slug }"
+              class="cat-strip-item"
+            >
+              <div class="cat-thumb-box">
+                <img [src]="cat.image" [alt]="cat.name" class="cat-thumb-img" loading="lazy" (error)="onImageError($event)" />
+              </div>
+              <span class="cat-thumb-name">{{ cat.name }}</span>
+            </a>
+          </div>
         </div>
 
         <div *ngIf="categories.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
@@ -531,107 +529,127 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       background-color: var(--brand-pearl-beige);
     }
 
-    .category-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    @media (min-width: 768px) {
-      .category-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-      }
-    }
-
-    @media (min-width: 992px) {
-      .category-grid {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
-      }
-    }
-
-    .category-card {
-      background-color: #FFFFFF;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      text-decoration: none;
-      transition: all var(--transition-normal);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .category-card:hover {
-      border-color: var(--brand-warm-gold);
-      transform: translateY(-4px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .category-img-wrapper {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      background-color: var(--brand-pearl-beige);
+    /* Shop by Category Section - Reference Replica (arista-jewelery.pages.dev) */
+    .category-section {
+      padding: 56px 0 44px 0;
+      background-color: var(--brand-pearl-beige, #FDFBF7);
       overflow: hidden;
     }
 
-    .category-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform var(--transition-normal);
-      display: block;
-    }
-
-    .category-card:hover .category-img {
-      transform: scale(1.06);
-    }
-
-    .category-info {
-      padding: 12px 10px;
+    .cat-section-header {
       text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .cat-eyebrow {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.28em;
+      color: var(--brand-warm-gold, #CFA874);
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .cat-section-title {
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-size: clamp(2rem, 4vw, 2.75rem);
+      color: var(--brand-mocha-brown, #3A2E28);
+      font-weight: 400;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .cat-section-title em {
+      font-style: italic;
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      color: var(--brand-warm-gold, #CFA874);
+      font-weight: 400;
+    }
+
+    .category-strip-container {
+      width: 100%;
+      overflow-x: auto;
+      padding: 8px 4px 16px 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .category-strip-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category-strip {
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      justify-content: center;
+      min-width: max-content;
+      margin: 0 auto;
+      padding: 4px 12px;
+    }
+
+    @media (max-width: 768px) {
+      .category-strip {
+        justify-content: flex-start;
+        gap: 18px;
+      }
+    }
+
+    .cat-strip-item {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
+      text-decoration: none;
+      cursor: pointer;
+      width: 125px;
+      flex-shrink: 0;
     }
 
-    @media (min-width: 768px) {
-      .category-info {
-        padding: 16px 12px;
-      }
+    .cat-thumb-box {
+      width: 120px;
+      height: 120px;
+      border-radius: 22px;
+      overflow: hidden;
+      background-color: #FFFFFF;
+      position: relative;
+      border: 1.5px solid rgba(207, 168, 116, 0.45);
+      box-shadow: 0 6px 16px rgba(58, 46, 40, 0.07);
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .category-name {
-      font-family: var(--font-serif);
-      font-size: var(--font-size-card-title);
-      font-weight: 600;
-      color: var(--brand-mocha-brown);
-      margin: 0;
-      line-height: 1.25;
+    .cat-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
     }
 
-    .category-count {
-      font-size: 0.75rem;
-      color: var(--color-text-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    .cat-strip-item:hover .cat-thumb-box {
+      transform: translateY(-5px);
+      border-color: var(--brand-warm-gold, #D4AF37);
+      box-shadow: 0 12px 26px rgba(212, 175, 55, 0.35);
     }
 
-    .category-cta {
-      font-size: 0.78rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--brand-warm-gold);
-      font-weight: 700;
-      margin-top: 6px;
-      transition: color var(--transition-fast);
+    .cat-strip-item:hover .cat-thumb-img {
+      transform: scale(1.12);
     }
 
-    .category-card:hover .category-cta {
-      color: var(--brand-mocha-brown);
+    .cat-thumb-name {
+      margin-top: 10px;
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: var(--brand-mocha-brown, #3A2E28);
+      text-align: center;
+      white-space: nowrap;
+      transition: color 0.25s ease;
+    }
+
+    .cat-strip-item:hover .cat-thumb-name {
+      color: var(--brand-warm-gold, #D4AF37);
     }
 
     /* Editorial Section */

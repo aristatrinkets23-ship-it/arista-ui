@@ -110,7 +110,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
         <div *ngIf="activeTab === 'categories'" class="tab-content">
           <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.2rem;">Collection Categories ({{ categories.length }})</h3>
-            <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="showAddCategoryModal = true">
+            <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="openAddCategoryModal()">
               + Add New Category
             </button>
           </div>
@@ -164,7 +164,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
         <div *ngIf="activeTab === 'products'" class="tab-content">
           <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
             <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.2rem;">Product Catalog ({{ products.length }})</h3>
-            <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="showAddProductModal = true">
+            <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="openAddProductModal()">
               + Add New Jewellery Piece
             </button>
           </div>
@@ -297,7 +297,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   Manage administrator accounts registered in the database with access to the Atelier dashboard.
                 </p>
               </div>
-              <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="showCreateAdminModal = true">
+              <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="openCreateAdminModal()">
                 + Create New Admin User
               </button>
             </div>
@@ -622,11 +622,11 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- ADD PRODUCT MODAL OVERLAY POPUP -->
-    <div *ngIf="showAddProductModal" class="modal-backdrop" (click)="showAddProductModal = false">
+    <div *ngIf="showAddProductModal" class="modal-backdrop" (click)="closeAddProductModal()">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="form-title" style="margin:0;">+ Add New Jewellery Creation to Catalog</h2>
-          <button type="button" class="btn-close" (click)="showAddProductModal = false">&times;</button>
+          <button type="button" class="btn-close" (click)="closeAddProductModal()">&times;</button>
         </div>
 
         <div class="success-banner" *ngIf="successMessage" style="margin-top:16px;">
@@ -810,7 +810,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn-cancel" (click)="showAddProductModal = false">Cancel</button>
+            <button type="button" class="btn-cancel" (click)="closeAddProductModal()">Cancel</button>
             <button type="submit" class="btn-save" style="margin-top:0;">+ Publish Product to Storefront</button>
           </div>
         </form>
@@ -818,11 +818,11 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- ADD CATEGORY MODAL OVERLAY POPUP -->
-    <div *ngIf="showAddCategoryModal" class="modal-backdrop" (click)="showAddCategoryModal = false">
+    <div *ngIf="showAddCategoryModal" class="modal-backdrop" (click)="closeAddCategoryModal()">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="form-title" style="margin:0;">+ Add New Collection Category</h2>
-          <button type="button" class="btn-close" (click)="showAddCategoryModal = false">&times;</button>
+          <button type="button" class="btn-close" (click)="closeAddCategoryModal()">&times;</button>
         </div>
 
         <div class="success-banner" *ngIf="categorySuccessMessage" style="margin-top:16px;">
@@ -900,7 +900,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn-cancel" (click)="showAddCategoryModal = false">Cancel</button>
+            <button type="button" class="btn-cancel" (click)="closeAddCategoryModal()">Cancel</button>
             <button type="submit" class="btn-save" style="margin-top:0;">+ Publish Category to Storefront</button>
           </div>
         </form>
@@ -908,11 +908,11 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- CREATE NEW ADMIN USER MODAL OVERLAY POPUP -->
-    <div *ngIf="showCreateAdminModal" class="modal-backdrop" (click)="showCreateAdminModal = false">
+    <div *ngIf="showCreateAdminModal" class="modal-backdrop" (click)="closeCreateAdminModal()">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="form-title" style="margin:0;">+ Create New Admin User Account</h2>
-          <button type="button" class="btn-close" (click)="showCreateAdminModal = false">&times;</button>
+          <button type="button" class="btn-close" (click)="closeCreateAdminModal()">&times;</button>
         </div>
 
         <div class="error-banner" *ngIf="newAdminErrorMessage" style="margin-top:16px;">
@@ -959,7 +959,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn-cancel" (click)="showCreateAdminModal = false">Cancel</button>
+            <button type="button" class="btn-cancel" (click)="closeCreateAdminModal()">Cancel</button>
             <button type="submit" class="btn-save" style="margin-top:0;">+ Register Admin User</button>
           </div>
         </form>
@@ -1172,7 +1172,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       top: 24px;
       right: 24px;
       z-index: 99999;
-      padding: 14px 24px;
+      padding: 12px 18px 12px 20px;
       border-radius: 50px;
       font-weight: 600;
       font-size: 0.9rem;
@@ -1180,6 +1180,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       display: flex;
       align-items: center;
       gap: 12px;
+      max-width: min(540px, calc(100vw - 32px));
       animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -1209,21 +1210,35 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     .toast-icon {
       font-weight: 700;
       font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .toast-text {
+      flex: 1;
+      line-height: 1.4;
+      word-break: break-word;
     }
 
     .btn-close-toast {
-      background: transparent;
+      background: rgba(255, 255, 255, 0.22);
       border: none;
-      color: currentColor;
-      font-size: 1.3rem;
+      color: #FFFFFF;
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      border-radius: 50%;
+      font-size: 1.1rem;
       cursor: pointer;
-      line-height: 1;
-      padding: 0 4px;
-      opacity: 0.8;
-      transition: opacity var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+      margin-left: 4px;
     }
     .btn-close-toast:hover {
-      opacity: 1;
+      background: rgba(255, 255, 255, 0.4);
+      transform: scale(1.08);
     }
 
     .admin-hero {
@@ -2821,27 +2836,7 @@ export class AdminComponent implements OnInit {
     this.products = [createdItem, ...this.products];
     const createdName = this.newProduct.name;
 
-    this.showAddProductModal = false;
-    this.successMessage = '';
-    this.newSystemFileName = '';
-    this.newProduct = {
-      name: '',
-      category: '',
-      price: '',
-      compareAtPrice: '',
-      badge: 'NEW',
-      stockQuantity: '',
-      image: '',
-      images: [],
-      description: '',
-      materialsStr: '18K Warm Gold, Sterling Silver, Rose Gold',
-      careGuide: 'Handle with care. Store in protective velvet pouch after use.',
-      shippingInfo: 'Complimentary insured express delivery within 3-5 business days.',
-      specifications: [
-        { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' },
-        { label: 'Certification', value: 'BIS Hallmarked Gold' }
-      ]
-    };
+    this.closeAddProductModal();
     this.showToast(`Jewellery creation "${createdName}" published to catalog!`, 'success');
   }
 
@@ -3146,22 +3141,32 @@ export class AdminComponent implements OnInit {
 
     if (!this.newCategory.name || !this.newCategory.name.trim()) {
       this.categoryErrorMessage = 'Category Name is mandatory.';
-      this.showToast('Category Name is mandatory.', 'error');
       return;
     }
     if (!this.newCategory.slug || !this.newCategory.slug.trim()) {
       this.categoryErrorMessage = 'Category Slug is mandatory.';
-      this.showToast('Category Slug is mandatory.', 'error');
       return;
     }
     if (!this.newCategory.image || !this.newCategory.image.trim()) {
       this.categoryErrorMessage = 'Category Image is mandatory.';
-      this.showToast('Category Image is mandatory.', 'error');
       return;
     }
     if (!this.newCategory.description || !this.newCategory.description.trim()) {
       this.categoryErrorMessage = 'Category Description is mandatory.';
-      this.showToast('Category Description is mandatory.', 'error');
+      return;
+    }
+
+    const inputNameLower = this.newCategory.name.trim().toLowerCase();
+    const inputSlugLower = this.newCategory.slug.trim().toLowerCase();
+
+    const isDuplicate = this.categories.some(c =>
+      c.name.trim().toLowerCase() === inputNameLower ||
+      c.slug.trim().toLowerCase() === inputSlugLower
+    );
+
+    if (isDuplicate) {
+      const errMsg = `Category "${this.newCategory.name.trim()}" already exists. Cannot add duplicate categories.`;
+      this.categoryErrorMessage = errMsg;
       return;
     }
 
@@ -3184,6 +3189,11 @@ export class AdminComponent implements OnInit {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+      if (!res.ok || (data && data.success === false)) {
+        const errMsg = data?.message || `Category "${this.newCategory.name.trim()}" already exists.`;
+        this.categoryErrorMessage = errMsg;
+        return;
+      }
       if (data && data.data && data.data.id) {
         createdCatId = data.data.id;
       }
@@ -3191,15 +3201,33 @@ export class AdminComponent implements OnInit {
       // Offline fallback
     }
 
-    const added = this.mockDataService.addCategory({
-      ...payload,
-      id: createdCatId || undefined,
-      featured: true
-    });
+    try {
+      const added = this.mockDataService.addCategory({
+        ...payload,
+        id: createdCatId || undefined,
+        featured: true
+      });
 
-    const catName = added.name;
+      const catName = added.name;
+      this.closeAddCategoryModal();
+      this.showToast(`Category "${catName}" published successfully!`, 'success');
+    } catch (err: any) {
+      const errMsg = err.message || `Category "${this.newCategory.name.trim()}" already exists.`;
+      this.categoryErrorMessage = errMsg;
+    }
+  }
+
+  openAddCategoryModal(): void {
+    this.resetAddCategoryForm();
+    this.showAddCategoryModal = true;
+  }
+
+  closeAddCategoryModal(): void {
     this.showAddCategoryModal = false;
-    this.categorySuccessMessage = '';
+    this.resetAddCategoryForm();
+  }
+
+  resetAddCategoryForm(): void {
     this.newCategory = {
       name: '',
       slug: '',
@@ -3207,7 +3235,56 @@ export class AdminComponent implements OnInit {
       image: ''
     };
     this.newCategoryFileName = '';
-    this.showToast(`Category "${catName}" published successfully!`, 'success');
+    this.categoryErrorMessage = '';
+    this.categorySuccessMessage = '';
+  }
+
+  openAddProductModal(): void {
+    this.resetAddProductForm();
+    this.showAddProductModal = true;
+  }
+
+  closeAddProductModal(): void {
+    this.showAddProductModal = false;
+    this.resetAddProductForm();
+  }
+
+  resetAddProductForm(): void {
+    this.newProduct = {
+      name: '',
+      category: '',
+      price: '',
+      compareAtPrice: '',
+      badge: 'NEW',
+      stockQuantity: '',
+      image: '',
+      images: [],
+      description: '',
+      materialsStr: '18K Warm Gold, Sterling Silver, Rose Gold',
+      careGuide: 'Handle with care. Store in protective velvet pouch after use.',
+      shippingInfo: 'Complimentary insured express delivery within 3-5 business days.',
+      specifications: [
+        { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' },
+        { label: 'Certification', value: 'BIS Hallmarked Gold' }
+      ]
+    };
+    this.newSystemFileName = '';
+    this.successMessage = '';
+  }
+
+  openCreateAdminModal(): void {
+    this.resetCreateAdminForm();
+    this.showCreateAdminModal = true;
+  }
+
+  closeCreateAdminModal(): void {
+    this.showCreateAdminModal = false;
+    this.resetCreateAdminForm();
+  }
+
+  resetCreateAdminForm(): void {
+    this.newAdminForm = { name: '', email: '', password: '' };
+    this.newAdminErrorMessage = '';
   }
 
   async deleteCategory(id: number | string): Promise<void> {
@@ -3303,6 +3380,20 @@ export class AdminComponent implements OnInit {
       return;
     }
 
+    const editNameLower = this.editingCategory.name.trim().toLowerCase();
+    const editSlugLower = this.editingCategory.slug.trim().toLowerCase();
+
+    const isDuplicate = this.categories.some(c =>
+      c.id !== this.editingCategory.id &&
+      (c.name.trim().toLowerCase() === editNameLower || c.slug.trim().toLowerCase() === editSlugLower)
+    );
+
+    if (isDuplicate) {
+      const errMsg = `Category "${this.editingCategory.name.trim()}" already exists. Cannot update with duplicate name or slug.`;
+      this.showToast(errMsg, 'error');
+      return;
+    }
+
     const payload = {
       name: this.editingCategory.name.trim(),
       slug: this.editingCategory.slug.trim(),
@@ -3313,7 +3404,7 @@ export class AdminComponent implements OnInit {
 
     try {
       const token = this.authService.getToken();
-      await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(this.editingCategory.id), {
+      const res = await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(this.editingCategory.id), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -3321,6 +3412,12 @@ export class AdminComponent implements OnInit {
         },
         body: JSON.stringify(payload)
       });
+      const data = await res.json();
+      if (!res.ok || (data && data.success === false)) {
+        const errMsg = data?.message || 'Category update failed.';
+        this.showToast(errMsg, 'error');
+        return;
+      }
     } catch (err) {
       // Offline fallback
     }
