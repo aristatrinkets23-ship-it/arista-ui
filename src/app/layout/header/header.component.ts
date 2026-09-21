@@ -22,7 +22,7 @@ import { CartService } from '../../core/services/cart.service';
           </svg>
         </button>
 
-        <!-- Brand Logo -->
+        <!-- Brand Logo (Unified Emblem + Brand Mark) -->
         <a routerLink="/" class="brand-logo" aria-label="Arista Trinkets Home">
           <img src="/assets/images/full-logo-transparent.png" alt="Arista Trinkets Fine Jewellery" class="brand-logo-img" width="168" height="52" ngSkipOversizedImageWarning />
         </a>
@@ -146,17 +146,12 @@ import { CartService } from '../../core/services/cart.service';
     }
 
     .site-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      width: 100%;
-      z-index: 1000;
       background-color: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid rgba(207, 168, 116, 0.25);
       box-shadow: 0 4px 20px rgba(58, 46, 40, 0.07);
+      width: 100%;
     }
 
     .header-content {
@@ -180,21 +175,21 @@ import { CartService } from '../../core/services/cart.service';
     }
 
     .brand-logo-img {
-      height: 38px;
+      height: 36px;
       width: auto;
       object-fit: contain;
     }
 
     @media (min-width: 768px) {
       .brand-logo-img {
-        height: 46px;
+        height: 44px;
       }
     }
 
     .mobile-toggle {
       background: transparent;
       border: none;
-      color: var(--brand-mocha-brown, #1A120B);
+      color: var(--brand-mocha-brown, #3A2E28);
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -219,7 +214,7 @@ import { CartService } from '../../core/services/cart.service';
       .desktop-nav {
         display: flex;
         align-items: center;
-        gap: 26px;
+        gap: 24px;
         white-space: nowrap;
       }
       .mobile-toggle { display: none !important; }
@@ -227,17 +222,17 @@ import { CartService } from '../../core/services/cart.service';
 
     @media (min-width: 1200px) {
       .desktop-nav {
-        gap: 34px;
+        gap: 32px;
       }
     }
 
     .nav-link {
-      font-family: var(--font-sans, 'Montserrat', sans-serif);
+      font-family: var(--font-sans, system-ui, sans-serif);
       font-size: 0.82rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.12em;
-      color: var(--brand-mocha-brown, #1A120B);
+      color: var(--brand-mocha-brown, #3A2E28);
       padding: 10px 2px;
       position: relative;
       text-decoration: none;
@@ -284,7 +279,7 @@ import { CartService } from '../../core/services/cart.service';
     .action-btn {
       background: transparent;
       border: none;
-      color: var(--brand-mocha-brown, #1A120B);
+      color: var(--brand-mocha-brown, #3A2E28);
       cursor: pointer;
       position: relative;
       width: 44px;
@@ -296,7 +291,6 @@ import { CartService } from '../../core/services/cart.service';
       justify-content: center;
       border-radius: 50%;
       transition: all 0.25s ease;
-      overflow: visible;
     }
 
     .action-btn:hover {
@@ -304,17 +298,13 @@ import { CartService } from '../../core/services/cart.service';
       background-color: var(--brand-pearl-beige, #FAF7F2);
     }
 
-    .bag-btn {
-      overflow: visible !important;
-    }
-
     .bag-count {
       position: absolute;
-      top: 2px;
+      top: 4px;
       right: 2px;
       background-color: var(--brand-warm-gold, #CFA874);
       color: #1A120B;
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       font-weight: 700;
       width: 18px;
       height: 18px;
@@ -322,9 +312,26 @@ import { CartService } from '../../core/services/cart.service';
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
       border: 1.5px solid #FFFFFF;
-      z-index: 10;
+      z-index: 2;
+    }
+
+    .mobile-toggle {
+      background: transparent;
+      border: none;
+      color: var(--brand-mocha-brown);
+      cursor: pointer;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+    }
+
+    .mobile-toggle:hover {
+      background-color: var(--brand-pearl-beige);
     }
 
     /* Luxury Mobile Drawer */
@@ -336,18 +343,17 @@ import { CartService } from '../../core/services/cart.service';
       max-width: 88vw;
       height: 100vh;
       background-color: #FFFFFF;
-      z-index: 1200;
+      z-index: 200;
       transform: translateX(-100%);
       transition: transform var(--transition-normal);
       display: flex;
       flex-direction: column;
-      box-shadow: none; /* Stray left shadow fix */
+      box-shadow: 10px 0 35px rgba(91, 70, 54, 0.16);
       overflow-y: auto;
     }
 
     .mobile-drawer.open {
       transform: translateX(0);
-      box-shadow: 10px 0 35px rgba(26, 18, 11, 0.2);
     }
 
     .drawer-header {
@@ -362,6 +368,7 @@ import { CartService } from '../../core/services/cart.service';
     .drawer-logo {
       display: inline-flex;
       align-items: center;
+      gap: 0;
       text-decoration: none;
     }
 
@@ -527,7 +534,7 @@ import { CartService } from '../../core/services/cart.service';
       width: 100vw;
       height: 100vh;
       background-color: rgba(0, 0, 0, 0.45);
-      z-index: 1199;
+      z-index: 199;
       backdrop-filter: blur(2px);
     }
   `]

@@ -20,23 +20,125 @@ import { CartService } from '../../core/services/cart.service';
     ButtonComponent
   ],
   template: `
-    <!-- Hero Banner Section -->
+    <!-- Hero Banner Section (Reference: arista-jewelery.pages.dev) -->
     <section class="hero-section">
       <div class="hero-bg-overlay"></div>
       <div class="container hero-container">
         <div class="hero-content">
-          <span class="hero-subtitle">The New 2026 Fine Jewellery Collection</span>
-          <h1 class="hero-title">Timeless Elegance,<br>Handcrafted for You</h1>
+          <!-- Handcrafted Elegance Eyebrow -->
+          <div class="hero-eyebrow-wrapper">
+            <span class="hero-eyebrow-line"></span>
+            <span class="hero-eyebrow-text">
+              <span class="hero-diamond-dot">◆</span> Handcrafted Elegance <span class="hero-diamond-dot">◆</span>
+            </span>
+            <span class="hero-eyebrow-line"></span>
+          </div>
+
+          <!-- Hero Main Headline -->
+          <h1 class="hero-title">
+            Timeless pieces, thoughtfully crafted to celebrate <em>every you.</em>
+          </h1>
+
+          <!-- Hero Subtitle Description -->
           <p class="hero-description">
-            Discover our exquisite collection of 18K solid gold, sterling silver, and ethically sourced diamond creations designed for life's most precious milestones.
+            Discover a collection of fine jewellery designed for life's quiet, beautiful moments &mdash; elegant, minimal, and made to last.
           </p>
+
+          <!-- Primary CTA Button -->
           <div class="hero-actions">
-            <a routerLink="/shop" class="hero-cta-link">
-              <app-button variant="primary" size="lg">Explore Collection &rarr;</app-button>
+            <a routerLink="/shop" class="hero-primary-btn">
+              <span>Shop the Collection</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
             </a>
-            <a routerLink="/about" class="hero-cta-link">
-              <app-button variant="outline-light" size="lg">Our Atelier Craft</app-button>
-            </a>
+          </div>
+
+          <!-- 4 Feature Circles Grid -->
+          <div class="hero-features-grid">
+            <div class="hero-feature-item">
+              <div class="hero-feature-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </div>
+              <span class="hero-feature-title">HANDCRAFTED</span>
+              <span class="hero-feature-sub">Small-Batch Made</span>
+            </div>
+
+            <div class="hero-feature-item">
+              <div class="hero-feature-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path>
+                  <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path>
+                </svg>
+              </div>
+              <span class="hero-feature-title">ETHICAL</span>
+              <span class="hero-feature-sub">Sourced Stones</span>
+            </div>
+
+            <div class="hero-feature-item">
+              <div class="hero-feature-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  <polyline points="9 12 11 14 15 10"></polyline>
+                </svg>
+              </div>
+              <span class="hero-feature-title">LIFETIME</span>
+              <span class="hero-feature-sub">Warranty Included</span>
+            </div>
+
+            <div class="hero-feature-item">
+              <div class="hero-feature-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="8" width="18" height="13" rx="2"></rect>
+                  <path d="M12 8V3"></path>
+                  <path d="M7.5 3a2.5 2.5 0 0 1 4.5 1.5"></path>
+                  <path d="M16.5 3a2.5 2.5 0 0 0-4.5 1.5"></path>
+                </svg>
+              </div>
+              <span class="hero-feature-title">GIFT READY</span>
+              <span class="hero-feature-sub">Boxed & Wrapped</span>
+            </div>
+          </div>
+
+          <!-- 3-Item Trust Ribbon Bar -->
+          <div class="hero-trust-bar">
+            <div class="hero-trust-item">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="1" y="3" width="15" height="13"></rect>
+                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+                <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                <circle cx="18.5" cy="18.5" r="2.5"></circle>
+              </svg>
+              <div>
+                <span>FREE SHIPPING</span>
+                <span class="hero-trust-sub">On Every Order</span>
+              </div>
+            </div>
+
+            <div class="hero-trust-item">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+              </svg>
+              <div>
+                <span>30-DAY RETURNS</span>
+                <span class="hero-trust-sub">No Questions Asked</span>
+              </div>
+            </div>
+
+            <div class="hero-trust-item">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <div>
+                <span>SECURE PAYMENT</span>
+                <span class="hero-trust-sub">Encrypted Checkout</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -399,23 +501,190 @@ import { CartService } from '../../core/services/cart.service';
       text-align: left;
     }
 
-    .hero-subtitle {
-      font-family: var(--font-sans);
-      font-size: var(--font-size-eyebrow);
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 3.5px;
-      color: var(--brand-warm-gold);
+    .hero-eyebrow-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
       margin-bottom: 16px;
-      display: block;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      max-width: 320px;
+    }
+
+    .hero-eyebrow-line {
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, transparent, #CFA874);
+    }
+
+    .hero-eyebrow-wrapper .hero-eyebrow-line:last-child {
+      background: linear-gradient(90deg, #CFA874, transparent);
+    }
+
+    .hero-eyebrow-text {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.22em;
+      color: #E2BA84;
+      white-space: nowrap;
+    }
+
+    .hero-diamond-dot {
+      font-size: 0.6rem;
+      color: #CFA874;
     }
 
     .hero-title {
-      font-family: var(--font-serif);
-      font-size: clamp(2.4rem, 4.8vw, 3.8rem);
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-size: clamp(2.2rem, 4.5vw, 3.6rem);
       color: #FFFFFF;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      line-height: 1.15;
+      font-weight: 400;
+      font-style: italic;
+      text-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: #FFFFFF;
+    }
+
+    .hero-description {
+      font-size: clamp(0.98rem, 1.5vw, 1.1rem);
+      color: #F5EBDD;
+      margin-bottom: 28px;
+      line-height: 1.7;
+      max-width: 540px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    }
+
+    .hero-primary-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background-color: #CFA874;
+      color: #1A120B;
+      padding: 14px 32px;
+      border-radius: 50px;
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-decoration: none;
+      text-transform: uppercase;
+      box-shadow: 0 8px 24px rgba(207, 168, 116, 0.35);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hero-primary-btn:hover {
+      background-color: #FFFFFF;
+      color: #1A120B;
+      transform: scale(1.04);
+      box-shadow: 0 12px 30px rgba(255, 255, 255, 0.4);
+    }
+
+    /* 4 Feature Circles Grid */
+    .hero-features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 32px;
+      max-width: 480px;
+    }
+
+    @media (max-width: 576px) {
+      .hero-features-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+    }
+
+    .hero-feature-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 4px;
+    }
+
+    .hero-feature-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 24%, #FFFFFF 0%, #F7E9E6 100%);
+      border: 1.5px solid #CFA874;
+      color: #CFA874;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(207, 168, 116, 0.25);
+      transition: transform 0.3s ease;
+    }
+
+    .hero-feature-item:hover .hero-feature-icon {
+      transform: scale(1.08);
+    }
+
+    .hero-feature-title {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #FFFFFF;
+      text-transform: uppercase;
+    }
+
+    .hero-feature-sub {
+      font-size: 0.58rem;
+      color: rgba(245, 235, 221, 0.7);
+    }
+
+    /* 3-Item Trust Ribbon Bar */
+    .hero-trust-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(232, 227, 243, 0.12);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(207, 168, 116, 0.3);
+      border-radius: 50px;
+      padding: 10px 20px;
+      margin-top: 28px;
+      max-width: 520px;
+    }
+
+    @media (max-width: 576px) {
+      .hero-trust-bar {
+        flex-direction: column;
+        gap: 8px;
+        border-radius: 16px;
+        align-items: flex-start;
+      }
+    }
+
+    .hero-trust-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-trust-item svg {
+      color: #CFA874;
+      flex-shrink: 0;
+    }
+
+    .hero-trust-sub {
+      display: block;
+      font-size: 0.6rem;
+      font-weight: 400;
+      color: rgba(245, 235, 221, 0.75);
+    }
       line-height: 1.12;
       font-weight: 700;
       text-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
