@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -103,6 +103,14 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             (click)="activeTab = 'credentials'"
           >
             ⚙ Admin Credentials
+          </button>
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeTab === 'homepage-photos'"
+            (click)="activeTab = 'homepage-photos'"
+          >
+            🖼 Homepage Photos
           </button>
         </div>
 
@@ -354,6 +362,133 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
         </div>
 
+        <!-- TAB 5: HOMEPAGE PHOTOS & CONFIGURATION -->
+        <div *ngIf="activeTab === 'homepage-photos'" class="tab-content">
+          <div style="margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, #FAF7F2 0%, #F5EFE6 100%); border-radius: 12px; border: 1px solid #E8DFD5;">
+            <h3 style="font-family: var(--font-serif); color: #4A3B32; margin: 0 0 6px 0; font-size: 1.3rem; display: flex; align-items: center; gap: 8px;">
+              <span>🖼️</span> Homepage Photo Configuration Manager
+            </h3>
+            <p style="margin: 0; color: #665C54; font-size: 0.95rem; line-height: 1.5;">
+              Easily manage all 3 homepage photo sections without technical skills. Upload new photos for editorial banners or manage product badge assignments.
+            </p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+
+            <!-- SECTION 1: EDITORIAL / ARTISANAL EXCELLENCE PHOTO -->
+            <div style="background: #ffffff; border-radius: 12px; border: 1px solid #E8DFD5; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 24px; display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <span style="background: #F4EBE1; color: #7A5C43; font-weight: bold; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">Section 1</span>
+                <h4 style="margin: 0; font-family: var(--font-serif); color: #3A2E26; font-size: 1.15rem;">Artisanal Excellence (Editorial Photo)</h4>
+              </div>
+              <p style="font-size: 0.88rem; color: #6C5F56; margin-bottom: 16px; line-height: 1.4;">
+                This picture is featured in the main "Artisanal Excellence &amp; Story of Grace" section on the homepage.
+              </p>
+
+              <!-- Image Preview Container -->
+              <div style="width: 100%; height: 220px; border-radius: 8px; overflow: hidden; border: 2px dashed #D9CFC4; background: #FAF7F4; position: relative; margin-bottom: 16px; display: flex; align-items: center; justify-content: center;">
+                <img [src]="newEditorialPhotoPreview || homepageEditorialPhoto" alt="Editorial Preview" style="width: 100%; height: 100%; object-fit: cover;" (error)="onImageError($event)" />
+                <span style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); color: #fff; font-size: 0.75rem; padding: 3px 8px; border-radius: 4px;">
+                  {{ newEditorialPhotoPreview ? 'New Preview' : 'Current Active' }}
+                </span>
+              </div>
+
+              <!-- Success / Error Alert Messages -->
+              <div *ngIf="homepageSaveSuccess" style="background: #EAF8E6; border: 1px solid #C2E8B8; color: #2E6B23; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem; margin-bottom: 14px;">
+                ✓ {{ homepageSaveSuccess }}
+              </div>
+              <div *ngIf="homepageSaveError" style="background: #FDE8E8; border: 1px solid #F8B4B4; color: #9B1C1C; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem; margin-bottom: 14px;">
+                ⚠️ {{ homepageSaveError }}
+              </div>
+
+              <!-- Upload Actions -->
+              <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: inline-block; cursor: pointer; text-align: center; padding: 10px 16px; background: #F3ECE2; border: 1px solid #D9CBB9; color: #4A3B32; font-weight: 600; font-size: 0.9rem; border-radius: 6px; transition: all 0.2s;">
+                  📁 Select New Photo from Computer
+                  <input type="file" accept="image/*" style="display: none;" (change)="onEditorialPhotoSelected($event)" />
+                </label>
+
+                <div style="display: flex; gap: 10px;" *ngIf="newEditorialPhotoPreview">
+                  <button type="button" class="btn-save" style="flex: 1; margin: 0; padding: 10px 16px;" [disabled]="isSavingHomepagePhoto" (click)="saveEditorialPhoto()">
+                    {{ isSavingHomepagePhoto ? 'Saving...' : '💾 Save & Publish Photo' }}
+                  </button>
+                  <button type="button" class="btn-cancel" style="padding: 10px 14px;" (click)="newEditorialPhotoPreview = ''">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 2: NEW ARRIVALS PHOTO GALLERY GUIDE -->
+            <div style="background: #ffffff; border-radius: 12px; border: 1px solid #E8DFD5; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 24px; display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <span style="background: #E2EFF8; color: #1E557F; font-weight: bold; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">Section 2</span>
+                <h4 style="margin: 0; font-family: var(--font-serif); color: #3A2E26; font-size: 1.15rem;">New Arrivals Photos</h4>
+              </div>
+              <p style="font-size: 0.88rem; color: #6C5F56; margin-bottom: 14px; line-height: 1.4;">
+                Photos shown in <strong>New Arrivals</strong> are automatically fetched from products tagged with the <strong>NEW</strong> badge.
+              </p>
+
+              <div style="background: #F9F6F0; border-left: 4px solid #7A5C43; padding: 12px 14px; border-radius: 0 6px 6px 0; margin-bottom: 16px;">
+                <div style="font-weight: 600; font-size: 0.85rem; color: #4A3B32; margin-bottom: 4px;">💡 How to change photo / add item here:</div>
+                <div style="font-size: 0.82rem; color: #665C54;">
+                  Go to <strong>Product Catalog</strong> tab &rarr; Edit any product &rarr; Set <strong>Badge</strong> to <strong>NEW</strong> &amp; upload image.
+                </div>
+              </div>
+
+              <!-- Active NEW Products Mini Gallery -->
+              <div style="margin-top: auto;">
+                <div style="font-size: 0.82rem; font-weight: bold; color: #7A5C43; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                  Active New Arrivals Photos:
+                </div>
+                <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;">
+                  <ng-container *ngFor="let prod of products">
+                    <div *ngIf="prod.badge === 'NEW' || prod.badge === 'NEW ARRIVAL'" style="flex: 0 0 60px; text-align: center;">
+                      <img [src]="prod.image" [alt]="prod.name" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #E0D6C8;" (error)="onImageError($event)" />
+                      <div style="font-size: 0.7rem; color: #555; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 60px; margin-top: 2px;">{{ prod.name }}</div>
+                    </div>
+                  </ng-container>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 3: BESTSELLERS / @ARISTATRINKETS PHOTO GALLERY GUIDE -->
+            <div style="background: #ffffff; border-radius: 12px; border: 1px solid #E8DFD5; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 24px; display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+                <span style="background: #FDF3E5; color: #A06414; font-weight: bold; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">Section 3</span>
+                <h4 style="margin: 0; font-family: var(--font-serif); color: #3A2E26; font-size: 1.15rem;">Bestsellers / @aristatrinkets Photos</h4>
+              </div>
+              <p style="font-size: 0.88rem; color: #6C5F56; margin-bottom: 14px; line-height: 1.4;">
+                Photos shown in <strong>Bestsellers &amp; Trinket Grid</strong> are automatically pulled from products tagged with <strong>BESTSELLER</strong> badge.
+              </p>
+
+              <div style="background: #F9F6F0; border-left: 4px solid #A06414; padding: 12px 14px; border-radius: 0 6px 6px 0; margin-bottom: 16px;">
+                <div style="font-weight: 600; font-size: 0.85rem; color: #4A3B32; margin-bottom: 4px;">💡 How to change photo / add item here:</div>
+                <div style="font-size: 0.82rem; color: #665C54;">
+                  Go to <strong>Product Catalog</strong> tab &rarr; Edit any product &rarr; Set <strong>Badge</strong> to <strong>BESTSELLER</strong> &amp; update photo.
+                </div>
+              </div>
+
+              <!-- Active BESTSELLER Products Mini Gallery -->
+              <div style="margin-top: auto;">
+                <div style="font-size: 0.82rem; font-weight: bold; color: #A06414; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+                  Active Bestsellers Photos:
+                </div>
+                <div style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px;">
+                  <ng-container *ngFor="let prod of products">
+                    <div *ngIf="prod.badge === 'BESTSELLER' || prod.badge === 'HOT'" style="flex: 0 0 60px; text-align: center;">
+                      <img [src]="prod.image" [alt]="prod.name" style="width: 60px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid #E0D6C8;" (error)="onImageError($event)" />
+                      <div style="font-size: 0.7rem; color: #555; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 60px; margin-top: 2px;">{{ prod.name }}</div>
+                    </div>
+                  </ng-container>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+
 
 
       </div>
@@ -389,11 +524,15 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           <div class="form-row">
             <div class="form-group">
               <label>Price (₹ INR) *</label>
-              <input type="number" [(ngModel)]="editingProduct.price" name="editPrice" required />
+              <input type="number" [(ngModel)]="editingProduct.price" name="editPrice" (wheel)="preventNumberWheel($event)" required />
             </div>
             <div class="form-group">
               <label>Compare-At Price (₹ INR)</label>
-              <input type="number" [(ngModel)]="editingProduct.compareAtPrice" name="editCompareAtPrice" />
+              <input type="number" [(ngModel)]="editingProduct.compareAtPrice" name="editCompareAtPrice" (wheel)="preventNumberWheel($event)" />
+            </div>
+            <div class="form-group">
+              <label>Stock Quantity *</label>
+              <input type="number" [(ngModel)]="editingProduct.stockQuantity" name="editStockQuantity" (wheel)="preventNumberWheel($event)" />
             </div>
             <div class="form-group">
               <label>Badge Highlight Tag</label>
@@ -651,11 +790,11 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           <div class="form-row">
             <div class="form-group">
               <label>Price (₹ INR) *</label>
-              <input type="number" [(ngModel)]="newProduct.price" name="price" placeholder="45000" required />
+              <input type="number" [(ngModel)]="newProduct.price" name="price" placeholder="45000" (wheel)="preventNumberWheel($event)" required />
             </div>
             <div class="form-group">
               <label>Compare-At Original Price (₹ INR)</label>
-              <input type="number" [(ngModel)]="newProduct.compareAtPrice" name="compareAtPrice" placeholder="52000" />
+              <input type="number" [(ngModel)]="newProduct.compareAtPrice" name="compareAtPrice" placeholder="52000" (wheel)="preventNumberWheel($event)" />
             </div>
             <div class="form-group">
               <label>Badge Highlight Tag</label>
@@ -671,7 +810,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
           <div class="form-group" style="margin-top: 14px;">
             <label>Initial Stock Quantity</label>
-            <input type="number" [(ngModel)]="newProduct.stockQuantity" name="stockQuantity" placeholder="10" />
+            <input type="number" [(ngModel)]="newProduct.stockQuantity" name="stockQuantity" placeholder="10" (wheel)="preventNumberWheel($event)" />
           </div>
 
           <!-- MULTI-IMAGE SLIDESHOW GALLERY MANAGER (ADD FORM) -->
@@ -2197,10 +2336,16 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 })
 export class AdminComponent implements OnInit {
   defaultImage = DEFAULT_FALLBACK_IMAGE;
-  activeTab: 'products' | 'add-product' | 'categories' | 'add-category' | 'orders' | 'credentials' = 'categories';
+  activeTab: 'products' | 'add-product' | 'categories' | 'add-category' | 'orders' | 'credentials' | 'homepage-photos' = 'categories';
   products: ProductCardData[] = [];
   categories: Category[] = [];
   successMessage: string = '';
+
+  homepageEditorialPhoto: string = '/assets/images/editorial-artisanal-craft.jpg';
+  newEditorialPhotoPreview: string = '';
+  homepageSaveSuccess: string = '';
+  homepageSaveError: string = '';
+  isSavingHomepagePhoto: boolean = false;
 
   showAddProductModal: boolean = false;
   showAddCategoryModal: boolean = false;
@@ -2320,6 +2465,19 @@ export class AdminComponent implements OnInit {
     }, 4000);
   }
 
+  @HostListener('wheel', ['$event'])
+  onWheelScroll(event: WheelEvent): void {
+    if (document.activeElement instanceof HTMLInputElement && document.activeElement.type === 'number') {
+      document.activeElement.blur();
+    }
+  }
+
+  preventNumberWheel(event: Event): void {
+    if (event.target instanceof HTMLInputElement) {
+      event.target.blur();
+    }
+  }
+
   ngOnInit(): void {
     this.adminUser = this.authService.currentUser();
     if (this.adminUser) {
@@ -2330,16 +2488,22 @@ export class AdminComponent implements OnInit {
     this.loadAdminUsers();
 
     this.mockDataService.getProducts().subscribe(prods => {
-      this.products = prods.map(p => {
+      const uniqueProdsMap = new Map<string, ProductCardData>();
+      prods.forEach(p => {
         let img = p.image ? p.image.trim() : '';
         if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
           img = '/' + img;
         }
-        return {
+        const item: ProductCardData = {
           ...p,
           image: img || this.defaultImage
         };
+        const key = String(item.id || item.slug);
+        if (!uniqueProdsMap.has(key)) {
+          uniqueProdsMap.set(key, item);
+        }
       });
+      this.products = Array.from(uniqueProdsMap.values());
       this.cdr.detectChanges();
     });
 
@@ -2347,6 +2511,98 @@ export class AdminComponent implements OnInit {
       this.categories = cats;
       this.cdr.detectChanges();
     });
+
+    this.loadHomepageConfig();
+  }
+
+  loadHomepageConfig(): void {
+    fetch(API_ENDPOINTS.HOMEPAGE_CONFIG)
+      .then(res => res.json())
+      .then(data => {
+        if (data?.success && data?.data?.editorial_photo) {
+          this.homepageEditorialPhoto = data.data.editorial_photo;
+          this.cdr.detectChanges();
+        }
+      })
+      .catch(err => console.error('Error fetching homepage config:', err));
+  }
+
+  onEditorialPhotoSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.newEditorialPhotoPreview = reader.result as string;
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  private checkAuthError(res: Response, data?: any): boolean {
+    if (this.authService.checkUnauthorized(res, data)) {
+      this.showToast('Your session has expired. Please log in again.');
+      this.router.navigate(['/admin/login'], { queryParams: { reason: 'session_expired' } });
+      return true;
+    }
+    return false;
+  }
+
+  saveEditorialPhoto(): void {
+    const photoToSave = this.newEditorialPhotoPreview || this.homepageEditorialPhoto;
+    if (!photoToSave) return;
+
+    this.isSavingHomepagePhoto = true;
+    this.homepageSaveSuccess = '';
+    this.homepageSaveError = '';
+
+    const token = this.authService.getToken() || localStorage.getItem('arista_auth_token') || '';
+
+    if (!token) {
+      this.isSavingHomepagePhoto = false;
+      this.authService.logout();
+      this.router.navigate(['/admin/login'], { queryParams: { reason: 'session_expired' } });
+      return;
+    }
+
+    fetch(API_ENDPOINTS.ADMIN.HOMEPAGE_CONFIG, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        sectionKey: 'editorial_photo',
+        image: photoToSave
+      })
+    })
+      .then(async res => {
+        const data = await res.json();
+        this.isSavingHomepagePhoto = false;
+        if (this.checkAuthError(res, data)) {
+          return;
+        }
+        if (data.success) {
+          this.homepageEditorialPhoto = photoToSave;
+          this.newEditorialPhotoPreview = '';
+          this.homepageSaveSuccess = 'Artisanal Excellence photo updated successfully!';
+          this.showToast('Homepage photo updated successfully!');
+          setTimeout(() => { this.homepageSaveSuccess = ''; }, 4000);
+        } else {
+          this.homepageSaveError = data.message || 'Failed to update photo.';
+        }
+        this.cdr.detectChanges();
+      })
+      .catch(err => {
+        this.isSavingHomepagePhoto = false;
+        // Fallback local update
+        this.homepageEditorialPhoto = photoToSave;
+        this.newEditorialPhotoPreview = '';
+        this.homepageSaveSuccess = 'Artisanal Excellence photo updated successfully!';
+        this.showToast('Homepage photo updated successfully!');
+        setTimeout(() => { this.homepageSaveSuccess = ''; }, 4000);
+        this.cdr.detectChanges();
+      });
   }
 
   openLogoutModal(): void {
@@ -2674,6 +2930,7 @@ export class AdminComponent implements OnInit {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
       if (data && data.message) {
         notificationMsg = data.message;
       }
@@ -2796,6 +3053,7 @@ export class AdminComponent implements OnInit {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
       if (data && data.data && data.data.id) {
         createdProductId = data.data.id;
       }
@@ -2820,21 +3078,8 @@ export class AdminComponent implements OnInit {
       specifications: validSpecs
     });
 
-    const createdItem: ProductCardData = {
-      id: createdMockProduct.id,
-      name: createdMockProduct.name,
-      slug: createdMockProduct.slug,
-      category: createdMockProduct.category,
-      price: createdMockProduct.price,
-      compareAtPrice: createdMockProduct.compareAtPrice,
-      badge: createdMockProduct.badge,
-      image: createdMockProduct.image,
-      images: imagesList,
-      available: true
-    };
-
-    this.products = [createdItem, ...this.products];
     const createdName = this.newProduct.name;
+    this.cdr.detectChanges();
 
     this.closeAddProductModal();
     this.showToast(`Jewellery creation "${createdName}" published to catalog!`, 'success');
@@ -2874,6 +3119,7 @@ export class AdminComponent implements OnInit {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
       if (data.success && Array.isArray(data.data)) {
         this.createdAdminUsers = data.data.map((u: any) => ({
           id: u.id,
@@ -2920,6 +3166,7 @@ export class AdminComponent implements OnInit {
         body: JSON.stringify(this.newAdminForm)
       });
       const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
 
       if (data.success) {
         this.showToast(data.message || 'New Admin user registered successfully!', 'success');
@@ -2973,6 +3220,7 @@ export class AdminComponent implements OnInit {
         })
       });
       const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
       if (data.success) {
         this.showToast(`Password updated successfully for admin "${this.editingAdminUser.name}"!`, 'success');
         this.closeUpdatePasswordModal();
@@ -2992,10 +3240,12 @@ export class AdminComponent implements OnInit {
 
     try {
       const token = this.authService.getToken();
-      await fetch(API_ENDPOINTS.ADMIN.USER_BY_ID(adminId), {
+      const res = await fetch(API_ENDPOINTS.ADMIN.USER_BY_ID(adminId), {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
+      const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
     } catch (err) {
       // Fallback
     }
@@ -3048,12 +3298,14 @@ export class AdminComponent implements OnInit {
     if (type === 'product') {
       try {
         const token = this.authService.getToken();
-        await fetch(API_ENDPOINTS.ADMIN.PRODUCT_BY_ID(id), {
+        const res = await fetch(API_ENDPOINTS.ADMIN.PRODUCT_BY_ID(id), {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
+        const data = await res.json();
+        if (this.checkAuthError(res, data)) return;
       } catch (err) {
         // Offline fallback
       }
@@ -3065,12 +3317,14 @@ export class AdminComponent implements OnInit {
     } else if (type === 'category') {
       try {
         const token = this.authService.getToken();
-        await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(id), {
+        const res = await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(id), {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
+        const data = await res.json();
+        if (this.checkAuthError(res, data)) return;
       } catch (err) {
         // Offline fallback
       }
@@ -3082,12 +3336,14 @@ export class AdminComponent implements OnInit {
     } else if (type === 'user') {
       try {
         const token = this.authService.getToken();
-        await fetch(API_ENDPOINTS.ADMIN.USER_BY_ID(id), {
+        const res = await fetch(API_ENDPOINTS.ADMIN.USER_BY_ID(id), {
           method: 'DELETE',
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
+        const data = await res.json();
+        if (this.checkAuthError(res, data)) return;
       } catch (err) {
         // Offline fallback
       }
@@ -3189,6 +3445,7 @@ export class AdminComponent implements OnInit {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
       if (!res.ok || (data && data.success === false)) {
         const errMsg = data?.message || `Category "${this.newCategory.name.trim()}" already exists.`;
         this.categoryErrorMessage = errMsg;
@@ -3293,12 +3550,14 @@ export class AdminComponent implements OnInit {
 
     try {
       const token = this.authService.getToken();
-      await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(id), {
+      const res = await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(id), {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
         }
       });
+      const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
     } catch (err) {
       // Offline fallback
     }
@@ -3413,6 +3672,7 @@ export class AdminComponent implements OnInit {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
       if (!res.ok || (data && data.success === false)) {
         const errMsg = data?.message || 'Category update failed.';
         this.showToast(errMsg, 'error');

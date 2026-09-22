@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, ViewChild, HostListener, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
@@ -42,6 +42,90 @@ import { ButtonComponent } from '../../shared/components/button/button.component
         </div>
         <div class="story-image-box">
           <img src="/assets/images/placeholder-banner.svg" alt="Arista Jewellery Atelier Craftsmanship" class="story-img" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Choose Arista Section with Parallax Background -->
+    <section class="heritage-parallax-banner-section" #heritageSection>
+      <div class="heritage-parallax-bg" #heritageBg></div>
+      <div class="heritage-parallax-overlay"></div>
+      
+      <div class="container why-choose-container">
+        <!-- Header -->
+        <div class="why-choose-header">
+          <span class="why-choose-eyebrow">OUR PROMISE</span>
+          <h2 class="why-choose-title">Why Choose <em>Arista</em></h2>
+          <div class="why-choose-underline"></div>
+        </div>
+
+        <!-- 5 Feature Promise Cards Grid -->
+        <div class="why-choose-grid">
+          <!-- Card 1: Uncompromising Quality -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <polygon points="12 2 22 8.5 12 22 2 8.5 12 2"></polygon>
+                <line x1="2" y1="8.5" x2="22" y2="8.5"></line>
+                <line x1="12" y1="2" x2="7" y2="8.5"></line>
+                <line x1="12" y1="2" x2="17" y2="8.5"></line>
+                <line x1="7" y1="8.5" x2="12" y2="22"></line>
+                <line x1="17" y1="8.5" x2="12" y2="22"></line>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">Uncompromising Quality</h3>
+            <p class="why-choose-card-text">Every stone and setting is checked by hand before it ships.</p>
+          </div>
+
+          <!-- Card 2: True Craftsmanship -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">True Craftsmanship</h3>
+            <p class="why-choose-card-text">Small-batch made by artisans, not stamped out on a line.</p>
+          </div>
+
+          <!-- Card 3: Certified Authenticity -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polyline points="9 12 11 14 15 10"></polyline>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">Certified Authenticity</h3>
+            <p class="why-choose-card-text">Every piece ships with a certificate of authenticity.</p>
+          </div>
+
+          <!-- Card 4: Gift-Ready Packaging -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                <rect x="2" y="7" width="20" height="5"></rect>
+                <line x1="12" y1="22" x2="12" y2="7"></line>
+                <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">Gift-Ready Packaging</h3>
+            <p class="why-choose-card-text">Boxed and wrapped like a gift, even when it's for you.</p>
+          </div>
+
+          <!-- Card 5: Service That Listens -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">Service That Listens</h3>
+            <p class="why-choose-card-text">Real people for sizing, styling, or after-sales help.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -217,6 +301,178 @@ import { ButtonComponent } from '../../shared/components/button/button.component
       object-fit: cover;
     }
 
+    /* Featured Heritage Parallax Banner Section - Why Choose Arista */
+    .heritage-parallax-banner-section {
+      position: relative;
+      padding: 96px 0;
+      overflow: hidden;
+      background-color: #1A120B;
+      border-top: 1px solid rgba(207, 168, 116, 0.3);
+      border-bottom: 1px solid rgba(207, 168, 116, 0.3);
+    }
+
+    .heritage-parallax-bg {
+      position: absolute;
+      inset: -90px;
+      background-image: url('/assets/images/heritage-banner-bg.png');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      will-change: transform;
+      transform-origin: center center;
+      filter: brightness(0.92) contrast(1.02);
+      backface-visibility: hidden;
+      transform: translate3d(0, 0, 0) scale(1.28);
+    }
+
+    .heritage-parallax-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(35, 25, 20, 0.52) 0%,
+        rgba(26, 18, 11, 0.38) 50%,
+        rgba(35, 25, 20, 0.58) 100%
+      );
+      pointer-events: none;
+    }
+
+    .why-choose-container {
+      position: relative;
+      z-index: 3;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .why-choose-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .why-choose-eyebrow {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.78rem;
+      letter-spacing: 0.32em;
+      color: var(--brand-warm-gold, #CFA874);
+      font-weight: 700;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .why-choose-title {
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-size: clamp(2.2rem, 4vw, 3.2rem);
+      color: #FFFDF9;
+      font-weight: 400;
+      margin: 0 0 14px 0;
+      line-height: 1.2;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .why-choose-title em {
+      font-style: italic;
+      color: var(--brand-warm-gold, #CFA874);
+    }
+
+    .why-choose-underline {
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--brand-warm-gold, #CFA874), transparent);
+      margin: 0 auto;
+    }
+
+    .why-choose-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 1100px) {
+      .why-choose-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .why-choose-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .why-choose-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .why-choose-card {
+      background: rgba(26, 18, 11, 0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(207, 168, 116, 0.25);
+      border-radius: 20px;
+      padding: 36px 20px 32px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+
+    .why-choose-card:hover {
+      transform: translateY(-8px);
+      background: rgba(35, 25, 18, 0.75);
+      border-color: rgba(207, 168, 116, 0.7);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 25px rgba(207, 168, 116, 0.2);
+    }
+
+    .why-choose-icon-box {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(207, 168, 116, 0.6);
+      background: rgba(207, 168, 116, 0.08);
+      color: #D4AF37;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      transition: all 0.35s ease;
+      box-shadow: 0 0 15px rgba(207, 168, 116, 0.1);
+    }
+
+    .why-choose-card:hover .why-choose-icon-box {
+      background: var(--brand-warm-gold, #CFA874);
+      color: #1A120B;
+      border-color: #D4AF37;
+      transform: scale(1.1) rotate(4deg);
+      box-shadow: 0 0 20px rgba(207, 168, 116, 0.4);
+    }
+
+    .why-choose-card-title {
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: #FFFFFF;
+      margin: 0 0 10px 0;
+      line-height: 1.3;
+      letter-spacing: 0.01em;
+    }
+
+    .why-choose-card-text {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.88rem;
+      color: rgba(243, 236, 228, 0.82);
+      line-height: 1.6;
+      margin: 0;
+      font-weight: 400;
+    }
+
     .bg-pearl {
       background-color: var(--brand-pearl-beige);
     }
@@ -290,4 +546,44 @@ import { ButtonComponent } from '../../shared/components/button/button.component
     }
   `]
 })
-export class AboutComponent {}
+export class AboutComponent implements AfterViewInit {
+  @ViewChild('heritageSection') heritageSection?: ElementRef<HTMLElement>;
+  @ViewChild('heritageBg') heritageBg?: ElementRef<HTMLElement>;
+
+  private isTicking = false;
+
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    if (!this.isTicking) {
+      window.requestAnimationFrame(() => {
+        this.updateParallaxScrollEffect();
+        this.isTicking = false;
+      });
+      this.isTicking = true;
+    }
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => this.updateParallaxScrollEffect(), 100);
+  }
+
+  private updateParallaxScrollEffect(): void {
+    if (typeof window === 'undefined' || !this.heritageSection || !this.heritageBg) return;
+    const el = this.heritageSection.nativeElement;
+    const bg = this.heritageBg.nativeElement;
+
+    const rect = el.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    if (rect.top <= windowHeight && rect.bottom >= 0) {
+      const totalDist = windowHeight + rect.height;
+      const currentDist = windowHeight - rect.top;
+      const progress = Math.min(Math.max(currentDist / totalDist, 0), 1);
+
+      const scale = 1.28 - (progress * 0.25);
+      const translateY = (progress - 0.5) * -75;
+
+      bg.style.transform = `translate3d(0, ${translateY.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
+    }
+  }
+}

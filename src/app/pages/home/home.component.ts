@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, inject, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
@@ -8,6 +8,7 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Category } from '../../core/models/category.model';
 import { MockDataService } from '../../core/mock/mock-data.service';
 import { CartService } from '../../core/services/cart.service';
+import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
 @Component({
   selector: 'app-home',
@@ -217,7 +218,7 @@ import { CartService } from '../../core/services/cart.service';
     </div>
 
     <!-- Brand Introduction Section -->
-    <section class="brand-intro-section">
+    <section class="brand-intro-section scroll-reveal">
       <div class="container intro-content text-center">
         <span class="intro-eyebrow">Handcrafted Fine Jewellery</span>
         <h2 class="intro-heading">Where Modern Artistry Meets Heritage Precision</h2>
@@ -243,8 +244,44 @@ import { CartService } from '../../core/services/cart.service';
           <h2 class="cat-section-title">Shop by <em>Category</em></h2>
         </div>
 
-        <div *ngIf="categories.length > 0" class="category-strip-container">
-          <div class="category-strip">
+        <!-- Case 1: More than 5 categories -> Moving Infinite Marquee Effect -->
+        <div *ngIf="categories.length > 5" class="category-marquee-container">
+          <div class="category-marquee-track">
+            <!-- First Track -->
+            <div class="category-marquee-group">
+              <a
+                *ngFor="let cat of categories"
+                [routerLink]="['/shop']"
+                [queryParams]="{ category: cat.slug }"
+                class="cat-strip-item"
+              >
+                <div class="cat-thumb-box">
+                  <img [src]="cat.image" [alt]="cat.name" class="cat-thumb-img" loading="lazy" (error)="onImageError($event)" />
+                </div>
+                <span class="cat-thumb-name">{{ cat.name }}</span>
+              </a>
+            </div>
+
+            <!-- Second Track (Duplicate for Infinite Loop) -->
+            <div class="category-marquee-group" aria-hidden="true">
+              <a
+                *ngFor="let cat of categories"
+                [routerLink]="['/shop']"
+                [queryParams]="{ category: cat.slug }"
+                class="cat-strip-item"
+              >
+                <div class="cat-thumb-box">
+                  <img [src]="cat.image" [alt]="cat.name" class="cat-thumb-img" loading="lazy" (error)="onImageError($event)" />
+                </div>
+                <span class="cat-thumb-name">{{ cat.name }}</span>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Case 2: 1 to 5 categories -> Clean Centered Static Layout (No Duplication) -->
+        <div *ngIf="categories.length > 0 && categories.length <= 5" class="category-static-container">
+          <div class="category-static-grid scroll-reveal-stagger">
             <a
               *ngFor="let cat of categories"
               [routerLink]="['/shop']"
@@ -270,7 +307,7 @@ import { CartService } from '../../core/services/cart.service';
     </section>
 
     <!-- Shop by Occasion Section -->
-    <section class="section-padding occasion-section">
+    <section class="section-padding occasion-section scroll-reveal">
       <div class="container">
         <app-section-heading
           subtitle="FIND YOUR MOMENT"
@@ -278,7 +315,7 @@ import { CartService } from '../../core/services/cart.service';
           align="center"
         ></app-section-heading>
 
-        <div class="occasion-accordion">
+        <div class="occasion-accordion scroll-reveal-stagger">
           <div
             *ngFor="let item of occasionList"
             class="occasion-card"
@@ -309,7 +346,7 @@ import { CartService } from '../../core/services/cart.service';
     </section>
 
     <!-- Just Landed - New Arrivals Section (Ref: Arched Cards + View All Button) -->
-    <section class="section-padding new-arrivals-section">
+    <section class="section-padding new-arrivals-section scroll-reveal">
       <div class="container">
         <div class="arrivals-header">
           <span class="arrivals-eyebrow">JUST LANDED</span>
@@ -317,38 +354,36 @@ import { CartService } from '../../core/services/cart.service';
           <div class="arrivals-title-underline"></div>
         </div>
 
-        <div *ngIf="newArrivals.length > 0" class="arrivals-grid">
-          <div *ngFor="let product of newArrivals" class="arrival-arch-card">
-            <a [routerLink]="['/product', product.slug]" class="arrival-arch-link">
-              <!-- Top Pill Badge -->
-              <span class="arrival-pill-badge">
-                {{ product.badge || 'NEW' }}
-              </span>
-
-              <!-- Product Image -->
+        <div *ngIf="newArrivals.length > 0" class="arrivals-grid scroll-reveal-stagger">
+          <div *ngFor="let product of newArrivals" class="arrival-card-v2">
+            <a [routerLink]="['/product', product.slug]" class="arrival-img-box">
+              <span class="arrival-badge-pill">{{ product.badge || 'NEW' }}</span>
               <img
                 [src]="product.image"
                 [alt]="product.name"
-                class="arrival-arch-img"
+                class="arrival-card-img"
                 loading="lazy"
                 (error)="onImageError($event)"
               />
-
-              <!-- Bottom Dark Gradient Overlay -->
-              <div class="arrival-arch-overlay"></div>
-
-              <!-- Floating Content over Gradient -->
-              <div class="arrival-arch-content">
-                <h3 class="arrival-arch-title">{{ product.name }}</h3>
-                <div class="arrival-arch-rating">
-                  <span class="star-icon">★</span> {{ product.ratingAverage || 4.8 }} | {{ product.reviewCount || 98 }}
-                </div>
-                <div class="arrival-arch-price">
-                  <span class="price-current">₹{{ product.price | number:'1.0-0' }}</span>
-                  <span class="price-original" *ngIf="product.compareAtPrice">₹{{ product.compareAtPrice | number:'1.0-0' }}</span>
-                </div>
-              </div>
             </a>
+
+            <div class="arrival-info-box">
+              <a [routerLink]="['/product', product.slug]" class="arrival-card-name">{{ product.name }}</a>
+              
+              <div class="arrival-card-price-row">
+                <span class="price-current">₹{{ product.price | number:'1.0-0' }}</span>
+                <span class="price-original" *ngIf="product.compareAtPrice">₹{{ product.compareAtPrice | number:'1.0-0' }}</span>
+              </div>
+
+              <button class="arrival-add-bag-btn" (click)="addToBag(product, $event)">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+                <span>ADD TO BAG</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -364,19 +399,86 @@ import { CartService } from '../../core/services/cart.service';
       </div>
     </section>
 
-    <!-- Featured Collection - The Diamond Edit Banner Section -->
-    <section class="diamond-edit-banner-section">
-      <div class="diamond-banner-overlay"></div>
-      <div class="container diamond-banner-container">
-        <div class="diamond-banner-content">
-          <span class="diamond-banner-eyebrow">FEATURED COLLECTION</span>
-          <h2 class="diamond-banner-title">The Diamond Edit</h2>
-          <p class="diamond-banner-desc">
-            A curated edit of statement diamond pieces &mdash; for the moments that call for a little more sparkle.
-          </p>
-          <a routerLink="/shop" class="diamond-banner-btn">
-            Explore the Collection &rarr;
-          </a>
+    <!-- Why Choose Arista Section with Scroll Zoom Background (Ref: image scroll effect.mp4) -->
+    <section class="heritage-parallax-banner-section" #heritageSection>
+      <div class="heritage-parallax-bg" #heritageBg></div>
+      <div class="heritage-parallax-overlay"></div>
+      
+      <div class="container why-choose-container">
+        <!-- Header -->
+        <div class="why-choose-header">
+          <span class="why-choose-eyebrow">OUR PROMISE</span>
+          <h2 class="why-choose-title">Why Choose <em>Arista</em></h2>
+          <div class="why-choose-underline"></div>
+        </div>
+
+        <!-- 5 Feature Promise Cards Grid -->
+        <div class="why-choose-grid">
+          <!-- Card 1: Uncompromising Quality -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <polygon points="12 2 22 8.5 12 22 2 8.5 12 2"></polygon>
+                <line x1="2" y1="8.5" x2="22" y2="8.5"></line>
+                <line x1="12" y1="2" x2="7" y2="8.5"></line>
+                <line x1="12" y1="2" x2="17" y2="8.5"></line>
+                <line x1="7" y1="8.5" x2="12" y2="22"></line>
+                <line x1="17" y1="8.5" x2="12" y2="22"></line>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">Uncompromising Quality</h3>
+            <p class="why-choose-card-text">Every stone and setting is checked by hand before it ships.</p>
+          </div>
+
+          <!-- Card 2: True Craftsmanship -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">True Craftsmanship</h3>
+            <p class="why-choose-card-text">Small-batch made by artisans, not stamped out on a line.</p>
+          </div>
+
+          <!-- Card 3: Certified Authenticity -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <polyline points="9 12 11 14 15 10"></polyline>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">Certified Authenticity</h3>
+            <p class="why-choose-card-text">Every piece ships with a certificate of authenticity.</p>
+          </div>
+
+          <!-- Card 4: Gift-Ready Packaging -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <polyline points="20 12 20 22 4 22 4 12"></polyline>
+                <rect x="2" y="7" width="20" height="5"></rect>
+                <line x1="12" y1="22" x2="12" y2="7"></line>
+                <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+                <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">Gift-Ready Packaging</h3>
+            <p class="why-choose-card-text">Boxed and wrapped like a gift, even when it's for you.</p>
+          </div>
+
+          <!-- Card 5: Service That Listens -->
+          <div class="why-choose-card">
+            <div class="why-choose-icon-box">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+              </svg>
+            </div>
+            <h3 class="why-choose-card-title">Service That Listens</h3>
+            <p class="why-choose-card-text">Real people for sizing, styling, or after-sales help.</p>
+          </div>
         </div>
       </div>
     </section>
@@ -385,7 +487,7 @@ import { CartService } from '../../core/services/cart.service';
     <section class="editorial-section">
       <div class="container editorial-grid">
         <div class="editorial-media">
-          <img src="/assets/images/editorial-artisanal-craft.jpg" alt="Master Goldsmith Crafting Fine Jewellery" class="editorial-img ken-burns" (error)="onImageError($event)" />
+          <img [src]="editorialPhoto" alt="Master Goldsmith Crafting Fine Jewellery" class="editorial-img ken-burns" (error)="onImageError($event)" />
           <div class="editorial-badge">100% Hallmarked Gold</div>
         </div>
         <div class="editorial-text">
@@ -418,11 +520,11 @@ import { CartService } from '../../core/services/cart.service';
     </section>
 
     <!-- Instagram / Bestsellers Showcase Section (@aristatrinkets) -->
-    <section class="section-padding insta-grid-section">
+    <section class="section-padding insta-grid-section scroll-reveal">
       <div class="container">
         <h2 class="insta-section-title">@aristatrinkets</h2>
 
-        <div *ngIf="bestsellerProducts.length > 0" class="insta-grid">
+        <div *ngIf="bestsellerProducts.length > 0" class="insta-grid scroll-reveal-stagger">
           <a
             *ngFor="let product of bestsellerProducts"
             [routerLink]="['/product', product.slug]"
@@ -918,33 +1020,56 @@ import { CartService } from '../../core/services/cart.service';
       font-weight: 400;
     }
 
-    .category-strip-container {
+    .category-marquee-container {
       width: 100%;
-      overflow-x: auto;
-      padding: 8px 4px 16px 4px;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      overflow: hidden;
+      position: relative;
+      padding: 16px 0 24px 0;
+      mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
     }
 
-    .category-strip-container::-webkit-scrollbar {
-      display: none;
-    }
-
-    .category-strip {
+    .category-static-container {
+      width: 100%;
       display: flex;
-      gap: 28px;
+      justify-content: center;
+      padding: 16px 0 24px 0;
+    }
+
+    .category-static-grid {
+      display: flex;
+      gap: 32px;
       align-items: flex-start;
       justify-content: center;
-      min-width: max-content;
+      flex-wrap: wrap;
       margin: 0 auto;
-      padding: 4px 12px;
     }
 
-    @media (max-width: 768px) {
-      .category-strip {
-        justify-content: flex-start;
-        gap: 18px;
+    .category-marquee-track {
+      display: flex;
+      width: max-content;
+    }
+
+    .category-marquee-group {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      padding: 0 16px;
+      animation: catMarqueeSlide 30s linear infinite;
+      will-change: transform;
+    }
+
+    /* Pause animation on hover */
+    .category-marquee-container:hover .category-marquee-group {
+      animation-play-state: paused;
+    }
+
+    @keyframes catMarqueeSlide {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(0);
       }
     }
 
@@ -954,19 +1079,20 @@ import { CartService } from '../../core/services/cart.service';
       align-items: center;
       text-decoration: none;
       cursor: pointer;
-      width: 125px;
+      width: 130px;
       flex-shrink: 0;
+      transition: transform 0.3s ease;
     }
 
     .cat-thumb-box {
-      width: 120px;
-      height: 120px;
-      border-radius: 22px;
+      width: 125px;
+      height: 125px;
+      border-radius: 24px;
       overflow: hidden;
       background-color: #FFFFFF;
       position: relative;
       border: 1.5px solid rgba(207, 168, 116, 0.45);
-      box-shadow: 0 6px 16px rgba(58, 46, 40, 0.07);
+      box-shadow: 0 8px 22px rgba(58, 46, 40, 0.08);
       transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -975,13 +1101,13 @@ import { CartService } from '../../core/services/cart.service';
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.4s ease;
+      transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .cat-strip-item:hover .cat-thumb-box {
-      transform: translateY(-5px);
+      transform: translateY(-7px) scale(1.03);
       border-color: var(--brand-warm-gold, #D4AF37);
-      box-shadow: 0 12px 26px rgba(212, 175, 55, 0.35);
+      box-shadow: 0 14px 30px rgba(212, 175, 55, 0.35);
     }
 
     .cat-strip-item:hover .cat-thumb-img {
@@ -989,9 +1115,9 @@ import { CartService } from '../../core/services/cart.service';
     }
 
     .cat-thumb-name {
-      margin-top: 10px;
+      margin-top: 12px;
       font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       font-weight: 500;
       color: var(--brand-mocha-brown, #3A2E28);
       text-align: center;
@@ -1001,104 +1127,179 @@ import { CartService } from '../../core/services/cart.service';
 
     .cat-strip-item:hover .cat-thumb-name {
       color: var(--brand-warm-gold, #D4AF37);
+      font-weight: 600;
     }
 
-    /* Featured Collection - The Diamond Edit Banner Section */
-    .diamond-edit-banner-section {
+    /* Featured Heritage Parallax Banner Section - Why Choose Arista */
+    .heritage-parallax-banner-section {
       position: relative;
-      background-image: url('/assets/images/diamond-edit-banner.jpg');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      min-height: 400px;
-      display: flex;
-      align-items: center;
-      padding: 64px 0;
+      padding: 96px 0;
       overflow: hidden;
-      border-top: 1px solid rgba(207, 168, 116, 0.2);
-      border-bottom: 1px solid rgba(207, 168, 116, 0.2);
+      background-color: #1A120B;
+      border-top: 1px solid rgba(207, 168, 116, 0.3);
+      border-bottom: 1px solid rgba(207, 168, 116, 0.3);
     }
 
-    .diamond-banner-overlay {
+    .heritage-parallax-bg {
+      position: absolute;
+      inset: -90px;
+      background-image: url('/assets/images/heritage-banner-bg.png');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      will-change: transform;
+      transform-origin: center center;
+      filter: brightness(0.92) contrast(1.02);
+      backface-visibility: hidden;
+      transform: translate3d(0, 0, 0) scale(1.28);
+    }
+
+    .heritage-parallax-overlay {
       position: absolute;
       inset: 0;
       background: linear-gradient(
-        90deg,
-        rgba(38, 28, 23, 0.82) 0%,
-        rgba(38, 28, 23, 0.62) 45%,
-        rgba(38, 28, 23, 0.25) 100%
+        180deg,
+        rgba(35, 25, 20, 0.52) 0%,
+        rgba(26, 18, 11, 0.38) 50%,
+        rgba(35, 25, 20, 0.58) 100%
       );
       pointer-events: none;
     }
 
-    .diamond-banner-container {
+    .why-choose-container {
       position: relative;
-      z-index: 2;
+      z-index: 3;
       max-width: 1280px;
-      width: 100%;
       margin: 0 auto;
-      padding: 0 32px;
+      padding: 0 24px;
     }
 
-    .diamond-banner-content {
-      max-width: 520px;
-      text-align: left;
+    .why-choose-header {
+      text-align: center;
+      margin-bottom: 48px;
     }
 
-    .diamond-banner-eyebrow {
-      display: block;
+    .why-choose-eyebrow {
       font-family: var(--font-sans, system-ui, sans-serif);
       font-size: 0.78rem;
-      letter-spacing: 0.28em;
+      letter-spacing: 0.32em;
       color: var(--brand-warm-gold, #CFA874);
-      font-weight: 600;
+      font-weight: 700;
       text-transform: uppercase;
-      margin-bottom: 12px;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+      display: block;
+      margin-bottom: 10px;
     }
 
-    .diamond-banner-title {
+    .why-choose-title {
       font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
-      font-style: italic;
       font-size: clamp(2.2rem, 4vw, 3.2rem);
-      color: #FFFFFF;
+      color: #FFFDF9;
       font-weight: 400;
-      margin: 0 0 16px 0;
-      line-height: 1.15;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      margin: 0 0 14px 0;
+      line-height: 1.2;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
     }
 
-    .diamond-banner-desc {
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: clamp(0.92rem, 1.4vw, 1.05rem);
-      color: #E6DDD5;
-      line-height: 1.6;
-      margin-bottom: 28px;
-      font-weight: 300;
-      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+    .why-choose-title em {
+      font-style: italic;
+      color: var(--brand-warm-gold, #CFA874);
     }
 
-    .diamond-banner-btn {
-      display: inline-flex;
+    .why-choose-underline {
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--brand-warm-gold, #CFA874), transparent);
+      margin: 0 auto;
+    }
+
+    .why-choose-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 1100px) {
+      .why-choose-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .why-choose-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .why-choose-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .why-choose-card {
+      background: rgba(26, 18, 11, 0.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(207, 168, 116, 0.25);
+      border-radius: 20px;
+      padding: 36px 20px 32px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      padding: 12px 28px;
-      background-color: var(--brand-warm-gold, #CFA874);
-      color: #1A120B;
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: 0.9rem;
-      font-weight: 600;
-      border-radius: 50px;
-      text-decoration: none;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
     }
 
-    .diamond-banner-btn:hover {
-      background-color: #E2BC86;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(207, 168, 116, 0.4);
-      color: #000000;
+    .why-choose-card:hover {
+      transform: translateY(-8px);
+      background: rgba(35, 25, 18, 0.75);
+      border-color: rgba(207, 168, 116, 0.7);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 25px rgba(207, 168, 116, 0.2);
+    }
+
+    .why-choose-icon-box {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(207, 168, 116, 0.6);
+      background: rgba(207, 168, 116, 0.08);
+      color: #D4AF37;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      transition: all 0.35s ease;
+      box-shadow: 0 0 15px rgba(207, 168, 116, 0.1);
+    }
+
+    .why-choose-card:hover .why-choose-icon-box {
+      background: var(--brand-warm-gold, #CFA874);
+      color: #1A120B;
+      border-color: #D4AF37;
+      transform: scale(1.1) rotate(4deg);
+      box-shadow: 0 0 20px rgba(207, 168, 116, 0.4);
+    }
+
+    .why-choose-card-title {
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-size: 1.15rem;
+      font-weight: 500;
+      color: #FFFFFF;
+      margin: 0 0 10px 0;
+      line-height: 1.3;
+      letter-spacing: 0.01em;
+    }
+
+    .why-choose-card-text {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.88rem;
+      color: rgba(243, 236, 228, 0.82);
+      line-height: 1.6;
+      margin: 0;
+      font-weight: 400;
     }
 
     @media (max-width: 768px) {
@@ -1119,12 +1320,14 @@ import { CartService } from '../../core/services/cart.service';
       }
     }
 
-    /* Editorial Section */
+    /* Editorial Section - Opposite Direction Entrance Animation */
     .editorial-section {
-      padding: 64px 0;
+      padding: 72px 0;
       background-color: var(--brand-pearl-beige);
       border-top: 1px solid var(--color-border);
       border-bottom: 1px solid var(--color-border);
+      overflow: hidden;
+      position: relative;
     }
 
     .editorial-grid {
@@ -1141,6 +1344,7 @@ import { CartService } from '../../core/services/cart.service';
       }
     }
 
+    /* Left Column: Image comes from LEFT (-90px -> 0) */
     .editorial-media {
       position: relative;
       border-radius: var(--radius-md);
@@ -1152,6 +1356,29 @@ import { CartService } from '../../core/services/cart.service';
       margin: 0 auto;
       width: 100%;
       background-color: #FFFFFF;
+      opacity: 0;
+      transform: translateX(-90px);
+      transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+
+    /* Right Column: Text comes from RIGHT (+90px -> 0) */
+    .editorial-text {
+      opacity: 0;
+      transform: translateX(90px);
+      transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s, transform 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
+      will-change: opacity, transform;
+    }
+
+    /* When section enters viewport, both sides slide toward each other from opposite directions */
+    .editorial-section.in-view .editorial-media {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .editorial-section.in-view .editorial-text {
+      opacity: 1;
+      transform: translateX(0);
     }
 
     .editorial-img {
@@ -1323,10 +1550,54 @@ import { CartService } from '../../core/services/cart.service';
       transform: scale(1);
     }
 
+    /* Universal Scroll Reveal & Viewport Entrance Animations */
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(45px);
+      transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+
+    .scroll-reveal.revealed,
+    .scroll-reveal.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .scroll-reveal-stagger > * {
+      opacity: 0;
+      transform: translateY(35px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+
+    .scroll-reveal-stagger.revealed > *:nth-child(1),
+    .scroll-reveal-stagger.in-view > *:nth-child(1) { transition-delay: 0.05s; opacity: 1; transform: translateY(0); }
+    .scroll-reveal-stagger.revealed > *:nth-child(2),
+    .scroll-reveal-stagger.in-view > *:nth-child(2) { transition-delay: 0.15s; opacity: 1; transform: translateY(0); }
+    .scroll-reveal-stagger.revealed > *:nth-child(3),
+    .scroll-reveal-stagger.in-view > *:nth-child(3) { transition-delay: 0.25s; opacity: 1; transform: translateY(0); }
+    .scroll-reveal-stagger.revealed > *:nth-child(4),
+    .scroll-reveal-stagger.in-view > *:nth-child(4) { transition-delay: 0.35s; opacity: 1; transform: translateY(0); }
+    .scroll-reveal-stagger.revealed > *:nth-child(5),
+    .scroll-reveal-stagger.in-view > *:nth-child(5) { transition-delay: 0.45s; opacity: 1; transform: translateY(0); }
+    .scroll-reveal-stagger.revealed > *:nth-child(6),
+    .scroll-reveal-stagger.in-view > *:nth-child(6) { transition-delay: 0.55s; opacity: 1; transform: translateY(0); }
+
     /* Shop by Occasion Accordion Styles */
     .occasion-section {
       background-color: var(--brand-pearl-beige, #FAF7F2);
       padding: 72px 0;
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+
+    .occasion-section.in-view,
+    .occasion-section.revealed {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .occasion-accordion {
@@ -1531,97 +1802,132 @@ import { CartService } from '../../core/services/cart.service';
     @media (min-width: 992px) {
       .arrivals-grid {
         grid-template-columns: repeat(4, 1fr);
-        gap: 24px;
-      }
+        gap: 24px;    /* New Arrivals Clean Card Layout V2 (Matching Image 2) */
+    .arrival-card-v2 {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      text-decoration: none;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Arched Card Container */
-    .arrival-arch-card {
-      position: relative;
-      background-color: #FFFFFF;
-      border-radius: 140px 140px 24px 24px;
-      padding: 7px;
-      box-shadow: 0 8px 24px rgba(58, 46, 40, 0.07);
-      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
-      border: 1px solid rgba(207, 168, 116, 0.25);
+    .arrival-card-v2:hover {
+      transform: translateY(-4px);
     }
 
-    .arrival-arch-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 16px 36px rgba(58, 46, 40, 0.15);
-      border-color: var(--brand-warm-gold, #CFA874);
-    }
-
-    .arrival-arch-link {
-      display: block;
+    .arrival-img-box {
       position: relative;
       width: 100%;
-      height: 380px;
-      border-radius: 133px 133px 18px 18px;
+      aspect-ratio: 1 / 1;
+      border-radius: 16px;
       overflow: hidden;
-      text-decoration: none;
-      background-color: #1A120B;
+      display: block;
+      background-color: #F7F4EF;
+      box-shadow: 0 4px 16px rgba(58, 46, 40, 0.06);
     }
 
-    @media (max-width: 576px) {
-      .arrival-arch-card {
-        border-radius: 100px 100px 18px 18px;
-        padding: 5px;
-      }
-      .arrival-arch-link {
-        height: 310px;
-        border-radius: 95px 95px 14px 14px;
-      }
-    }
-
-    /* Top Pill Badge inside Arch */
-    .arrival-pill-badge {
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 3;
-      background: rgba(30, 22, 18, 0.85);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      color: var(--brand-warm-gold, #CFA874);
-      border: 1px solid rgba(207, 168, 116, 0.35);
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      padding: 5px 16px;
-      border-radius: 50px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-      white-space: nowrap;
-    }
-
-    /* Product Image */
-    .arrival-arch-img {
+    .arrival-card-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .arrival-arch-card:hover .arrival-arch-img {
-      transform: scale(1.08);
+    .arrival-card-v2:hover .arrival-card-img {
+      transform: scale(1.06);
     }
 
-    /* Bottom Dark Gradient Overlay */
-    .arrival-arch-overlay {
+    .arrival-badge-pill {
       position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        180deg,
-        rgba(0, 0, 0, 0) 35%,
-        rgba(26, 18, 11, 0.65) 65%,
-        rgba(26, 18, 11, 0.92) 100%
-      );
-      pointer-events: none;
+      top: 12px;
+      left: 12px;
+      z-index: 3;
+      background: rgba(35, 25, 20, 0.82);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      color: #FFFDF9;
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .arrival-info-box {
+      display: flex;
+      flex-direction: column;
+      padding-top: 14px;
+    }
+
+    .arrival-card-name {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--brand-mocha-brown, #3A2E28);
+      text-decoration: none;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color 0.25s ease;
+    }
+
+    .arrival-card-v2:hover .arrival-card-name {
+      color: var(--brand-warm-gold, #CFA874);
+    }
+
+    .arrival-card-price-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .arrival-card-price-row .price-current {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 1.02rem;
+      font-weight: 700;
+      color: #1A120B;
+    }
+
+    .arrival-card-price-row .price-original {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.88rem;
+      color: #888888;
+      text-decoration: line-through;
+    }
+
+    .arrival-add-bag-btn {
+      width: 100%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 16px;
+      background: rgba(253, 251, 247, 0.9);
+      border: 1px solid rgba(207, 168, 116, 0.45);
+      border-radius: 50px;
+      color: var(--brand-mocha-brown, #3A2E28);
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 8px rgba(58, 46, 40, 0.04);
+    }
+
+    .arrival-add-bag-btn:hover {
+      background: var(--brand-warm-gold, #CFA874);
+      color: #1A120B;
+      border-color: var(--brand-warm-gold, #CFA874);
+      box-shadow: 0 4px 14px rgba(207, 168, 116, 0.35);
+      transform: translateY(-2px);
+    }-events: none;
       z-index: 1;
     }
 
@@ -1976,9 +2282,27 @@ import { CartService } from '../../core/services/cart.service';
       transform: scale(1.3);
       box-shadow: 0 0 8px var(--brand-warm-gold, #D4AF37);
     }
+
+    .editorial-media {
+      transform: translateX(-30px);
+      opacity: 0;
+      transition: transform 0.8s ease, opacity 0.8s ease;
+    }
+
+    .editorial-text {
+      transform: translateX(30px);
+      opacity: 0;
+      transition: transform 0.8s ease, opacity 0.8s ease;
+    }
+
+    .editorial-section.in-view .editorial-media,
+    .editorial-section.in-view .editorial-text {
+      transform: translateX(0);
+      opacity: 1;
+    }
   `]
 })
-export class HomeComponent implements OnInit, OnDestroy {
+export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   categories: Category[] = [];
   featuredProducts: ProductCardData[] = [];
   newArrivals: ProductCardData[] = [];
@@ -2072,11 +2396,61 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
   ];
 
+  editorialPhoto: string = '/assets/images/editorial-artisanal-craft.jpg';
+
+  @ViewChild('heritageSection') heritageSection?: ElementRef<HTMLElement>;
+  @ViewChild('heritageBg') heritageBg?: ElementRef<HTMLElement>;
+
+  private isTicking = false;
+
   private mockDataService = inject(MockDataService);
   private cartService = inject(CartService);
   private cdr = inject(ChangeDetectorRef);
 
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    if (!this.isTicking) {
+      window.requestAnimationFrame(() => {
+        this.updateParallaxScrollEffect();
+        this.isTicking = false;
+      });
+      this.isTicking = true;
+    }
+  }
+
+  private updateParallaxScrollEffect(): void {
+    if (typeof window === 'undefined' || !this.heritageSection || !this.heritageBg) return;
+    const el = this.heritageSection.nativeElement;
+    const bg = this.heritageBg.nativeElement;
+
+    const rect = el.getBoundingClientRect();
+    const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+
+    if (rect.top <= windowHeight && rect.bottom >= 0) {
+      const totalDist = windowHeight + rect.height;
+      const currentDist = windowHeight - rect.top;
+      const progress = Math.min(Math.max(currentDist / totalDist, 0), 1);
+
+      // Smooth background image zoom out on scroll (starts at scale 1.28 -> scales down to 1.03)
+      // and vertical parallax shift (-75px -> +75px)
+      const scale = 1.28 - (progress * 0.25);
+      const translateY = (progress - 0.5) * -75;
+
+      bg.style.transform = `translate3d(0, ${translateY.toFixed(1)}px, 0) scale(${scale.toFixed(3)})`;
+    }
+  }
+
   ngOnInit(): void {
+    fetch(API_ENDPOINTS.HOMEPAGE_CONFIG)
+      .then(res => res.json())
+      .then(data => {
+        if (data?.success && data?.data?.editorial_photo) {
+          this.editorialPhoto = data.data.editorial_photo;
+          this.cdr.markForCheck();
+        }
+      })
+      .catch(err => console.error('Failed to load homepage config:', err));
+
     this.mockDataService.getCategories().subscribe(cats => {
       this.categories = cats;
     });
@@ -2086,14 +2460,49 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
 
     this.mockDataService.getNewArrivals().subscribe(prods => {
-      this.newArrivals = prods;
+      this.newArrivals = [...prods].sort((a, b) => {
+        const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
+        const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
+        return idB - idA;
+      }).slice(0, 4);
     });
 
     this.mockDataService.getBestsellers().subscribe(prods => {
-      this.bestsellerProducts = prods;
+      this.bestsellerProducts = [...prods].sort((a, b) => {
+        const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
+        const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
+        return idB - idA;
+      });
     });
 
     this.startSlideshowTimer();
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => this.updateParallaxScrollEffect(), 100);
+
+    if (typeof window !== 'undefined') {
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in-view');
+              entry.target.classList.add('revealed');
+            }
+          });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+        const revealTargets = document.querySelectorAll(
+          '.scroll-reveal, .scroll-reveal-stagger, .editorial-section, .occasion-section, .brand-intro-section, .new-arrivals-section, .why-choose-grid, .insta-grid-section'
+        );
+        revealTargets.forEach(el => observer.observe(el));
+      } else {
+        const revealTargets = document.querySelectorAll(
+          '.scroll-reveal, .scroll-reveal-stagger, .editorial-section, .occasion-section, .brand-intro-section, .new-arrivals-section, .why-choose-grid, .insta-grid-section'
+        );
+        revealTargets.forEach(el => el.classList.add('in-view', 'revealed'));
+      }
+    }
   }
 
   addToBag(product: ProductCardData, event: Event): void {

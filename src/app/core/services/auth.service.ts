@@ -103,6 +103,22 @@ export class AuthService {
     }
   }
 
+  checkUnauthorized(response: Response, data?: any): boolean {
+    const isUnauthorizedStatus = response.status === 401 || response.status === 403;
+    const isTokenErrorMsg = data && data.message && typeof data.message === 'string' && (
+      data.message.toLowerCase().includes('token') ||
+      data.message.toLowerCase().includes('unauthorized') ||
+      data.message.toLowerCase().includes('expired') ||
+      data.message.toLowerCase().includes('access denied')
+    );
+
+    if (isUnauthorizedStatus || (data && data.success === false && isTokenErrorMsg)) {
+      this.logout();
+      return true;
+    }
+    return false;
+  }
+
   async verifySession(): Promise<boolean> {
     const token = this.getToken();
     if (!token) return false;
@@ -121,6 +137,9 @@ export class AuthService {
         }
         return true;
       }
+      if (this.checkUnauthorized(response, data)) {
+        return false;
+      }
     } catch (err) {
       // Keep active session in offline mode
     }
@@ -138,6 +157,9 @@ export class AuthService {
       const data = await response.json();
       if (response.ok && data.success) {
         return true;
+      }
+      if (this.checkUnauthorized(response, data)) {
+        return false;
       }
     } catch (err) {
       // Offline check fallback
@@ -159,6 +181,9 @@ export class AuthService {
       });
 
       const data = await response.json();
+      if (this.checkUnauthorized(response, data)) {
+        return { success: false, message: 'Your session has expired. Please log in again.' };
+      }
       if (response.ok && data.success) {
         const updatedUser = data.data.user;
         const newToken = data.data.token || token;
@@ -191,6 +216,9 @@ export class AuthService {
       });
 
       const data = await response.json();
+      if (this.checkUnauthorized(response, data)) {
+        return { success: false, message: 'Your session has expired. Please log in again.' };
+      }
       if (response.ok && data.success) {
         return { success: true, message: data.message || `New Admin account "${name}" created successfully.` };
       }

@@ -547,9 +547,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   navItems: NavItem[] = [
     { label: 'Home', path: '/' },
     { label: 'Shop', path: '/shop' },
-    { label: 'Categories', path: '/categories' },
+    // { label: 'Categories', path: '/categories' },
     { label: 'About Us', path: '/about' },
-    { label: 'Contact', path: '/contact' }
+    { label: 'Contact Us', path: '/contact' }
   ];
 
   private cartService = inject(CartService);

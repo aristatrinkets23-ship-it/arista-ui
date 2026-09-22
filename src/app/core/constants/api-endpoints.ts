@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
     VERIFY_PAYMENT: `${BASE_URL}/orders/verify-payment`,
     BY_NUMBER: (orderNumber: string) => `${BASE_URL}/orders/${orderNumber}`
   },
+  HOMEPAGE_CONFIG: `${BASE_URL}/homepage-config`,
   ADMIN: {
     VERIFY: `${BASE_URL}/admin/verify`,
     DASHBOARD: `${BASE_URL}/admin/dashboard`,
@@ -26,6 +27,7 @@ export const API_ENDPOINTS = {
     USERS: `${BASE_URL}/admin/users`,
     USER_BY_ID: (id: string | number) => `${BASE_URL}/admin/users/${id}`,
     USER_PASSWORD: (id: string | number) => `${BASE_URL}/admin/users/${id}/password`,
+    HOMEPAGE_CONFIG: `${BASE_URL}/admin/homepage-config`,
     PRODUCTS: `${BASE_URL}/admin/products`,
     PRODUCT_BY_ID: (id: string | number) => `${BASE_URL}/admin/products/${id}`,
     CATEGORIES: `${BASE_URL}/admin/categories`,
