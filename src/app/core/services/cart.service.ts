@@ -30,20 +30,43 @@ export class CartService {
     return this.cartSubject.getValue();
   }
 
-  isInCart(productId: number | string): boolean {
-    if (!productId && productId !== 0) return false;
-    return this.currentCart.items.some(
-      item => String(item.product.id) === String(productId) || (item.product.slug && item.product.slug === String(productId))
-    );
+  private matchesProduct(item: CartItem, target: any): boolean {
+    if (!item || !item.product || target === undefined || target === null || target === '') return false;
+
+    let targetId: any = typeof target === 'object' && target !== null ? target.id : target;
+    let targetSlug: any = typeof target === 'object' && target !== null ? target.slug : target;
+
+    const itemSlugStr = item.product.slug ? String(item.product.slug).trim().toLowerCase() : '';
+    const targetSlugStr = targetSlug ? String(targetSlug).trim().toLowerCase() : '';
+
+    if (itemSlugStr && targetSlugStr && itemSlugStr === targetSlugStr) {
+      return true;
+    }
+
+    const itemIdStr = item.product.id !== undefined && item.product.id !== null ? String(item.product.id).trim().toLowerCase() : '';
+    const targetIdStr = targetId !== undefined && targetId !== null ? String(targetId).trim().toLowerCase() : '';
+
+    if (itemIdStr && targetIdStr && itemIdStr === targetIdStr) {
+      return true;
+    }
+
+    return false;
+  }
+
+  isInCart(productIdOrSlug: number | string): boolean {
+    if (productIdOrSlug === undefined || productIdOrSlug === null || productIdOrSlug === '') return false;
+    return this.currentCart.items.some(item => this.matchesProduct(item, productIdOrSlug));
   }
 
   addToCart(product: ProductCardData, quantity: number = 1, selectedMetal?: string): void {
+    if (!product) return;
+
     const currentItems = [...this.currentCart.items];
     const addQty = Math.max(1, Number(quantity) || 1);
 
-    // Fetch fresh product data from localStorage to capture image changes
+    // Fetch fresh product data from localStorage if custom created
     let freshImage = product.image;
-    let freshPrice = product.price;
+    let freshPrice = Number(product.price) || 0;
     let freshName = product.name;
     let freshCategory = product.category;
 
@@ -53,7 +76,10 @@ export class CartService {
         if (storedMockData) {
           const parsed = JSON.parse(storedMockData);
           if (Array.isArray(parsed)) {
-            const match = parsed.find(p => String(p.id) === String(product.id) || (product.slug && p.slug === product.slug));
+            const match = parsed.find(p => 
+              (p.id !== undefined && product.id !== undefined && String(p.id) === String(product.id)) ||
+              (p.slug && product.slug && p.slug === product.slug)
+            );
             if (match) {
               if (match.image) freshImage = match.image;
               if (match.price !== undefined) freshPrice = Number(match.price);
@@ -65,17 +91,15 @@ export class CartService {
       }
     } catch {}
 
-    const updatedProduct = {
+    const updatedProduct: ProductCardData = {
       ...product,
-      name: freshName,
+      name: freshName || 'Arista Fine Jewellery',
       price: freshPrice,
       image: freshImage || '/assets/images/placeholder-jewellery.svg',
-      category: freshCategory
+      category: freshCategory || 'Fine Jewellery'
     };
 
-    const existingIndex = currentItems.findIndex(item => 
-      String(item.product.id) === String(product.id) || (product.slug && item.product.slug === product.slug)
-    );
+    const existingIndex = currentItems.findIndex(item => this.matchesProduct(item, product));
 
     if (existingIndex > -1) {
       const existing = currentItems[existingIndex];
@@ -83,7 +107,7 @@ export class CartService {
       currentItems[existingIndex] = {
         ...existing,
         product: updatedProduct,
-        selectedMetal: selectedMetal || existing.selectedMetal,
+        selectedMetal: selectedMetal || existing.selectedMetal || '18K Warm Gold',
         quantity: newQty,
         subtotal: freshPrice * newQty
       };
@@ -99,19 +123,20 @@ export class CartService {
     this.saveAndUpdate(currentItems);
   }
 
-  updateQuantity(productId: number | string, quantity: number): void {
+  updateQuantity(productIdOrSlug: number | string, quantity: number): void {
     const numericQty = Number(quantity) || 0;
     if (numericQty <= 0) {
-      this.removeFromCart(productId);
+      this.removeFromCart(productIdOrSlug);
       return;
     }
 
     const currentItems = this.currentCart.items.map(item => {
-      if (String(item.product.id) === String(productId) || item.product.slug === productId) {
+      if (this.matchesProduct(item, productIdOrSlug)) {
+        const unitPrice = Number(item.product.price) || 0;
         return {
           ...item,
           quantity: numericQty,
-          subtotal: (Number(item.product.price) || 0) * numericQty
+          subtotal: unitPrice * numericQty
         };
       }
       return item;
@@ -120,10 +145,8 @@ export class CartService {
     this.saveAndUpdate(currentItems);
   }
 
-  removeFromCart(productId: number | string): void {
-    const updatedItems = this.currentCart.items.filter(
-      item => String(item.product.id) !== String(productId) && item.product.slug !== productId
-    );
+  removeFromCart(productIdOrSlug: number | string): void {
+    const updatedItems = this.currentCart.items.filter(item => !this.matchesProduct(item, productIdOrSlug));
     this.saveAndUpdate(updatedItems);
   }
 
@@ -145,61 +168,27 @@ export class CartService {
     try {
       if (typeof localStorage !== 'undefined') {
         const savedCart = localStorage.getItem(this.STORAGE_KEY);
-        const storedMockProductsData = localStorage.getItem('arista_mock_products');
-        let mockProductsMap: Map<string, any> = new Map();
-
-        if (storedMockProductsData) {
-          try {
-            const parsedMock = JSON.parse(storedMockProductsData);
-            if (Array.isArray(parsedMock)) {
-              parsedMock.forEach(p => {
-                if (p.id !== undefined) mockProductsMap.set(String(p.id), p);
-                if (p.slug) mockProductsMap.set(String(p.slug), p);
-              });
-            }
-          } catch {}
-        }
-
         if (savedCart !== null) {
           const parsedCart = JSON.parse(savedCart);
           if (Array.isArray(parsedCart)) {
-            // Sync cart items with fresh product data from mockProductsMap
-            const syncedItems: CartItem[] = parsedCart.map(item => {
-              if (item && item.product) {
-                const targetKey = String(item.product.id || item.product.slug);
-                const freshProd = mockProductsMap.get(targetKey) || mockProductsMap.get(String(item.product.slug));
-                if (freshProd) {
-                  const updatedImage = freshProd.image || item.product.image;
-                  const updatedPrice = freshProd.price !== undefined ? Number(freshProd.price) : item.product.price;
-                  const updatedQty = Number(item.quantity) || 1;
-                  return {
-                    ...item,
-                    product: {
-                      ...item.product,
-                      name: freshProd.name || item.product.name,
-                      price: updatedPrice,
-                      image: updatedImage,
-                      category: freshProd.category || item.product.category,
-                      badge: freshProd.badge || item.product.badge
-                    },
-                    subtotal: updatedPrice * updatedQty
-                  };
-                }
+            const cleanItems: CartItem[] = [];
+            for (const item of parsedCart) {
+              if (item && item.product && (item.product.id !== undefined || item.product.slug)) {
+                cleanItems.push({
+                  ...item,
+                  quantity: Math.max(1, Number(item.quantity) || 1),
+                  subtotal: (Number(item.product.price) || 0) * (Math.max(1, Number(item.quantity) || 1))
+                });
               }
-              return item;
-            });
-            this.saveCartToStorage(syncedItems);
-            return syncedItems;
+            }
+            return cleanItems;
           }
         }
       }
     } catch (e) {
       console.warn('Could not load cart from localStorage:', e);
     }
-
-    const defaultItems: CartItem[] = [];
-    this.saveCartToStorage(defaultItems);
-    return defaultItems;
+    return [];
   }
 
   private saveCartToStorage(items: CartItem[]): void {
@@ -229,3 +218,4 @@ export class CartService {
     };
   }
 }
+
