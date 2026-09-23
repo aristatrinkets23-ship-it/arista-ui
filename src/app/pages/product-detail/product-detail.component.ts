@@ -455,6 +455,21 @@ import { CartService } from '../../core/services/cart.service';
       flex-wrap: wrap;
     }
 
+    @media (max-width: 576px) {
+      .purchase-box {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .quantity-control {
+        justify-content: center;
+      }
+      .btn-add-bag {
+        min-width: 100%;
+        height: 46px;
+        font-size: 0.88rem;
+      }
+    }
+
     .quantity-control {
       display: flex;
       align-items: center;

@@ -270,6 +270,21 @@ import { CartService } from '../../core/services/cart.service';
       gap: 4px;
     }
 
+    @media (max-width: 380px) {
+      .brand-logo-img {
+        height: 32px;
+      }
+      .header-actions {
+        gap: 0;
+      }
+      .action-btn {
+        width: 38px;
+        height: 38px;
+        min-width: 38px;
+        min-height: 38px;
+      }
+    }
+
     @media (min-width: 768px) {
       .header-actions {
         gap: 8px;

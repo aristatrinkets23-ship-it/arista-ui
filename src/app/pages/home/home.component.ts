@@ -598,6 +598,12 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       padding: 0 32px;
     }
 
+    @media (max-width: 576px) {
+      .hero-container {
+        padding: 0 16px;
+      }
+    }
+
     .hero-content {
       max-width: 620px;
       text-align: left;
@@ -1045,6 +1051,12 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       margin: 0 auto;
     }
 
+    @media (max-width: 576px) {
+      .category-static-grid {
+        gap: 16px 14px;
+      }
+    }
+
     .category-marquee-track {
       display: flex;
       width: max-content;
@@ -1362,12 +1374,24 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       will-change: opacity, transform;
     }
 
+    @media (max-width: 768px) {
+      .editorial-media {
+        transform: translateY(30px);
+      }
+    }
+
     /* Right Column: Text comes from RIGHT (+90px -> 0) */
     .editorial-text {
       opacity: 0;
       transform: translateX(90px);
       transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s, transform 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s;
       will-change: opacity, transform;
+    }
+
+    @media (max-width: 768px) {
+      .editorial-text {
+        transform: translateY(30px);
+      }
     }
 
     /* When section enters viewport, both sides slide toward each other from opposite directions */
@@ -1682,6 +1706,15 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
+    @media (max-width: 768px) {
+      .occasion-collapsed-label span {
+        writing-mode: horizontal-tb;
+        transform: none;
+        font-size: 1.05rem;
+        letter-spacing: 2px;
+      }
+    }
+
     .occasion-expanded-content {
       position: absolute;
       bottom: 0;
@@ -1794,15 +1827,24 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
     @media (min-width: 768px) {
       .arrivals-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 22px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
       }
     }
 
     @media (min-width: 992px) {
       .arrivals-grid {
         grid-template-columns: repeat(4, 1fr);
-        gap: 24px;    /* New Arrivals Clean Card Layout V2 (Matching Image 2) */
+        gap: 24px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .arrivals-grid {
+        gap: 12px;
+      }
+    }
+
     .arrival-card-v2 {
       display: flex;
       flex-direction: column;
@@ -1857,10 +1899,25 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
 
+    @media (max-width: 480px) {
+      .arrival-badge-pill {
+        top: 8px;
+        left: 8px;
+        font-size: 0.65rem;
+        padding: 3px 8px;
+      }
+    }
+
     .arrival-info-box {
       display: flex;
       flex-direction: column;
       padding-top: 14px;
+    }
+
+    @media (max-width: 480px) {
+      .arrival-info-box {
+        padding-top: 10px;
+      }
     }
 
     .arrival-card-name {
@@ -1876,6 +1933,13 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       transition: color 0.25s ease;
     }
 
+    @media (max-width: 480px) {
+      .arrival-card-name {
+        font-size: 0.85rem;
+        margin-bottom: 4px;
+      }
+    }
+
     .arrival-card-v2:hover .arrival-card-name {
       color: var(--brand-warm-gold, #CFA874);
     }
@@ -1887,6 +1951,13 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       margin-bottom: 14px;
     }
 
+    @media (max-width: 480px) {
+      .arrival-card-price-row {
+        margin-bottom: 10px;
+        gap: 6px;
+      }
+    }
+
     .arrival-card-price-row .price-current {
       font-family: var(--font-sans, system-ui, sans-serif);
       font-size: 1.02rem;
@@ -1894,11 +1965,23 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       color: #1A120B;
     }
 
+    @media (max-width: 480px) {
+      .arrival-card-price-row .price-current {
+        font-size: 0.92rem;
+      }
+    }
+
     .arrival-card-price-row .price-original {
       font-family: var(--font-sans, system-ui, sans-serif);
       font-size: 0.88rem;
       color: #888888;
       text-decoration: line-through;
+    }
+
+    @media (max-width: 480px) {
+      .arrival-card-price-row .price-original {
+        font-size: 0.78rem;
+      }
     }
 
     .arrival-add-bag-btn {
@@ -1921,80 +2004,19 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       box-shadow: 0 2px 8px rgba(58, 46, 40, 0.04);
     }
 
+    @media (max-width: 480px) {
+      .arrival-add-bag-btn {
+        padding: 8px 10px;
+        font-size: 0.7rem;
+      }
+    }
+
     .arrival-add-bag-btn:hover {
       background: var(--brand-warm-gold, #CFA874);
       color: #1A120B;
       border-color: var(--brand-warm-gold, #CFA874);
       box-shadow: 0 4px 14px rgba(207, 168, 116, 0.35);
       transform: translateY(-2px);
-    }-events: none;
-      z-index: 1;
-    }
-
-    /* Floating Content over Gradient */
-    .arrival-arch-content {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 20px 16px;
-      z-index: 2;
-      text-align: center;
-      color: #FFFFFF;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .arrival-arch-title {
-      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
-      font-size: 1.05rem;
-      font-weight: 400;
-      color: #FFFFFF;
-      margin: 0 0 6px 0;
-      line-height: 1.25;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-      display: -webkit-box;
-      -webkit-line-clamp: 1;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .arrival-arch-rating {
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: 0.78rem;
-      color: #E2C799;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      font-weight: 500;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
-    }
-
-    .arrival-arch-rating .star-icon {
-      color: #E2C799;
-      font-size: 0.82rem;
-    }
-
-    .arrival-arch-price {
-      font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: 1.02rem;
-      font-weight: 700;
-      color: #FFFFFF;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-    }
-
-    .arrival-arch-price .price-original {
-      font-size: 0.85rem;
-      font-weight: 400;
-      color: rgba(255, 255, 255, 0.65);
-      text-decoration: line-through;
     }
 
     /* Footer / View All Pill Button */

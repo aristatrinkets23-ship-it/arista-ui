@@ -204,6 +204,23 @@ import { CartService } from '../../core/services/cart.service';
       align-items: center;
     }
 
+    @media (max-width: 576px) {
+      .cart-item-card {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px 10px;
+      }
+      .item-main {
+        grid-column: 1 / -1;
+      }
+      .item-qty {
+        justify-self: start;
+      }
+      .item-subtotal {
+        justify-self: end;
+        font-size: 1.05rem;
+      }
+    }
+
     @media (min-width: 768px) {
       .cart-item-card {
         grid-template-columns: 3fr 1fr 1fr 1fr;

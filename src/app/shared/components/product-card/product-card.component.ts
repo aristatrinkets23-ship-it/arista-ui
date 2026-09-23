@@ -184,6 +184,13 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
     .product-card:hover .card-slide-dots {
       opacity: 1;
     }
+
+    @media (max-width: 768px) {
+      .card-slide-btn,
+      .card-slide-dots {
+        opacity: 0.85;
+      }
+    }
     .card-dot {
       width: 6px;
       height: 6px;

@@ -228,6 +228,11 @@ import { CartService } from '../../core/services/cart.service';
       padding: 36px;
       box-shadow: var(--shadow-sm);
     }
+    @media (max-width: 576px) {
+      .auth-card {
+        padding: 24px 16px;
+      }
+    }
     .auth-card-title {
       font-family: var(--font-serif);
       font-size: 1.6rem;
