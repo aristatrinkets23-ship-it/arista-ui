@@ -1,7 +1,17 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CartItem, CartSummary } from '../models/cart.model';
 import { ProductCardData } from '../models/product-card-data.model';
+import { AuthService } from './auth.service';
+import { API_ENDPOINTS } from '../constants/api-endpoints';
+
+const GUEST_CART_EXPIRY_DAYS = 30;
+const THIRTY_DAYS_MS = GUEST_CART_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+
+interface StoredCartData {
+  items: CartItem[];
+  createdAt: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +21,8 @@ export class CartService {
   private cartSubject: BehaviorSubject<CartSummary>;
   cart$: Observable<CartSummary>;
 
+  private authService = inject(AuthService);
+
   constructor() {
     const loadedItems = this.loadCartFromStorage();
     this.cartSubject = new BehaviorSubject<CartSummary>(this.calculateSummary(loadedItems));
@@ -18,11 +30,37 @@ export class CartService {
 
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', (event) => {
-        if (event.key === this.STORAGE_KEY) {
+        if (event.key === this.STORAGE_KEY && !this.authService.isAuthenticated()) {
           const freshItems = this.loadCartFromStorage();
           this.cartSubject.next(this.calculateSummary(freshItems));
         }
       });
+    }
+
+    // Initialize & sync authentication state
+    this.initAuthSync();
+  }
+
+  private initAuthSync(): void {
+    if (this.authService.isAuthenticated()) {
+      this.syncWithBackendOrMerge();
+    }
+
+    let prevToken = this.authService.getToken();
+    if (typeof window !== 'undefined') {
+      setInterval(() => {
+        const currentToken = this.authService.getToken();
+        if (currentToken !== prevToken) {
+          prevToken = currentToken;
+          if (currentToken) {
+            this.syncWithBackendOrMerge();
+          } else {
+            // User logged out: restore guest local cart
+            const guestItems = this.loadCartFromStorage();
+            this.cartSubject.next(this.calculateSummary(guestItems));
+          }
+        }
+      }, 500);
     }
   }
 
@@ -52,40 +90,80 @@ export class CartService {
     return item ? item.quantity : 0;
   }
 
-  addToCart(product: ProductCardData, quantity: number = 1, selectedMetal?: string): void {
+  async syncWithBackendOrMerge(): Promise<void> {
+    const token = this.authService.getToken();
+    if (!token) return;
+
+    const guestItems = this.loadCartFromStorage();
+
+    if (guestItems && guestItems.length > 0) {
+      try {
+        const response = await fetch(API_ENDPOINTS.CART.MERGE, {
+          method: 'POST',
+          headers: this.getHeaders(),
+          body: JSON.stringify({ guestItems })
+        });
+        const data = await response.json();
+        if (response.ok && data.success && data.data) {
+          this.clearLocalStorage();
+          this.cartSubject.next(data.data);
+          return;
+        }
+      } catch (err) {
+        console.warn('Could not merge cart with backend:', err);
+      }
+    }
+
+    this.fetchCartFromBackend();
+  }
+
+  async fetchCartFromBackend(): Promise<void> {
+    const token = this.authService.getToken();
+    if (!token) return;
+
+    try {
+      const response = await fetch(API_ENDPOINTS.CART.GET, {
+        headers: this.getHeaders()
+      });
+      const data = await response.json();
+      if (response.ok && data.success && data.data) {
+        this.cartSubject.next(data.data);
+      }
+    } catch (err) {
+      console.warn('Could not fetch cart from server:', err);
+    }
+  }
+
+  async addToCart(product: ProductCardData, quantity: number = 1, selectedMetal?: string): Promise<void> {
     if (!product) return;
-    const currentItems = [...this.currentCart.items];
     const addQty = Math.max(1, Number(quantity) || 1);
     const metal = selectedMetal || '18K Warm Gold';
 
-    // Fetch fresh product data from localStorage if available
-    let freshImage = product.image;
-    let freshPrice = Number(product.price) || 0;
-    let freshName = product.name;
-    let freshCategory = product.category;
-
-    try {
-      if (typeof localStorage !== 'undefined') {
-        const storedMockData = localStorage.getItem('arista_mock_products_v3') || localStorage.getItem('arista_mock_products');
-        if (storedMockData) {
-          const parsed = JSON.parse(storedMockData);
-          if (Array.isArray(parsed)) {
-            const match = parsed.find(p => 
-              (p.id !== undefined && p.id !== null && product.id !== undefined && product.id !== null && String(p.id) === String(product.id)) ||
-              (p.slug && product.slug && p.slug === product.slug) ||
-              (p.name && product.name && p.name.trim().toLowerCase() === product.name.trim().toLowerCase())
-            );
-            if (match) {
-              if (match.image) freshImage = match.image;
-              if (match.price !== undefined && !isNaN(Number(match.price))) freshPrice = Number(match.price);
-              if (match.name) freshName = match.name;
-              if (match.category) freshCategory = match.category;
-            }
-          }
+    // 1. Logged-in user: send API request to database backend
+    if (this.authService.isAuthenticated()) {
+      try {
+        const response = await fetch(API_ENDPOINTS.CART.ADD, {
+          method: 'POST',
+          headers: this.getHeaders(),
+          body: JSON.stringify({
+            product,
+            productId: product.id,
+            quantity: addQty,
+            selectedMetal: metal
+          })
+        });
+        const data = await response.json();
+        if (response.ok && data.success && data.data) {
+          this.cartSubject.next(data.data);
+          return;
         }
+      } catch (err) {
+        console.warn('Backend addToCart failed, fallback to local state:', err);
       }
-    } catch {}
+    }
 
+    // 2. Guest or Offline mode: Update local state & localStorage
+    const currentItems = [...this.currentCart.items];
     const productId = (product.id !== undefined && product.id !== null && String(product.id) !== '')
       ? product.id
       : (product.slug || (product.name ? product.name.toLowerCase().replace(/\s+/g, '-') : 'prod-' + Date.now()));
@@ -93,23 +171,20 @@ export class CartService {
     const updatedProduct: ProductCardData = {
       ...product,
       id: productId,
-      name: freshName || product.name || 'Jewellery Item',
-      price: freshPrice,
-      image: freshImage || product.image || '/assets/images/placeholder-jewellery.svg',
-      category: freshCategory || product.category || 'Jewellery'
+      name: product.name || 'Jewellery Item',
+      price: Number(product.price) || 0,
+      image: product.image || '/assets/images/placeholder-jewellery.svg',
+      category: product.category || 'Jewellery'
     };
 
     const existingIndex = currentItems.findIndex(item => {
-      const sameMetal = !selectedMetal || !item.selectedMetal || item.selectedMetal === metal;
-
+      const sameMetal = !metal || !item.selectedMetal || item.selectedMetal === metal;
       const sameId = (item.product.id !== undefined && item.product.id !== null && updatedProduct.id !== undefined && updatedProduct.id !== null)
         ? String(item.product.id) === String(updatedProduct.id)
         : false;
-
       const sameSlug = (item.product.slug && updatedProduct.slug)
         ? item.product.slug === updatedProduct.slug
         : false;
-
       const sameName = (item.product.name && updatedProduct.name)
         ? item.product.name.trim().toLowerCase() === updatedProduct.name.trim().toLowerCase()
         : false;
@@ -125,26 +200,46 @@ export class CartService {
         product: updatedProduct,
         selectedMetal: metal,
         quantity: newQty,
-        subtotal: freshPrice * newQty
+        subtotal: (Number(updatedProduct.price) || 0) * newQty
       };
     } else {
       currentItems.push({
         product: updatedProduct,
         quantity: addQty,
         selectedMetal: metal,
-        subtotal: freshPrice * addQty
+        subtotal: (Number(updatedProduct.price) || 0) * addQty
       });
     }
 
-    this.saveAndUpdate(currentItems);
+    this.saveAndUpdateLocal(currentItems);
   }
 
-  updateQuantity(productId: number | string, quantity: number, selectedMetal?: string): void {
+  async updateQuantity(productId: number | string, quantity: number, selectedMetal?: string): Promise<void> {
     if (productId === undefined || productId === null) return;
     const numericQty = Number(quantity) || 0;
     if (numericQty <= 0) {
-      this.removeFromCart(productId, selectedMetal);
+      await this.removeFromCart(productId, selectedMetal);
       return;
+    }
+
+    if (this.authService.isAuthenticated()) {
+      try {
+        const response = await fetch(API_ENDPOINTS.CART.UPDATE(productId), {
+          method: 'PATCH',
+          headers: this.getHeaders(),
+          body: JSON.stringify({
+            quantity: numericQty,
+            selectedMetal
+          })
+        });
+        const data = await response.json();
+        if (response.ok && data.success && data.data) {
+          this.cartSubject.next(data.data);
+          return;
+        }
+      } catch (err) {
+        console.warn('Backend updateQuantity failed:', err);
+      }
     }
 
     const strId = String(productId);
@@ -165,11 +260,32 @@ export class CartService {
       return item;
     });
 
-    this.saveAndUpdate(currentItems);
+    this.saveAndUpdateLocal(currentItems);
   }
 
-  removeFromCart(productId: number | string, selectedMetal?: string): void {
+  async removeFromCart(productId: number | string, selectedMetal?: string): Promise<void> {
     if (productId === undefined || productId === null) return;
+
+    if (this.authService.isAuthenticated()) {
+      try {
+        let url = API_ENDPOINTS.CART.REMOVE(productId);
+        if (selectedMetal) {
+          url += `?selectedMetal=${encodeURIComponent(selectedMetal)}`;
+        }
+        const response = await fetch(url, {
+          method: 'DELETE',
+          headers: this.getHeaders()
+        });
+        const data = await response.json();
+        if (response.ok && data.success && data.data) {
+          this.cartSubject.next(data.data);
+          return;
+        }
+      } catch (err) {
+        console.warn('Backend removeFromCart failed:', err);
+      }
+    }
+
     const strId = String(productId);
     const updatedItems = this.currentCart.items.filter(item => {
       const matchesId = (item.product.id !== undefined && item.product.id !== null && String(item.product.id) === strId) ||
@@ -180,21 +296,39 @@ export class CartService {
       return !(matchesId && matchesMetal);
     });
 
-    this.saveAndUpdate(updatedItems);
+    this.saveAndUpdateLocal(updatedItems);
   }
 
-  clearCart(): void {
-    this.saveAndUpdate([]);
+  async clearCart(): Promise<void> {
+    if (this.authService.isAuthenticated()) {
+      try {
+        const response = await fetch(API_ENDPOINTS.CART.CLEAR, {
+          method: 'DELETE',
+          headers: this.getHeaders()
+        });
+        const data = await response.json();
+        if (response.ok && data.success && data.data) {
+          this.cartSubject.next(data.data);
+          return;
+        }
+      } catch (err) {
+        console.warn('Backend clearCart failed:', err);
+      }
+    }
+
+    this.saveAndUpdateLocal([]);
   }
 
   syncCartWithMockProducts(): void {
-    const currentItems = this.loadCartFromStorage();
-    if (currentItems && currentItems.length > 0) {
-      this.cartSubject.next(this.calculateSummary(currentItems));
+    if (!this.authService.isAuthenticated()) {
+      const currentItems = this.loadCartFromStorage();
+      if (currentItems && currentItems.length > 0) {
+        this.cartSubject.next(this.calculateSummary(currentItems));
+      }
     }
   }
 
-  private saveAndUpdate(items: CartItem[]): void {
+  private saveAndUpdateLocal(items: CartItem[]): void {
     this.saveCartToStorage(items);
     this.cartSubject.next(this.calculateSummary(items));
   }
@@ -205,76 +339,34 @@ export class CartService {
         const savedCart = localStorage.getItem(this.STORAGE_KEY);
         if (!savedCart) return [];
 
-        let parsedCart: any[];
+        let parsedData: any;
         try {
-          parsedCart = JSON.parse(savedCart);
+          parsedData = JSON.parse(savedCart);
         } catch {
           return [];
         }
 
-        if (!Array.isArray(parsedCart) || parsedCart.length === 0) return [];
+        let parsedItems: any[] = [];
+        let createdAt = Date.now();
 
-        const storedMockProductsData = localStorage.getItem('arista_mock_products_v3') || localStorage.getItem('arista_mock_products');
-        let mockProductsMap = new Map<string, any>();
-
-        if (storedMockProductsData) {
-          try {
-            const parsedMock = JSON.parse(storedMockProductsData);
-            if (Array.isArray(parsedMock)) {
-              parsedMock.forEach(p => {
-                if (p) {
-                  if (p.id !== undefined && p.id !== null && String(p.id).trim() !== '') {
-                    mockProductsMap.set(String(p.id), p);
-                  }
-                  if (p.slug && String(p.slug).trim() !== '') {
-                    mockProductsMap.set(String(p.slug), p);
-                  }
-                  if (p.name && String(p.name).trim() !== '') {
-                    mockProductsMap.set(p.name.trim().toLowerCase(), p);
-                  }
-                }
-              });
-            }
-          } catch {}
+        if (Array.isArray(parsedData)) {
+          parsedItems = parsedData;
+        } else if (parsedData && typeof parsedData === 'object') {
+          parsedItems = Array.isArray(parsedData.items) ? parsedData.items : [];
+          createdAt = Number(parsedData.createdAt) || Date.now();
         }
 
-        const syncedItems: CartItem[] = parsedCart.map(item => {
+        // 30-DAY GUEST EXPIRATION CHECK
+        if (Date.now() - createdAt > THIRTY_DAYS_MS) {
+          console.info('Guest cart has expired (older than 30 days). Removing from localStorage.');
+          this.clearLocalStorage();
+          return [];
+        }
+
+        if (parsedItems.length === 0) return [];
+
+        const syncedItems: CartItem[] = parsedItems.map(item => {
           if (!item || !item.product) return item;
-
-          let freshProd: any = null;
-          if (item.product.id !== undefined && item.product.id !== null && String(item.product.id).trim() !== '') {
-            freshProd = mockProductsMap.get(String(item.product.id));
-          }
-          if (!freshProd && item.product.slug) {
-            freshProd = mockProductsMap.get(String(item.product.slug));
-          }
-          if (!freshProd && item.product.name) {
-            freshProd = mockProductsMap.get(item.product.name.trim().toLowerCase());
-          }
-
-          if (freshProd) {
-            const updatedImage = freshProd.image || item.product.image;
-            const updatedPrice = (freshProd.price !== undefined && !isNaN(Number(freshProd.price))) 
-              ? Number(freshProd.price) 
-              : (Number(item.product.price) || 0);
-            const updatedQty = Math.max(1, Number(item.quantity) || 1);
-            return {
-              ...item,
-              quantity: updatedQty,
-              selectedMetal: item.selectedMetal || '18K Warm Gold',
-              product: {
-                ...item.product,
-                id: item.product.id !== undefined && item.product.id !== null ? item.product.id : freshProd.id,
-                name: freshProd.name || item.product.name,
-                price: updatedPrice,
-                image: updatedImage || '/assets/images/placeholder-jewellery.svg',
-                category: freshProd.category || item.product.category,
-                badge: freshProd.badge || item.product.badge
-              },
-              subtotal: updatedPrice * updatedQty
-            };
-          }
-
           const itemPrice = Number(item.product.price) || 0;
           const itemQty = Math.max(1, Number(item.quantity) || 1);
           return {
@@ -285,12 +377,7 @@ export class CartService {
           };
         }).filter(item => item && item.product && (item.product.name || item.product.id || item.product.slug));
 
-        if (syncedItems.length > 0) {
-          this.saveCartToStorage(syncedItems);
-          return syncedItems;
-        } else if (parsedCart.length > 0) {
-          return parsedCart;
-        }
+        return syncedItems;
       }
     } catch (e) {
       console.warn('Could not load cart from localStorage:', e);
@@ -302,11 +389,88 @@ export class CartService {
   private saveCartToStorage(items: CartItem[]): void {
     try {
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(items));
+        if (!items || items.length === 0) {
+          localStorage.removeItem(this.STORAGE_KEY);
+        } else {
+          let createdAt = Date.now();
+          const existing = localStorage.getItem(this.STORAGE_KEY);
+          if (existing) {
+            try {
+              const parsed = JSON.parse(existing);
+              if (parsed && parsed.createdAt && !isNaN(Number(parsed.createdAt))) {
+                createdAt = Number(parsed.createdAt);
+              }
+            } catch {}
+          }
+
+          const sanitizedItems: CartItem[] = items.map(item => {
+            let img = item.product?.image || '/assets/images/placeholder-jewellery.svg';
+            if (typeof img === 'string' && (img.startsWith('data:') || img.length > 500)) {
+              img = '/assets/images/placeholder-jewellery.svg';
+            }
+            return {
+              ...item,
+              product: {
+                ...item.product,
+                image: img,
+                images: undefined
+              }
+            };
+          });
+
+          const payload: StoredCartData = {
+            items: sanitizedItems,
+            createdAt
+          };
+
+          try {
+            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(payload));
+          } catch (quotaErr) {
+            console.warn('LocalStorage quota exceeded in cart. Pruning large storage keys and retrying...');
+            localStorage.removeItem('arista_mock_products_v3');
+            localStorage.removeItem('arista_mock_products');
+            try {
+              localStorage.setItem(this.STORAGE_KEY, JSON.stringify(payload));
+            } catch (retryErr) {
+              console.warn('Could not save cart after pruning:', retryErr);
+            }
+          }
+        }
       }
     } catch (e) {
       console.warn('Could not save cart to localStorage:', e);
     }
+  }
+
+  private clearLocalStorage(): void {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem(this.STORAGE_KEY);
+      }
+    } catch (e) {}
+  }
+
+  private getSessionId(): string {
+    let sid = typeof localStorage !== 'undefined' ? localStorage.getItem('arista_session_id') : null;
+    if (!sid) {
+      sid = 'sess_' + Math.random().toString(36).substring(2, 11) + '_' + Date.now();
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('arista_session_id', sid);
+      }
+    }
+    return sid;
+  }
+
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-session-id': this.getSessionId()
+    };
+    const token = this.authService.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
   }
 
   private calculateSummary(items: CartItem[]): CartSummary {
@@ -327,4 +491,3 @@ export class CartService {
     };
   }
 }
-

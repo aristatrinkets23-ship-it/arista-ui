@@ -20,6 +20,15 @@ export function getDefaultCategoryImage(nameOrSlug?: string): string {
   return '/assets/images/placeholder-jewellery.svg';
 }
 
+export function normalizeCategory(str?: string): string {
+  if (!str) return '';
+  return String(str)
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -63,6 +72,7 @@ export class MockDataService {
               compareAtPrice: p.compare_at_price ? Number(p.compare_at_price) : undefined,
               badge: p.badge || undefined,
               category: catName,
+              category_slug: p.category_slug || p.category_name,
               available: true,
               inStock: Boolean(p.in_stock !== 0),
               stockQuantity: Number(p.stock_quantity || 10),
@@ -197,7 +207,20 @@ export class MockDataService {
 
   private saveProductsToStorage(): void {
     try {
-      localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(this.products));
+      if (typeof localStorage !== 'undefined') {
+        const sanitizedProducts = (this.products || []).map(p => {
+          let img = p.image || '/assets/images/placeholder-jewellery.svg';
+          if (typeof img === 'string' && (img.startsWith('data:') || img.length > 500)) {
+            img = '/assets/images/placeholder-jewellery.svg';
+          }
+          return {
+            ...p,
+            image: img,
+            images: undefined
+          };
+        });
+        localStorage.setItem(STORAGE_KEY_PRODUCTS, JSON.stringify(sanitizedProducts));
+      }
     } catch (err) {
       console.warn('Failed to save arista_mock_products to localStorage:', err);
     }
@@ -351,16 +374,28 @@ export class MockDataService {
       map(prods => {
         let result = [...prods];
         if (categorySlug && categorySlug !== 'all') {
-          result = result.filter(p => p.category?.toLowerCase() === categorySlug.toLowerCase());
+          const targetNorm = normalizeCategory(categorySlug);
+          result = result.filter(p => {
+            const catNorm = normalizeCategory(p.category);
+            const slugNorm = normalizeCategory((p as any).category_slug);
+            return catNorm === targetNorm || slugNorm === targetNorm || catNorm.includes(targetNorm) || targetNorm.includes(catNorm);
+          });
         }
 
         if (sortBy) {
           if (sortBy === 'price-low') {
-            result.sort((a, b) => a.price - b.price);
+            result.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
           } else if (sortBy === 'price-high') {
-            result.sort((a, b) => b.price - a.price);
+            result.sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
           } else if (sortBy === 'newest') {
-            result.sort((a, b) => (b.badge === 'NEW' ? 1 : 0) - (a.badge === 'NEW' ? 1 : 0));
+            result.sort((a, b) => {
+              const badgeA = String(a.badge || '').toUpperCase() === 'NEW' ? 1 : 0;
+              const badgeB = String(b.badge || '').toUpperCase() === 'NEW' ? 1 : 0;
+              if (badgeB !== badgeA) return badgeB - badgeA;
+              const idA = Number(a.id) || 0;
+              const idB = Number(b.id) || 0;
+              return idB - idA;
+            });
           }
         }
 

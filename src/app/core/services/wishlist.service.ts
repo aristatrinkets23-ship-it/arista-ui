@@ -128,7 +128,30 @@ export class WishlistService {
   private saveWishlistToStorage(): void {
     try {
       if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(this.wishlistItems));
+        const sanitized = this.wishlistItems.map(p => {
+          let img = p.image || '/assets/images/placeholder-jewellery.svg';
+          if (typeof img === 'string' && (img.startsWith('data:') || img.length > 500)) {
+            img = '/assets/images/placeholder-jewellery.svg';
+          }
+          return {
+            ...p,
+            image: img,
+            images: undefined
+          };
+        });
+
+        try {
+          localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(sanitized));
+        } catch (quotaErr) {
+          console.warn('LocalStorage quota exceeded in wishlist. Pruning large storage keys and retrying...');
+          localStorage.removeItem('arista_mock_products_v3');
+          localStorage.removeItem('arista_mock_products');
+          try {
+            localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(sanitized));
+          } catch (retryErr) {
+            console.warn('Could not save wishlist after pruning:', retryErr);
+          }
+        }
       }
     } catch (err) {
       console.warn('Failed to save wishlist to storage:', err);

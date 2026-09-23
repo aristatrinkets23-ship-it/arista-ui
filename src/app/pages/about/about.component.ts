@@ -41,7 +41,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
           </p>
         </div>
         <div class="story-image-box">
-          <img src="/assets/images/placeholder-banner.svg" alt="Arista Jewellery Atelier Craftsmanship" class="story-img" />
+          <img src="/assets/images/about-heritage-artisan.jpg" alt="Arista Fine Jewellery Collection Box" class="story-img" />
         </div>
       </div>
     </section>

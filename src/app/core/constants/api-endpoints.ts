@@ -20,6 +20,14 @@ export const API_ENDPOINTS = {
     BY_NUMBER: (orderNumber: string) => `${BASE_URL}/orders/${orderNumber}`
   },
   HOMEPAGE_CONFIG: `${BASE_URL}/homepage-config`,
+  CART: {
+    GET: `${BASE_URL}/cart`,
+    ADD: `${BASE_URL}/cart/items`,
+    UPDATE: (productId: string | number) => `${BASE_URL}/cart/items/${productId}`,
+    REMOVE: (productId: string | number) => `${BASE_URL}/cart/items/${productId}`,
+    CLEAR: `${BASE_URL}/cart`,
+    MERGE: `${BASE_URL}/cart/merge`
+  },
   WISHLIST: {
     GET: `${BASE_URL}/wishlist`,
     TOGGLE: `${BASE_URL}/wishlist/toggle`,
