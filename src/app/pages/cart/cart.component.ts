@@ -20,10 +20,14 @@ import { CartService } from '../../core/services/cart.service';
   ],
   template: `
     <!-- Cart Hero -->
-    <section class="cart-hero text-center">
-      <div class="container">
-        <span class="hero-eyebrow">Shopping Bag</span>
-        <h1 class="hero-title">Your Curated Jewels</h1>
+    <section class="cart-hero">
+      <div class="hero-bg-overlay"></div>
+      <div class="container hero-container">
+        <div class="hero-content">
+          <span class="hero-eyebrow">Shopping Bag</span>
+          <h1 class="hero-title">Your Curated Jewels</h1>
+          <p class="hero-subtitle">Review your handpicked heirloom pieces and fine jewellery</p>
+        </div>
       </div>
     </section>
 
@@ -61,7 +65,7 @@ import { CartService } from '../../core/services/cart.service';
                     <a [routerLink]="['/product', item.product.slug]">{{ item.product.name }}</a>
                   </h3>
                   <span *ngIf="item.selectedMetal" class="item-metal">Metal: {{ item.selectedMetal }}</span>
-                  <button type="button" class="btn-remove" (click)="removeItem(item.product.id)">
+                  <button type="button" class="btn-remove" (click)="removeItem(item)">
                     Remove
                   </button>
                 </div>
@@ -73,9 +77,9 @@ import { CartService } from '../../core/services/cart.service';
 
               <div class="item-qty">
                 <div class="qty-control">
-                  <button type="button" class="qty-btn" (click)="updateQty(item.product.id, item.quantity - 1)">-</button>
+                  <button type="button" class="qty-btn" (click)="updateQty(item, item.quantity - 1)">-</button>
                   <span class="qty-val">{{ item.quantity }}</span>
-                  <button type="button" class="qty-btn" (click)="updateQty(item.product.id, item.quantity + 1)">+</button>
+                  <button type="button" class="qty-btn" (click)="updateQty(item, item.quantity + 1)">+</button>
                 </div>
               </div>
 
@@ -136,34 +140,80 @@ import { CartService } from '../../core/services/cart.service';
   `,
   styles: [`
     .cart-hero {
-      background: linear-gradient(135deg, rgba(247, 233, 230, 0.9) 0%, rgba(242, 239, 232, 0.95) 100%), url('/assets/images/placeholder-banner.svg');
+      position: relative;
+      background-image: url('/assets/images/cart-hero-banner.jpg');
       background-size: cover;
-      padding: 40px 16px;
-      border-bottom: 1px solid var(--color-border);
-      text-align: center;
+      background-position: center right;
+      background-repeat: no-repeat;
+      padding: 64px 0;
+      min-height: 280px;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      border-bottom: 1px solid var(--color-border, #E5E0D8);
+      overflow: hidden;
+    }
+
+    .hero-bg-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        rgba(253, 249, 244, 0.96) 0%,
+        rgba(253, 249, 244, 0.88) 35%,
+        rgba(253, 249, 244, 0.35) 65%,
+        rgba(253, 249, 244, 0) 90%
+      );
+      pointer-events: none;
+    }
+
+    .hero-container {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: var(--container-max-width, 1280px);
+      margin: 0 auto;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .hero-content {
+      max-width: 520px;
+      margin: 0;
+      text-align: left;
     }
 
     .hero-eyebrow {
+      font-family: var(--font-sans);
       font-size: 0.82rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 2.5px;
-      color: var(--brand-warm-gold);
+      letter-spacing: 3px;
+      color: var(--brand-warm-gold, #CFA874);
       display: block;
       margin-bottom: 8px;
-      text-align: center;
+      text-align: left;
     }
 
     .hero-title {
       font-family: var(--font-serif);
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      color: var(--brand-mocha-brown);
-      text-align: center;
-      margin: 0 auto;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-weight: 700;
+      color: var(--brand-mocha-brown, #5B4636);
+      margin: 0 0 10px 0;
+      line-height: 1.2;
+      letter-spacing: -0.2px;
+      text-align: left;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-sans);
+      font-size: clamp(0.88rem, 1.6vw, 1rem);
+      color: #6A5544;
+      margin: 0;
+      max-width: 480px;
+      font-weight: 400;
+      text-align: left;
+      line-height: 1.5;
     }
 
     .cart-layout {
@@ -424,12 +474,14 @@ export class CartComponent implements OnInit, OnDestroy {
     }
   }
 
-  updateQty(productId: number | string, qty: number): void {
-    this.cartService.updateQuantity(productId, qty);
+  updateQty(item: any, qty: number): void {
+    const targetId = (item?.product?.id !== undefined && item?.product?.id !== null) ? item.product.id : item?.product?.slug;
+    this.cartService.updateQuantity(targetId, qty, item?.selectedMetal);
   }
 
-  removeItem(productId: number | string): void {
-    this.cartService.removeFromCart(productId);
+  removeItem(item: any): void {
+    const targetId = (item?.product?.id !== undefined && item?.product?.id !== null) ? item.product.id : item?.product?.slug;
+    this.cartService.removeFromCart(targetId, item?.selectedMetal);
   }
 
   clearCart(): void {

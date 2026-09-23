@@ -82,15 +82,19 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
             class="quick-add-btn"
             [class.added]="isAdded"
             (click)="onQuickAdd($event)"
+            [title]="'Add ' + (product.name || 'item') + ' to cart'"
           >
-            <ng-container *ngIf="!isAdded">
-              + Add to Cart
-            </ng-container>
-            <ng-container *ngIf="isAdded">
+            <ng-container *ngIf="justAdded">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display: inline-block; vertical-align: -2px; margin-right: 4px;">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
-              Added
+              ✓ Added!
+            </ng-container>
+            <ng-container *ngIf="!justAdded && itemQtyInCart > 0">
+              + Add More ({{ itemQtyInCart }} in Bag)
+            </ng-container>
+            <ng-container *ngIf="!justAdded && itemQtyInCart === 0">
+              + Add to Cart
             </ng-container>
           </button>
         </div>
@@ -422,11 +426,16 @@ export class ProductCardComponent implements OnInit, OnDestroy {
     }
   }
 
+  justAdded = false;
+  itemQtyInCart = 0;
+  private addedTimeout: any;
+
   private checkCartStatus(): void {
     if (this.product) {
-      const targetId = this.product.id || this.product.slug;
+      const targetId = (this.product.id !== undefined && this.product.id !== null) ? this.product.id : this.product.slug;
       if (targetId !== undefined && targetId !== null) {
         this.isAdded = this.cartService.isInCart(targetId);
+        this.itemQtyInCart = this.cartService.getItemQuantity(targetId);
         this.cdr.detectChanges();
       }
     }
@@ -479,7 +488,16 @@ export class ProductCardComponent implements OnInit, OnDestroy {
     event.preventDefault();
     if (this.product) {
       this.cartService.addToCart(this.product, 1);
-      this.isAdded = true;
+      this.justAdded = true;
+      this.checkCartStatus();
+
+      if (this.addedTimeout) {
+        clearTimeout(this.addedTimeout);
+      }
+      this.addedTimeout = setTimeout(() => {
+        this.justAdded = false;
+        this.cdr.detectChanges();
+      }, 1800);
     }
   }
 
