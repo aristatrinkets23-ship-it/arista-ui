@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
@@ -11,13 +11,13 @@ import { ContactForm } from '../../core/models/contact.model';
   imports: [CommonModule, FormsModule, SectionHeadingComponent, ButtonComponent],
   template: `
     <!-- Contact Page Hero -->
-    <section class="contact-hero">
+    <section class="contact-hero animate-on-scroll">
       <div class="hero-bg-overlay"></div>
       <div class="container hero-container">
         <div class="hero-content">
-          <span class="hero-eyebrow">Personal Concierge</span>
-          <h1 class="hero-title">Connect With Our Atelier</h1>
-          <p class="hero-desc">
+          <span class="hero-eyebrow animate-child">Personal Concierge</span>
+          <h1 class="hero-title animate-child">Connect With Our Atelier</h1>
+          <p class="hero-desc animate-child">
             Whether inquiring about a custom creation, bespoke fitting, or order guidance, our luxury advisors are at your service.
           </p>
         </div>
@@ -25,17 +25,17 @@ import { ContactForm } from '../../core/models/contact.model';
     </section>
 
     <!-- Main Contact Section -->
-    <section class="section-padding">
+    <section class="section-padding contact-main-section animate-on-scroll">
       <div class="container contact-grid">
         <!-- Contact Information Cards -->
-        <div class="info-column">
+        <div class="info-column animate-slide-left">
           <h2 class="column-title">Client Care & Appointments</h2>
           <p class="column-intro">
             Experience bespoke luxury service online or schedule a private consultation at our flagship studio.
           </p>
 
           <div class="contact-cards">
-            <div class="info-card">
+            <div class="info-card animate-stagger-card" style="--stagger-index: 1">
               <div class="info-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -48,7 +48,7 @@ import { ContactForm } from '../../core/models/contact.model';
               </div>
             </div>
 
-            <div class="info-card">
+            <div class="info-card animate-stagger-card" style="--stagger-index: 2">
               <div class="info-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
@@ -61,7 +61,7 @@ import { ContactForm } from '../../core/models/contact.model';
               </div>
             </div>
 
-            <div class="info-card">
+            <div class="info-card animate-stagger-card" style="--stagger-index: 3">
               <div class="info-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
@@ -75,7 +75,7 @@ import { ContactForm } from '../../core/models/contact.model';
           </div>
 
           <!-- WhatsApp Concierge Banner -->
-          <div class="whatsapp-box">
+          <div class="whatsapp-box animate-stagger-card" style="--stagger-index: 4">
             <h4 class="wa-title">Need Instant Guidance?</h4>
             <p class="wa-text">Speak directly with a certified diamond specialist on WhatsApp.</p>
             <button type="button" class="btn-whatsapp" (click)="openWhatsApp()">
@@ -85,7 +85,7 @@ import { ContactForm } from '../../core/models/contact.model';
         </div>
 
         <!-- Contact Form -->
-        <div class="form-column">
+        <div class="form-column animate-slide-right">
           <div class="form-card">
             <h3 class="form-title">Send Us a Message</h3>
             
@@ -172,18 +172,68 @@ import { ContactForm } from '../../core/models/contact.model';
     </section>
   `,
   styles: [`
+    /* Section Scroll Reveal Animation Base */
+    .animate-on-scroll {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+
+    .animate-on-scroll.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .animate-slide-left {
+      opacity: 0;
+      transform: translateX(-36px);
+      transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: 0.1s;
+    }
+
+    .animate-slide-right {
+      opacity: 0;
+      transform: translateX(36px);
+      transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: 0.2s;
+    }
+
+    .animate-stagger-card {
+      opacity: 0;
+      transform: translateY(28px) scale(0.97);
+      transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), 
+                  transform 0.75s cubic-bezier(0.16, 1, 0.3, 1), 
+                  background-color 0.35s ease, 
+                  border-color 0.35s ease, 
+                  box-shadow 0.35s ease;
+      transition-delay: calc(var(--stagger-index, 1) * 0.1s);
+    }
+
+    .in-view .animate-slide-left,
+    .in-view .animate-slide-right,
+    .in-view .animate-stagger-card,
+    .animate-slide-left.in-view,
+    .animate-slide-right.in-view,
+    .animate-stagger-card.in-view {
+      opacity: 1;
+      transform: translateX(0) translateY(0) scale(1);
+    }
+
+    /* Contact Hero */
     .contact-hero {
       position: relative;
       background-image: url('/assets/images/hero-contact.jpg');
       background-size: cover;
       background-position: center right;
       background-repeat: no-repeat;
-      padding: 72px 0 60px 0;
-      min-height: 380px;
+      padding: 80px 0 68px 0;
+      min-height: 400px;
       display: flex;
       align-items: center;
       border-bottom: 1px solid var(--brand-warm-gold);
       color: #FFFFFF;
+      overflow: hidden;
     }
 
     .hero-bg-overlay {
@@ -191,10 +241,10 @@ import { ContactForm } from '../../core/models/contact.model';
       inset: 0;
       background: linear-gradient(
         90deg, 
-        rgba(26, 18, 11, 0.88) 0%, 
-        rgba(26, 18, 11, 0.65) 40%, 
-        rgba(26, 18, 11, 0.3) 70%, 
-        rgba(26, 18, 11, 0.05) 100%
+        rgba(26, 18, 11, 0.9) 0%, 
+        rgba(26, 18, 11, 0.68) 45%, 
+        rgba(26, 18, 11, 0.35) 75%, 
+        rgba(26, 18, 11, 0.08) 100%
       );
       pointer-events: none;
     }
@@ -209,7 +259,7 @@ import { ContactForm } from '../../core/models/contact.model';
     }
 
     .hero-content {
-      max-width: 600px;
+      max-width: 620px;
       text-align: left;
     }
 
@@ -219,7 +269,7 @@ import { ContactForm } from '../../core/models/contact.model';
       text-transform: uppercase;
       letter-spacing: 3px;
       color: var(--brand-warm-gold);
-      display: block;
+      display: inline-block;
       margin-bottom: 12px;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
@@ -282,13 +332,25 @@ import { ContactForm } from '../../core/models/contact.model';
       background-color: var(--brand-pearl-beige);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
-      padding: 20px;
+      padding: 22px;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .info-card:hover {
+      border-color: var(--brand-warm-gold);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 28px rgba(207, 168, 116, 0.18);
     }
 
     .info-icon {
       color: var(--brand-warm-gold);
       flex-shrink: 0;
       margin-top: 2px;
+      transition: transform 0.35s ease;
+    }
+
+    .info-card:hover .info-icon {
+      transform: scale(1.15) rotate(5deg);
     }
 
     .card-heading {
@@ -305,15 +367,23 @@ import { ContactForm } from '../../core/models/contact.model';
     }
 
     .whatsapp-box {
-      background-color: #F0F7ED;
-      border: 1px solid #C8E6C9;
+      background: linear-gradient(135deg, #F0F7ED 0%, #E2F0E0 100%);
+      border: 1px solid #A5D6A7;
       border-radius: var(--radius-md);
-      padding: 24px;
+      padding: 26px;
+      box-shadow: 0 8px 24px rgba(46, 125, 50, 0.08);
+      transition: all 0.4s ease;
+    }
+
+    .whatsapp-box:hover {
+      border-color: #2E7D32;
+      box-shadow: 0 14px 32px rgba(46, 125, 50, 0.16);
+      transform: translateY(-4px);
     }
 
     .wa-title {
       font-family: var(--font-serif);
-      font-size: 1.2rem;
+      font-size: 1.25rem;
       color: #2E7D32;
       margin-bottom: 6px;
     }
@@ -321,7 +391,7 @@ import { ContactForm } from '../../core/models/contact.model';
     .wa-text {
       font-size: 0.92rem;
       color: #388E3C;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
 
     .btn-whatsapp {
@@ -336,11 +406,14 @@ import { ContactForm } from '../../core/models/contact.model';
       text-transform: uppercase;
       letter-spacing: 1px;
       cursor: pointer;
-      transition: all var(--transition-fast);
+      transition: all 0.35s ease;
+      box-shadow: 0 4px 14px rgba(46, 125, 50, 0.25);
     }
 
     .btn-whatsapp:hover {
       background-color: #1B5E20;
+      transform: scale(1.02);
+      box-shadow: 0 8px 20px rgba(46, 125, 50, 0.35);
     }
 
     /* Form Styles */
@@ -348,8 +421,14 @@ import { ContactForm } from '../../core/models/contact.model';
       background-color: #FFFFFF;
       border: 1px solid var(--color-border);
       border-radius: var(--radius-md);
-      padding: 32px;
-      box-shadow: var(--shadow-sm);
+      padding: 36px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+      transition: border-color 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .form-card:hover {
+      border-color: var(--brand-warm-gold);
+      box-shadow: 0 16px 40px rgba(207, 168, 116, 0.12);
     }
 
     .form-title {
@@ -387,20 +466,27 @@ import { ContactForm } from '../../core/models/contact.model';
       font-size: 0.95rem;
       color: var(--brand-mocha-brown);
       background-color: #FFFFFF;
-      transition: border-color var(--transition-fast);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .form-input:focus, .form-select:focus, .form-textarea:focus {
       outline: none;
       border-color: var(--brand-warm-gold);
+      box-shadow: 0 0 0 3px rgba(207, 168, 116, 0.2);
     }
 
     .success-alert {
       background-color: var(--brand-pearl-beige);
       border: 1px solid var(--brand-warm-gold);
       border-radius: var(--radius-md);
-      padding: 24px;
+      padding: 28px;
       text-align: center;
+      animation: alertPopIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes alertPopIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
     }
 
     .success-alert h4 {
@@ -424,10 +510,15 @@ import { ContactForm } from '../../core/models/contact.model';
       border-radius: var(--radius-sm);
       font-weight: 700;
       cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-reset:hover {
+      background-color: #C29961;
     }
   `]
 })
-export class ContactComponent {
+export class ContactComponent implements AfterViewInit {
   formData: ContactForm = {
     name: '',
     email: '',
@@ -437,6 +528,35 @@ export class ContactComponent {
   };
 
   isSubmitted: boolean = false;
+
+  ngAfterViewInit(): void {
+    setTimeout(() => this.initScrollObserver(), 100);
+  }
+
+  private initScrollObserver(): void {
+    if (typeof window === 'undefined') return;
+
+    const targets = document.querySelectorAll(
+      '.animate-on-scroll, .animate-slide-left, .animate-slide-right, .animate-stagger-card'
+    );
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in-view');
+            }
+          });
+        },
+        { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      targets.forEach((el) => observer.observe(el));
+    } else {
+      targets.forEach((el) => el.classList.add('in-view'));
+    }
+  }
 
   onSubmit(event: Event): void {
     event.preventDefault();
@@ -460,3 +580,4 @@ export class ContactComponent {
     alert('Direct WhatsApp Concierge link: Opening chat with Arista Jewellery advisor...');
   }
 }
+

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
@@ -21,13 +21,13 @@ import { MockDataService } from '../../core/mock/mock-data.service';
   ],
   template: `
     <!-- Shop Page Header -->
-    <section class="shop-hero">
+    <section class="shop-hero animate-on-scroll">
       <div class="hero-bg-overlay"></div>
       <div class="container hero-container">
         <div class="hero-content">
-          <span class="hero-eyebrow">The Complete Collection</span>
-          <h1 class="hero-title">Fine & Fashion Jewellery</h1>
-          <p class="hero-desc">
+          <span class="hero-eyebrow animate-child">The Complete Collection</span>
+          <h1 class="hero-title animate-child">Fine & Fashion Jewellery</h1>
+          <p class="hero-desc animate-child">
             Explore handcrafted gold rings, layered necklaces, pearl drop earrings, and diamond cuff bracelets.
           </p>
         </div>
@@ -35,17 +35,18 @@ import { MockDataService } from '../../core/mock/mock-data.service';
     </section>
 
     <!-- Shop Control Toolbar & Filters -->
-    <section class="section-padding">
+    <section class="section-padding shop-main-section animate-on-scroll">
       <div class="container">
-        <div class="shop-toolbar" *ngIf="filterTabs.length > 1 || products.length > 0">
+        <div class="shop-toolbar animate-fade-up" *ngIf="filterTabs.length > 1 || products.length > 0">
           <!-- Category Filter Tabs -->
           <div class="filter-tabs">
             <button
-              *ngFor="let tab of filterTabs"
+              *ngFor="let tab of filterTabs; let i = index"
               type="button"
               [class.active]="selectedCategory === tab.slug"
               (click)="selectCategory(tab.slug)"
               class="tab-btn"
+              [style.--tab-index]="i + 1"
             >
               {{ tab.label }}
             </button>
@@ -71,11 +72,13 @@ import { MockDataService } from '../../core/mock/mock-data.service';
         <!-- Loading State -->
         <app-loading-spinner *ngIf="isLoading" message="Curating collection..."></app-loading-spinner>
 
-        <!-- Product Grid -->
+        <!-- Product Grid with Staggered Entrance -->
         <div *ngIf="!isLoading && products.length > 0" class="grid-products">
           <app-product-card
-            *ngFor="let product of products"
+            *ngFor="let product of products; let i = index"
             [product]="product"
+            class="animate-stagger-card"
+            [style.--stagger-index]="(i % 8) + 1"
           ></app-product-card>
         </div>
 
@@ -91,18 +94,56 @@ import { MockDataService } from '../../core/mock/mock-data.service';
     </section>
   `,
   styles: [`
+    /* Section Scroll Reveal Animation Base */
+    .animate-on-scroll {
+      opacity: 0;
+      transform: translateY(32px);
+      transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity, transform;
+    }
+
+    .animate-on-scroll.in-view {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .animate-fade-up {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1), transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .animate-stagger-card {
+      opacity: 0;
+      transform: translateY(30px) scale(0.96);
+      transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), 
+                  transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+      transition-delay: calc(var(--stagger-index, 1) * 0.07s);
+      will-change: opacity, transform;
+    }
+
+    .in-view .animate-fade-up,
+    .in-view .animate-stagger-card,
+    .animate-fade-up.in-view,
+    .animate-stagger-card.in-view {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Shop Hero */
     .shop-hero {
       position: relative;
       background-image: url('/assets/images/hero-shop.jpg');
       background-size: cover;
       background-position: center right;
       background-repeat: no-repeat;
-      padding: 72px 0 60px 0;
-      min-height: 380px;
+      padding: 80px 0 68px 0;
+      min-height: 400px;
       display: flex;
       align-items: center;
       border-bottom: 1px solid var(--brand-warm-gold);
       color: #FFFFFF;
+      overflow: hidden;
     }
 
     .hero-bg-overlay {
@@ -110,10 +151,10 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       inset: 0;
       background: linear-gradient(
         90deg, 
-        rgba(26, 18, 11, 0.88) 0%, 
-        rgba(26, 18, 11, 0.65) 40%, 
-        rgba(26, 18, 11, 0.3) 70%, 
-        rgba(26, 18, 11, 0.05) 100%
+        rgba(26, 18, 11, 0.9) 0%, 
+        rgba(26, 18, 11, 0.68) 45%, 
+        rgba(26, 18, 11, 0.35) 75%, 
+        rgba(26, 18, 11, 0.08) 100%
       );
       pointer-events: none;
     }
@@ -128,7 +169,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
     }
 
     .hero-content {
-      max-width: 600px;
+      max-width: 620px;
       text-align: left;
     }
 
@@ -138,7 +179,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       text-transform: uppercase;
       letter-spacing: 3px;
       color: var(--brand-warm-gold);
-      display: block;
+      display: inline-block;
       margin-bottom: 12px;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     }
@@ -179,7 +220,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
 
     .filter-tabs {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       flex-wrap: wrap;
       justify-content: center;
     }
@@ -188,7 +229,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       background-color: var(--brand-pearl-beige);
       color: var(--brand-mocha-brown);
       border: 1px solid var(--color-border);
-      padding: 10px 20px;
+      padding: 10px 22px;
       min-height: 44px;
       border-radius: var(--radius-full);
       font-family: var(--font-sans);
@@ -197,13 +238,22 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       text-transform: uppercase;
       letter-spacing: 0.5px;
       cursor: pointer;
-      transition: all var(--transition-fast);
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
 
-    .tab-btn:hover, .tab-btn.active {
+    .tab-btn:hover {
+      background-color: rgba(207, 168, 116, 0.2);
+      border-color: var(--brand-warm-gold);
+      transform: translateY(-2px);
+    }
+
+    .tab-btn.active {
       background-color: var(--brand-warm-gold);
       color: var(--brand-mocha-brown);
       border-color: var(--brand-warm-gold);
+      box-shadow: 0 6px 18px rgba(207, 168, 116, 0.35);
+      transform: translateY(-2px);
     }
 
     .sort-wrapper {
@@ -229,15 +279,17 @@ import { MockDataService } from '../../core/mock/mock-data.service';
       color: var(--brand-mocha-brown);
       background-color: #FFFFFF;
       cursor: pointer;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
     }
 
     .sort-select:focus {
       outline: none;
       border-color: var(--brand-warm-gold);
+      box-shadow: 0 0 0 3px rgba(207, 168, 116, 0.2);
     }
   `]
 })
-export class ShopComponent implements OnInit {
+export class ShopComponent implements OnInit, AfterViewInit {
   products: ProductCardData[] = [];
   isLoading: boolean = true;
   selectedCategory: string = 'all';
@@ -269,12 +321,42 @@ export class ShopComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit(): void {
+    setTimeout(() => this.initScrollObserver(), 100);
+  }
+
+  private initScrollObserver(): void {
+    if (typeof window === 'undefined') return;
+
+    const targets = document.querySelectorAll(
+      '.animate-on-scroll, .animate-fade-up, .animate-stagger-card'
+    );
+
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in-view');
+            }
+          });
+        },
+        { threshold: 0.08, rootMargin: '0px 0px -30px 0px' }
+      );
+
+      targets.forEach((el) => observer.observe(el));
+    } else {
+      targets.forEach((el) => el.classList.add('in-view'));
+    }
+  }
+
   loadProducts(): void {
     this.isLoading = true;
     this.mockDataService.getProducts(this.selectedCategory, this.selectedSort).subscribe(prods => {
       this.products = prods;
       this.isLoading = false;
       this.cdr.detectChanges();
+      setTimeout(() => this.initScrollObserver(), 50);
     });
   }
 
@@ -289,3 +371,4 @@ export class ShopComponent implements OnInit {
     this.loadProducts();
   }
 }
+
