@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
@@ -9,6 +10,7 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Product } from '../../core/models/product.model';
 import { MockDataService } from '../../core/mock/mock-data.service';
 import { CartService } from '../../core/services/cart.service';
+import { WishlistService } from '../../core/services/wishlist.service';
 
 @Component({
   selector: 'app-product-detail',
@@ -123,6 +125,19 @@ import { CartService } from '../../core/services/cart.service';
 
               <button type="button" class="btn-add-bag" (click)="addToBag()">
                 Add to Shopping Bag &bull; ₹{{ (product.price * quantity) | number:'1.2-2' }}
+              </button>
+
+              <button
+                type="button"
+                class="btn-wishlist-detail"
+                [class.active]="isFavorited"
+                (click)="toggleWishlist()"
+                [attr.aria-label]="isFavorited ? 'Remove from Wishlist' : 'Add to Wishlist'"
+                [title]="isFavorited ? 'Remove from Wishlist' : 'Add to Wishlist'"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" [attr.fill]="isFavorited ? '#D97706' : 'none'" [attr.stroke]="isFavorited ? '#D97706' : 'currentColor'" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.78-8.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                </svg>
               </button>
             </div>
 
@@ -450,6 +465,7 @@ import { CartService } from '../../core/services/cart.service';
 
     .purchase-box {
       display: flex;
+      align-items: center;
       gap: 12px;
       margin-top: 12px;
       flex-wrap: wrap;
@@ -467,6 +483,9 @@ import { CartService } from '../../core/services/cart.service';
         min-width: 100%;
         height: 46px;
         font-size: 0.88rem;
+      }
+      .btn-wishlist-detail {
+        align-self: center;
       }
     }
 
@@ -520,6 +539,32 @@ import { CartService } from '../../core/services/cart.service';
       background-color: #E2B882;
       box-shadow: var(--shadow-gold);
       transform: translateY(-1px);
+    }
+
+    .btn-wishlist-detail {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      border-radius: 50%;
+      background-color: #FFFFFF;
+      border: 1px solid var(--color-border);
+      color: var(--brand-mocha-brown);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-wishlist-detail:hover {
+      border-color: var(--brand-warm-gold);
+      background-color: var(--brand-pearl-beige);
+      transform: scale(1.06);
+    }
+    .btn-wishlist-detail.active {
+      border-color: #F59E0B;
+      background-color: #FFFBEB;
+      color: #D97706;
     }
 
     .added-notice {
@@ -591,7 +636,7 @@ import { CartService } from '../../core/services/cart.service';
     .bg-pearl { background-color: var(--brand-pearl-beige); }
   `]
 })
-export class ProductDetailComponent implements OnInit {
+export class ProductDetailComponent implements OnInit, OnDestroy {
   product?: Product;
   relatedProducts: ProductCardData[] = [];
   selectedImage: string = '';
@@ -600,12 +645,15 @@ export class ProductDetailComponent implements OnInit {
   quantity: number = 1;
   openAcc: string = 'spec';
   addedToBagNotice: boolean = false;
+  isFavorited: boolean = false;
 
   metalOptions = ['18K Warm Gold', 'Sterling Silver', 'Rose Gold'];
 
   private route = inject(ActivatedRoute);
   private mockDataService = inject(MockDataService);
   private cartService = inject(CartService);
+  private wishlistService = inject(WishlistService);
+  private wishlistSub!: Subscription;
 
   get productImages(): string[] {
     if (this.product && this.product.images && this.product.images.length > 0) {
@@ -622,6 +670,16 @@ export class ProductDetailComponent implements OnInit {
       const slug = params['slug'] || 'eternal-solitaire-diamond-ring';
       this.loadProduct(slug);
     });
+
+    this.wishlistSub = this.wishlistService.wishlist$.subscribe(() => {
+      this.checkWishlistStatus();
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.wishlistSub) {
+      this.wishlistSub.unsubscribe();
+    }
   }
 
   onImageError(): void {
@@ -648,11 +706,41 @@ export class ProductDetailComponent implements OnInit {
         this.quantity = 1;
         this.addedToBagNotice = false;
 
+        this.checkWishlistStatus();
+
         this.mockDataService.getRelatedProducts(p.slug).subscribe(rel => {
           this.relatedProducts = rel;
         });
       }
     });
+  }
+
+  private checkWishlistStatus(): void {
+    if (this.product) {
+      const targetId = this.product.id || this.product.slug;
+      if (targetId !== undefined && targetId !== null) {
+        this.isFavorited = this.wishlistService.isInWishlist(targetId);
+      }
+    }
+  }
+
+  toggleWishlist(): void {
+    if (this.product) {
+      const cardData: ProductCardData = {
+        id: this.product.id,
+        name: this.product.name,
+        slug: this.product.slug,
+        price: this.product.price,
+        compareAtPrice: this.product.compareAtPrice,
+        image: this.product.image || (this.product.images && this.product.images[0]) || '',
+        category: this.product.category,
+        badge: this.product.badge as any,
+        available: true,
+        ratingAverage: (this.product as any).ratingAverage || (this.product as any).rating,
+        reviewCount: (this.product as any).reviewCount
+      };
+      this.isFavorited = this.wishlistService.toggleWishlist(cardData);
+    }
   }
 
   nextSlide(): void {
@@ -711,3 +799,4 @@ export class ProductDetailComponent implements OnInit {
     }
   }
 }
+

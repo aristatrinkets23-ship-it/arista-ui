@@ -3315,6 +3315,20 @@ export class AdminComponent implements OnInit {
       this.showToast(`Jewellery product "${name}" deleted from catalog.`, 'success');
       this.cdr.detectChanges();
     } else if (type === 'category') {
+      const cat = this.categories.find(c => String(c.id) === targetStr || c.slug === targetStr);
+      const catName = cat ? cat.name : name;
+
+      const assignedCount = (this.products || []).filter(p =>
+        (catName && p.category?.toLowerCase() === catName.toLowerCase()) ||
+        (cat && p.category?.toLowerCase() === cat.slug?.toLowerCase())
+      ).length;
+
+      if (assignedCount > 0) {
+        this.showToast(`Cannot delete category "${catName}": ${assignedCount} product(s) are assigned to this category. Please reassign or delete the products first.`, 'error');
+        this.cdr.detectChanges();
+        return;
+      }
+
       try {
         const token = this.authService.getToken();
         const res = await fetch(API_ENDPOINTS.ADMIN.CATEGORY_BY_ID(id), {
@@ -3325,13 +3339,25 @@ export class AdminComponent implements OnInit {
         });
         const data = await res.json();
         if (this.checkAuthError(res, data)) return;
+        if (data && !data.success) {
+          this.showToast(data.message || `Cannot delete category "${catName}".`, 'error');
+          this.cdr.detectChanges();
+          return;
+        }
       } catch (err) {
         // Offline fallback
       }
 
+      try {
+        this.mockDataService.deleteCategory(id);
+      } catch (mockErr: any) {
+        this.showToast(mockErr.message || `Cannot delete category "${catName}".`, 'error');
+        this.cdr.detectChanges();
+        return;
+      }
+
       this.categories = this.categories.filter(c => String(c.id) !== targetStr && c.slug !== targetStr);
-      this.mockDataService.deleteCategory(id);
-      this.showToast(`Category "${name}" removed from catalog.`, 'success');
+      this.showToast(`Category "${catName}" removed from catalog.`, 'success');
       this.cdr.detectChanges();
     } else if (type === 'user') {
       try {
@@ -3545,8 +3571,19 @@ export class AdminComponent implements OnInit {
   }
 
   async deleteCategory(id: number | string): Promise<void> {
-    const cat = this.categories.find(c => c.id === id);
+    const targetStr = String(id);
+    const cat = this.categories.find(c => String(c.id) === targetStr || c.slug === targetStr);
     const name = cat ? cat.name : `ID ${id}`;
+
+    const assignedCount = (this.products || []).filter(p =>
+      (cat && p.category?.toLowerCase() === cat.name.toLowerCase()) ||
+      (cat && p.category?.toLowerCase() === cat.slug.toLowerCase())
+    ).length;
+
+    if (assignedCount > 0) {
+      this.showToast(`Cannot delete category "${name}": ${assignedCount} product(s) are assigned to this category. Please reassign or delete the products first.`, 'error');
+      return;
+    }
 
     try {
       const token = this.authService.getToken();
@@ -3558,12 +3595,22 @@ export class AdminComponent implements OnInit {
       });
       const data = await res.json();
       if (this.checkAuthError(res, data)) return;
+      if (data && !data.success) {
+        this.showToast(data.message || `Cannot delete category "${name}".`, 'error');
+        return;
+      }
     } catch (err) {
       // Offline fallback
     }
 
-    this.mockDataService.deleteCategory(id);
-    this.categories = this.categories.filter(c => c.id !== id);
+    try {
+      this.mockDataService.deleteCategory(id);
+    } catch (mockErr: any) {
+      this.showToast(mockErr.message || `Cannot delete category "${name}".`, 'error');
+      return;
+    }
+
+    this.categories = this.categories.filter(c => String(c.id) !== targetStr && c.slug !== targetStr);
     this.showToast(`Category "${name}" removed from catalog.`, 'success');
   }
 

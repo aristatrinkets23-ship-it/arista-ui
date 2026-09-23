@@ -4,11 +4,15 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { NavItem } from '../../core/models/ui.model';
 import { CartService } from '../../core/services/cart.service';
+import { WishlistModalComponent } from '../../shared/components/wishlist-modal/wishlist-modal.component';
+import { WishlistService } from '../../core/services/wishlist.service';
+import { ProductCardData } from '../../core/models/product-card-data.model';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, WishlistModalComponent],
+
   template: `
     <!-- Main Navigation Header -->
     <header class="site-header">
@@ -40,14 +44,16 @@ import { CartService } from '../../core/services/cart.service';
           </a>
         </nav>
 
-        <!-- Action Icons (Search, Account, Bag) -->
+        <!-- Action Icons (Favorites, Account, Bag) -->
         <div class="header-actions">
-          <button type="button" class="action-btn" aria-label="Search items">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          <!-- Favorites Heart Link -->
+          <a routerLink="/wishlist" class="action-btn" aria-label="View Favorites / Wishlist">
+            <svg width="22" height="22" viewBox="0 0 24 24" [attr.fill]="wishlistItems.length > 0 ? '#D97706' : 'none'" [attr.stroke]="wishlistItems.length > 0 ? '#D97706' : 'currentColor'" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l8.78-8.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
             </svg>
-          </button>
+            <span class="bag-count" *ngIf="wishlistItems.length > 0">{{ wishlistItems.length }}</span>
+          </a>
+
 
           <a routerLink="/account" class="action-btn" aria-label="Customer Account">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -67,6 +73,7 @@ import { CartService } from '../../core/services/cart.service';
         </div>
       </div>
     </header>
+
 
     <!-- Mobile Drawer Overlay -->
     <div class="mobile-drawer" [class.open]="isMobileNavOpen">
@@ -133,6 +140,13 @@ import { CartService } from '../../core/services/cart.service';
       </div>
     </div>
     <div class="drawer-backdrop" *ngIf="isMobileNavOpen" (click)="toggleMobileNav()"></div>
+
+    <!-- Favorites / Wishlist Modal Component -->
+    <app-wishlist-modal
+      *ngIf="isWishlistOpen"
+      [items]="wishlistItems"
+      (closed)="isWishlistOpen = false"
+    ></app-wishlist-modal>
   `,
   styles: [`
     :host {
@@ -556,8 +570,12 @@ import { CartService } from '../../core/services/cart.service';
 })
 export class HeaderComponent implements OnInit, OnDestroy {
   isMobileNavOpen: boolean = false;
+  isWishlistOpen: boolean = false;
   cartCount: number = 0;
+  wishlistItems: ProductCardData[] = [];
+
   private cartSub!: Subscription;
+  private wishlistSub!: Subscription;
 
   navItems: NavItem[] = [
     { label: 'Home', path: '/' },
@@ -568,11 +586,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ];
 
   private cartService = inject(CartService);
+  private wishlistService = inject(WishlistService);
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.cartSub = this.cartService.cart$.subscribe(summary => {
       this.cartCount = summary ? summary.itemCount : 0;
+      this.cdr.detectChanges();
+    });
+
+    this.wishlistSub = this.wishlistService.wishlist$.subscribe(items => {
+      this.wishlistItems = items || [];
       this.cdr.detectChanges();
     });
   }
@@ -581,9 +605,17 @@ export class HeaderComponent implements OnInit, OnDestroy {
     if (this.cartSub) {
       this.cartSub.unsubscribe();
     }
+    if (this.wishlistSub) {
+      this.wishlistSub.unsubscribe();
+    }
+  }
+
+  openWishlistModal(): void {
+    this.isWishlistOpen = true;
   }
 
   toggleMobileNav(): void {
     this.isMobileNavOpen = !this.isMobileNavOpen;
   }
 }
+

@@ -20,6 +20,12 @@ export const API_ENDPOINTS = {
     BY_NUMBER: (orderNumber: string) => `${BASE_URL}/orders/${orderNumber}`
   },
   HOMEPAGE_CONFIG: `${BASE_URL}/homepage-config`,
+  WISHLIST: {
+    GET: `${BASE_URL}/wishlist`,
+    TOGGLE: `${BASE_URL}/wishlist/toggle`,
+    REMOVE: (idOrSlug: string | number) => `${BASE_URL}/wishlist/${idOrSlug}`,
+    CLEAR: `${BASE_URL}/wishlist/clear`
+  },
   ADMIN: {
     VERIFY: `${BASE_URL}/admin/verify`,
     DASHBOARD: `${BASE_URL}/admin/dashboard`,

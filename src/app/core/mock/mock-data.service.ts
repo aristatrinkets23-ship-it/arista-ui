@@ -250,6 +250,20 @@ export class MockDataService {
 
   deleteCategory(id: string | number): void {
     const targetStr = String(id);
+    const cat = this.categories.find(c => String(c.id) === targetStr || c.slug === targetStr);
+    const catName = cat ? cat.name : targetStr;
+    const catSlug = cat ? cat.slug : targetStr;
+
+    // Check if products exist in this category
+    const assignedProducts = (this.products || []).filter(p =>
+      p.category?.toLowerCase() === catName.toLowerCase() ||
+      p.category?.toLowerCase() === catSlug.toLowerCase()
+    );
+
+    if (assignedProducts.length > 0) {
+      throw new Error(`Cannot delete category "${catName}": ${assignedProducts.length} product(s) are assigned to this category. Please reassign or delete the products first.`);
+    }
+
     this.categories = this.categories.filter(c => String(c.id) !== targetStr && c.slug !== targetStr);
     this.saveCategoriesToStorage();
   }
