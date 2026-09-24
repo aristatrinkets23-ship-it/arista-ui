@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { ProductCardData } from '../../../core/models/product-card-data.model';
 import { WishlistService } from '../../../core/services/wishlist.service';
 import { CartService } from '../../../core/services/cart.service';
@@ -48,8 +48,8 @@ import { CartService } from '../../../core/services/cart.service';
             </div>
 
             <div class="item-actions">
-              <button type="button" class="btn-add-cart" (click)="addToCart(item)">
-                + Add to Bag
+              <button type="button" class="btn-add-cart" [class.in-cart]="isItemInCart(item)" (click)="addToCart(item)">
+                {{ isItemInCart(item) ? 'Go to Cart' : '+ Add to Bag' }}
               </button>
               <button type="button" class="btn-remove" (click)="removeItem(item.id || item.slug)" aria-label="Remove item">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -324,12 +324,24 @@ export class WishlistModalComponent {
 
   private wishlistService = inject(WishlistService);
   private cartService = inject(CartService);
+  private router = inject(Router);
 
   closeModal(): void {
     this.closed.emit();
   }
 
+  isItemInCart(item: ProductCardData): boolean {
+    const targetId = item.id || item.slug;
+    return targetId ? this.cartService.isInCart(targetId) : false;
+  }
+
   addToCart(item: ProductCardData): void {
+    const targetId = item.id || item.slug;
+    if (targetId && this.cartService.isInCart(targetId)) {
+      this.closeModal();
+      this.router.navigate(['/cart']);
+      return;
+    }
     this.cartService.addToCart(item, 1);
   }
 

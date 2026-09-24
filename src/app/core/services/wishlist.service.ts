@@ -129,14 +129,9 @@ export class WishlistService {
     try {
       if (typeof localStorage !== 'undefined') {
         const sanitized = this.wishlistItems.map(p => {
-          let img = p.image || '/assets/images/placeholder-jewellery.svg';
-          if (typeof img === 'string' && (img.startsWith('data:') || img.length > 500)) {
-            img = '/assets/images/placeholder-jewellery.svg';
-          }
           return {
             ...p,
-            image: img,
-            images: undefined
+            image: p.image || ''
           };
         });
 

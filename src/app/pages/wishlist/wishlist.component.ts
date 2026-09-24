@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
@@ -244,6 +244,7 @@ export class WishlistComponent implements OnInit, OnDestroy {
 
   private wishlistService = inject(WishlistService);
   private cartService = inject(CartService);
+  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
@@ -263,7 +264,7 @@ export class WishlistComponent implements OnInit, OnDestroy {
     this.wishlistItems.forEach(item => {
       this.cartService.addToCart(item, 1);
     });
-    alert(`Added ${this.wishlistItems.length} wishlist item(s) to your shopping bag!`);
+    this.router.navigate(['/cart']);
   }
 
   clearWishlist(): void {

@@ -484,7 +484,7 @@ export class MockDataService {
       this.saveProductsToStorage();
       try {
         this.cartService.syncCartWithMockProducts();
-      } catch {}
+      } catch { }
     }
   }
 
@@ -494,6 +494,6 @@ export class MockDataService {
     this.saveProductsToStorage();
     try {
       this.cartService.syncCartWithMockProducts();
-    } catch {}
+    } catch { }
   }
 }

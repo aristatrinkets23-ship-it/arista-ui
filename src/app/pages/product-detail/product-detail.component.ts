@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
@@ -123,8 +123,13 @@ import { WishlistService } from '../../core/services/wishlist.service';
                 <button type="button" class="qty-btn" (click)="increaseQty()">+</button>
               </div>
 
-              <button type="button" class="btn-add-bag" (click)="addToBag()">
-                Add to Shopping Bag &bull; ₹{{ (product.price * quantity) | number:'1.2-2' }}
+              <button type="button" class="btn-add-bag" [class.in-cart]="isInCart" (click)="addToBag()">
+                <ng-container *ngIf="isInCart">
+                  Go to Cart &rarr;
+                </ng-container>
+                <ng-container *ngIf="!isInCart">
+                  Add to Shopping Bag &bull; ₹{{ (product.price * quantity) | number:'1.2-2' }}
+                </ng-container>
               </button>
 
               <button
@@ -652,10 +657,17 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   metalOptions = ['18K Warm Gold', 'Sterling Silver', 'Rose Gold'];
 
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private mockDataService = inject(MockDataService);
   private cartService = inject(CartService);
   private wishlistService = inject(WishlistService);
   private wishlistSub!: Subscription;
+
+  get isInCart(): boolean {
+    if (!this.product) return false;
+    const targetId = this.product.id || this.product.slug;
+    return targetId ? this.cartService.isInCart(targetId) : false;
+  }
 
   get productImages(): string[] {
     if (this.product && this.product.images && this.product.images.length > 0) {
@@ -783,6 +795,11 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   addToBag(): void {
     if (this.product) {
+      const targetId = this.product.id || this.product.slug;
+      if (targetId && this.cartService.isInCart(targetId)) {
+        this.router.navigate(['/cart']);
+        return;
+      }
       this.cartService.addToCart(this.product, this.quantity, this.selectedMetal);
       this.addedToBagNotice = true;
       setTimeout(() => {

@@ -9,17 +9,8 @@ export function getFallbackProductImage(nameOrCategory?: string): string {
 }
 
 export function resolveProductImage(img?: string, nameOrCategory?: string): string {
-  if (
-    !img ||
-    typeof img !== 'string' ||
-    img.trim() === '' ||
-    img.includes('placeholder-jewellery.svg') ||
-    img.includes('placeholder-rings.svg') ||
-    img.includes('placeholder-necklaces.svg') ||
-    img.includes('placeholder-earrings.svg') ||
-    img.includes('placeholder-bracelets.svg')
-  ) {
-    return getFallbackProductImage(nameOrCategory);
+  if (img && typeof img === 'string' && img.trim() !== '') {
+    return img.trim();
   }
-  return img.trim();
+  return getFallbackProductImage(nameOrCategory);
 }

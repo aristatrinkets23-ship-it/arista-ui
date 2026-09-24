@@ -404,16 +404,11 @@ export class CartService {
           }
 
           const sanitizedItems: CartItem[] = items.map(item => {
-            let img = item.product?.image || '/assets/images/placeholder-jewellery.svg';
-            if (typeof img === 'string' && (img.startsWith('data:') || img.length > 500)) {
-              img = '/assets/images/placeholder-jewellery.svg';
-            }
             return {
               ...item,
               product: {
                 ...item.product,
-                image: img,
-                images: undefined
+                image: item.product?.image || ''
               }
             };
           });

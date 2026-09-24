@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { ProductCardData } from '../../../core/models/product-card-data.model';
 import { BadgeComponent } from '../badge/badge.component';
@@ -82,10 +82,10 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
             class="quick-add-btn"
             [class.added]="isAdded || justAdded || itemQtyInCart > 0"
             (click)="onQuickAdd($event)"
-            [title]="'Add ' + (product.name || 'item') + ' to cart'"
+            [title]="(isAdded || justAdded || itemQtyInCart > 0) ? 'Go to cart' : ('Add ' + (product.name || 'item') + ' to cart')"
           >
             <ng-container *ngIf="justAdded || isAdded || itemQtyInCart > 0">
-              ✓ Added
+              Go to Cart &rarr;
             </ng-container>
             <ng-container *ngIf="!justAdded && !isAdded && itemQtyInCart === 0">
               + Add to Cart
@@ -370,6 +370,7 @@ export class ProductCardComponent implements OnInit, OnDestroy {
 
   private cartService = inject(CartService);
   private wishlistService = inject(WishlistService);
+  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
   get productImages(): string[] {
@@ -481,6 +482,11 @@ export class ProductCardComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     event.preventDefault();
     if (this.product) {
+      if (this.isAdded || this.justAdded || this.itemQtyInCart > 0) {
+        this.router.navigate(['/cart']);
+        return;
+      }
+
       this.justAdded = true;
       this.isAdded = true;
       if (this.itemQtyInCart === 0) {
