@@ -217,23 +217,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       </div>
     </div>
 
-    <!-- Brand Introduction Section -->
-    <section class="brand-intro-section scroll-reveal">
-      <div class="container intro-content text-center">
-        <span class="intro-eyebrow">Handcrafted Fine Jewellery</span>
-        <h2 class="intro-heading">Where Modern Artistry Meets Heritage Precision</h2>
-        <p class="intro-tagline">
-          “Timeless pieces, thoughtfully crafted to celebrate every you. ♡”
-        </p>
-        <div class="brand-mood-tags">
-          <span class="mood-pill">ELEGANT</span>
-          <span class="mood-pill">FEMININE</span>
-          <span class="mood-pill">MINIMAL</span>
-          <span class="mood-pill">TIMELESS</span>
-          <span class="mood-pill">REFINED</span>
-        </div>
-      </div>
-    </section>
+
 
     <!-- Featured Collections Grid -->
     <!-- Shop by Category Section (Ref: arista-jewelery.pages.dev) -->

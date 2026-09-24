@@ -60,6 +60,14 @@ if (fs.existsSync(path.join(frontendDir, 'src', 'index.html'))) {
   fs.copyFileSync(path.join(frontendDir, 'src', 'index.html'), path.join(distDir, 'index.html'));
 }
 
+// Copy favicon.ico and favicon.webp
+if (fs.existsSync(path.join(frontendDir, 'src', 'favicon.ico'))) {
+  fs.copyFileSync(path.join(frontendDir, 'src', 'favicon.ico'), path.join(distDir, 'favicon.ico'));
+}
+if (fs.existsSync(path.join(frontendDir, 'src', 'favicon.webp'))) {
+  fs.copyFileSync(path.join(frontendDir, 'src', 'favicon.webp'), path.join(distDir, 'favicon.webp'));
+}
+
 // Copy src/styles.css
 if (fs.existsSync(path.join(frontendDir, 'src', 'styles.css'))) {
   fs.copyFileSync(path.join(frontendDir, 'src', 'styles.css'), path.join(distDir, 'styles.css'));
