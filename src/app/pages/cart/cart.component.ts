@@ -7,6 +7,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { CartSummary } from '../../core/models/cart.model';
 import { CartService } from '../../core/services/cart.service';
+import { resolveProductImage, getFallbackProductImage } from '../../core/utils/image-utils';
 
 @Component({
   selector: 'app-cart',
@@ -57,7 +58,7 @@ import { CartService } from '../../core/services/cart.service';
             <div *ngFor="let item of cart.items" class="cart-item-card">
               <div class="item-main">
                 <a [routerLink]="['/product', item.product.slug]" class="item-img-link">
-                  <img [src]="item.product.image || '/assets/images/placeholder-jewellery.svg'" [alt]="item.product.name" class="item-img" />
+                  <img [src]="getItemImage(item)" (error)="onImageError($event, item)" [alt]="item.product.name" class="item-img" />
                 </a>
                 <div class="item-details">
                   <span class="item-cat">{{ item.product.category }}</span>
@@ -486,5 +487,18 @@ export class CartComponent implements OnInit, OnDestroy {
 
   clearCart(): void {
     this.cartService.clearCart();
+  }
+
+  getItemImage(item: any): string {
+    const img = item?.product?.image;
+    const cat = item?.product?.category || item?.product?.name;
+    return resolveProductImage(img, cat);
+  }
+
+  onImageError(event: Event, item: any): void {
+    const imgElement = event.target as HTMLImageElement;
+    if (imgElement) {
+      imgElement.src = getFallbackProductImage(item?.product?.category || item?.product?.name);
+    }
   }
 }

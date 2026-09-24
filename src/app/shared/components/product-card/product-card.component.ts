@@ -80,15 +80,14 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
           <button
             type="button"
             class="quick-add-btn"
-            [class.added]="isAdded"
+            [class.added]="isAdded || justAdded || itemQtyInCart > 0"
             (click)="onQuickAdd($event)"
             [title]="'Add ' + (product.name || 'item') + ' to cart'"
           >
-           
-            <ng-container *ngIf="!justAdded && itemQtyInCart > 0">
-               ✓ Added
+            <ng-container *ngIf="justAdded || isAdded || itemQtyInCart > 0">
+              ✓ Added
             </ng-container>
-            <ng-container *ngIf="!justAdded && itemQtyInCart === 0">
+            <ng-container *ngIf="!justAdded && !isAdded && itemQtyInCart === 0">
               + Add to Cart
             </ng-container>
           </button>
@@ -482,17 +481,15 @@ export class ProductCardComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     event.preventDefault();
     if (this.product) {
-      this.cartService.addToCart(this.product, 1);
       this.justAdded = true;
-      this.checkCartStatus();
-
-      if (this.addedTimeout) {
-        clearTimeout(this.addedTimeout);
+      this.isAdded = true;
+      if (this.itemQtyInCart === 0) {
+        this.itemQtyInCart = 1;
       }
-      this.addedTimeout = setTimeout(() => {
-        this.justAdded = false;
-        this.cdr.detectChanges();
-      }, 1800);
+      this.cdr.detectChanges();
+
+      this.cartService.addToCart(this.product, 1);
+      this.checkCartStatus();
     }
   }
 
