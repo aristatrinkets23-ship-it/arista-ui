@@ -503,6 +503,46 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       </div>
     </section>
 
+    <!-- Frequently Asked Questions (FAQ) Section -->
+    <section class="section-padding faq-section scroll-reveal bg-white">
+      <div class="container">
+        <div class="faq-header text-center">
+          <span class="faq-eyebrow">HELP & INFORMATION</span>
+          <h2 class="faq-title">Frequently Asked <em>Questions</em></h2>
+          <p class="faq-subtitle">Everything you need to know about our handcrafted jewellery, certification, and services.</p>
+        </div>
+
+        <div class="faq-accordion-wrapper">
+          <div 
+            *ngFor="let faq of faqs; let i = index" 
+            class="faq-item"
+            [class.active]="faq.isOpen"
+          >
+            <button 
+              type="button" 
+              class="faq-question-btn" 
+              (click)="toggleFaq(i)"
+              [attr.aria-expanded]="faq.isOpen"
+            >
+              <span class="faq-question-text">{{ faq.question }}</span>
+              <span class="faq-toggle-icon">
+                <svg *ngIf="!faq.isOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <svg *ngIf="faq.isOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </span>
+            </button>
+            <div class="faq-answer-panel" *ngIf="faq.isOpen">
+              <p class="faq-answer-text">{{ faq.answer }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Instagram / Bestsellers Showcase Section (@aristatrinkets) -->
     <section class="section-padding insta-grid-section scroll-reveal">
       <div class="container">
@@ -2306,6 +2346,125 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       transform: translateX(0);
       opacity: 1;
     }
+
+    /* FAQ Section Styles (Pure White Background) */
+    .faq-section {
+      background-color: #FFFFFF;
+      border-top: 1px solid rgba(91, 70, 54, 0.08);
+      border-bottom: 1px solid rgba(91, 70, 54, 0.08);
+    }
+
+    .faq-header {
+      margin-bottom: 48px;
+    }
+
+    .faq-eyebrow {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      color: var(--brand-warm-gold, #CFA874);
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .faq-title {
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-size: clamp(2rem, 3.5vw, 2.8rem);
+      color: var(--brand-mocha-brown, #5B4636);
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .faq-title em {
+      font-style: italic;
+      color: var(--brand-warm-gold, #CFA874);
+    }
+
+    .faq-subtitle {
+      font-size: 0.95rem;
+      color: #666666;
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    .faq-accordion-wrapper {
+      max-width: 820px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .faq-item {
+      background: var(--brand-pearl-beige, #F9F7F2);
+      border: 1px solid rgba(91, 70, 54, 0.12);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 8px rgba(91, 70, 54, 0.04);
+    }
+
+    .faq-item.active {
+      background: #FFFFFF;
+      border-color: var(--brand-warm-gold, #CFA874);
+      box-shadow: 0 6px 20px rgba(207, 168, 116, 0.15);
+    }
+
+    .faq-question-btn {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 24px;
+      background: transparent;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--brand-mocha-brown, #5B4636);
+      transition: color 0.2s ease;
+    }
+
+    .faq-item.active .faq-question-btn {
+      color: var(--brand-warm-gold, #CFA874);
+    }
+
+    .faq-toggle-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(207, 168, 116, 0.12);
+      color: var(--brand-warm-gold, #CFA874);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .faq-item.active .faq-toggle-icon {
+      background: var(--brand-warm-gold, #CFA874);
+      color: #FFFFFF;
+    }
+
+    .faq-answer-panel {
+      padding: 0 24px 24px 24px;
+      border-top: 1px solid rgba(91, 70, 54, 0.08);
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    .faq-answer-text {
+      font-family: var(--font-sans, system-ui, sans-serif);
+      font-size: 0.94rem;
+      line-height: 1.65;
+      color: #555555;
+      margin: 16px 0 0 0;
+    }
   `]
 })
 export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -2314,6 +2473,38 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   newArrivals: ProductCardData[] = [];
   bestsellerProducts: ProductCardData[] = [];
   activeOccasionId = 'wedding';
+
+  faqs = [
+    {
+      question: 'Are all Arista Trinkets jewellery pieces certified and hallmarked?',
+      answer: 'Yes, every piece of gold, diamond, and precious gemstone jewellery from Arista Trinkets is 100% BIS hallmarked and comes with an official certificate of authenticity.',
+      isOpen: false
+    },
+    {
+      question: 'What is your return and exchange policy?',
+      answer: 'We offer a hassle-free 30-day money-back guarantee and complimentary exchanges on all unworn items in their original packaging.',
+      isOpen: false
+    },
+    {
+      question: 'How do I find my correct ring size?',
+      answer: 'We provide a detailed Ring Size Guide on every product page. You can also request a complimentary physical ring sizer sent straight to your doorstep.',
+      isOpen: false
+    },
+    {
+      question: 'Do you offer custom jewellery design services?',
+      answer: 'Absolutely. Our master artisans work directly with you to craft bespoke engagement rings, custom engravings, and heritage heirloom redesigns.',
+      isOpen: false
+    },
+    {
+      question: 'How should I care for and clean my handcrafted jewellery?',
+      answer: 'Store your pieces individually in soft velvet pouches away from direct moisture. We provide a complimentary luxury polishing cloth and care guide with every order.',
+      isOpen: false
+    }
+  ];
+
+  toggleFaq(index: number): void {
+    this.faqs[index].isOpen = !this.faqs[index].isOpen;
+  }
 
   currentSlideIndex = 0;
   slideProgress = 0;
