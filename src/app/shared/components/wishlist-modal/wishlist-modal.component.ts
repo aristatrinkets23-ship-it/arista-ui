@@ -75,6 +75,7 @@ import { CartService } from '../../../core/services/cart.service';
       inset: 0;
       background: rgba(26, 18, 11, 0.75);
       backdrop-filter: blur(5px);
+      -webkit-backdrop-filter: blur(5px);
       z-index: 99999;
       display: flex;
       align-items: center;
