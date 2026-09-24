@@ -213,6 +213,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   </td>
                   <td>
                     <span class="item-compare" *ngIf="item.compareAtPrice">₹{{ item.compareAtPrice | number }}</span>
+                    <span *ngIf="getDiscountPercentage(item) > 0" style="display: inline-block; background: #FEF2F2; color: #DC2626; font-weight: 700; font-size: 0.68rem; padding: 2px 6px; border-radius: 10px; margin-left: 6px;">
+                      {{ getDiscountPercentage(item) }}% OFF
+                    </span>
                     <span *ngIf="!item.compareAtPrice">-</span>
                   </td>
                   <td>
@@ -529,6 +532,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             <div class="form-group">
               <label>Compare-At Price (₹ INR)</label>
               <input type="number" [(ngModel)]="editingProduct.compareAtPrice" name="editCompareAtPrice" (wheel)="preventNumberWheel($event)" />
+              <span *ngIf="isPriceGreaterThanCompareAt(editingProduct.price, editingProduct.compareAtPrice)" style="color: #DC2626; font-size: 0.78rem; margin-top: 4px; display: block; font-weight: 600;">
+                ⚠️ Price cannot be greater than Compare-At Price
+              </span>
             </div>
             <div class="form-group">
               <label>Stock Quantity *</label>
@@ -795,6 +801,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             <div class="form-group">
               <label>Compare-At Original Price (₹ INR)</label>
               <input type="number" [(ngModel)]="newProduct.compareAtPrice" name="compareAtPrice" placeholder="52000" (wheel)="preventNumberWheel($event)" />
+              <span *ngIf="isPriceGreaterThanCompareAt(newProduct.price, newProduct.compareAtPrice)" style="color: #DC2626; font-size: 0.78rem; margin-top: 4px; display: block; font-weight: 600;">
+                ⚠️ Price cannot be greater than Compare-At Price
+              </span>
             </div>
             <div class="form-group">
               <label>Badge Highlight Tag</label>
@@ -2868,6 +2877,10 @@ export class AdminComponent implements OnInit {
       this.showToast('Valid Product Price is mandatory.', 'error');
       return;
     }
+    if (this.isPriceGreaterThanCompareAt(this.editingProduct.price, this.editingProduct.compareAtPrice)) {
+      this.showToast('Product Price (₹ INR) cannot be greater than Compare-At Price (₹ INR).', 'error');
+      return;
+    }
     if (this.editingProduct.stockQuantity === '' || this.editingProduct.stockQuantity === null || this.editingProduct.stockQuantity === undefined || Number(this.editingProduct.stockQuantity) < 0) {
       this.showToast('Stock Quantity is mandatory.', 'error');
       return;
@@ -2991,6 +3004,10 @@ export class AdminComponent implements OnInit {
     }
     if (!this.newProduct.price || Number(this.newProduct.price) <= 0) {
       this.showToast('Valid Product Price is mandatory.', 'error');
+      return;
+    }
+    if (this.isPriceGreaterThanCompareAt(this.newProduct.price, this.newProduct.compareAtPrice)) {
+      this.showToast('Product Price (₹ INR) cannot be greater than Compare-At Price (₹ INR).', 'error');
       return;
     }
     if (this.newProduct.stockQuantity === '' || this.newProduct.stockQuantity === null || this.newProduct.stockQuantity === undefined || Number(this.newProduct.stockQuantity) < 0) {
@@ -3752,5 +3769,30 @@ export class AdminComponent implements OnInit {
       this.editCategoryFileName = '';
       this.editingCategory.image = getDefaultCategoryImage(this.editingCategory.name);
     }
+  }
+
+  isPriceGreaterThanCompareAt(price: any, compareAtPrice: any): boolean {
+    if (compareAtPrice === '' || compareAtPrice === null || compareAtPrice === undefined) {
+      return false;
+    }
+    const p = Number(price);
+    const cap = Number(compareAtPrice);
+    return !isNaN(p) && !isNaN(cap) && cap > 0 && p > cap;
+  }
+
+  getDiscountPercentage(product: any): number {
+    if (
+      product &&
+      product.compareAtPrice !== undefined &&
+      product.compareAtPrice !== null &&
+      Number(product.compareAtPrice) > Number(product.price) &&
+      Number(product.compareAtPrice) > 0
+    ) {
+      const price = Number(product.price) || 0;
+      const compareAtPrice = Number(product.compareAtPrice) || 0;
+      const savings = compareAtPrice - price;
+      return Math.round((savings / compareAtPrice) * 100);
+    }
+    return 0;
   }
 }

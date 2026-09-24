@@ -140,7 +140,15 @@ declare var Razorpay: any;
                 <div class="item-details">
                   <span class="item-title">{{ item.product.name }}</span>
                   <span class="item-meta">Qty: {{ item.quantity }} | {{ item.selectedMetal || '18K Gold' }}</span>
-                  <span class="item-price">₹{{ item.subtotal | number }}</span>
+                  <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
+                    <span class="item-price">₹{{ item.subtotal | number }}</span>
+                    <span *ngIf="item.product.compareAtPrice && item.product.compareAtPrice > item.product.price" style="text-decoration: line-through; color: #888; font-size: 0.78rem;">
+                      ₹{{ (item.product.compareAtPrice * item.quantity) | number:'1.2-2' }}
+                    </span>
+                    <span *ngIf="getDiscountPercentage(item.product) > 0" style="background: #FEF2F2; color: #DC2626; font-weight: 700; font-size: 0.68rem; padding: 2px 6px; border-radius: 10px;">
+                      {{ getDiscountPercentage(item.product) }}% OFF
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -841,5 +849,21 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.paymentVerified = true;
     this.orderPlaced = true;
     this.cartService.clearCart();
+  }
+
+  getDiscountPercentage(product: any): number {
+    if (
+      product &&
+      product.compareAtPrice !== undefined &&
+      product.compareAtPrice !== null &&
+      Number(product.compareAtPrice) > Number(product.price) &&
+      Number(product.compareAtPrice) > 0
+    ) {
+      const price = Number(product.price) || 0;
+      const compareAtPrice = Number(product.compareAtPrice) || 0;
+      const savings = compareAtPrice - price;
+      return Math.round((savings / compareAtPrice) * 100);
+    }
+    return 0;
   }
 }

@@ -93,7 +93,7 @@ import { WishlistService } from '../../core/services/wishlist.service';
                 ₹{{ product.compareAtPrice | number:'1.2-2' }}
               </span>
               <span *ngIf="product.compareAtPrice && product.compareAtPrice > product.price" class="savings-tag">
-                Save ₹{{ (product.compareAtPrice - product.price) | number:'1.2-2' }}
+                Save ₹{{ (product.compareAtPrice - product.price) | number:'1.2-2' }} ({{ discountPercentage }}% OFF)
               </span>
             </div>
 
@@ -154,38 +154,50 @@ import { WishlistService } from '../../core/services/wishlist.service';
 
             <!-- Accordion / Specifications Tabs -->
             <div class="accordion-box">
-              <div class="acc-item">
+              <div class="acc-item" [class.active]="openAcc === 'spec'">
                 <button type="button" class="acc-header" (click)="toggleAcc('spec')">
                   <span>Product Specifications</span>
-                  <span>{{ openAcc === 'spec' ? '−' : '+' }}</span>
+                  <span class="acc-icon">+</span>
                 </button>
-                <div *ngIf="openAcc === 'spec'" class="acc-content">
-                  <table class="spec-table">
-                    <tr *ngFor="let spec of product.specifications">
-                      <td class="spec-label">{{ spec.label }}</td>
-                      <td class="spec-val">{{ spec.value }}</td>
-                    </tr>
-                  </table>
+                <div class="acc-wrapper" [class.open]="openAcc === 'spec'">
+                  <div class="acc-inner">
+                    <div class="acc-content">
+                      <table class="spec-table">
+                        <tr *ngFor="let spec of product.specifications">
+                          <td class="spec-label">{{ spec.label }}</td>
+                          <td class="spec-val">{{ spec.value }}</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div class="acc-item">
+              <div class="acc-item" [class.active]="openAcc === 'care'">
                 <button type="button" class="acc-header" (click)="toggleAcc('care')">
                   <span>Care & Maintenance Guide</span>
-                  <span>{{ openAcc === 'care' ? '−' : '+' }}</span>
+                  <span class="acc-icon">+</span>
                 </button>
-                <div *ngIf="openAcc === 'care'" class="acc-content">
-                  <p>{{ product.careGuide }}</p>
+                <div class="acc-wrapper" [class.open]="openAcc === 'care'">
+                  <div class="acc-inner">
+                    <div class="acc-content">
+                      <p>{{ product.careGuide }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div class="acc-item">
+              <div class="acc-item" [class.active]="openAcc === 'ship'">
                 <button type="button" class="acc-header" (click)="toggleAcc('ship')">
                   <span>Complimentary Shipping & Returns</span>
-                  <span>{{ openAcc === 'ship' ? '−' : '+' }}</span>
+                  <span class="acc-icon">+</span>
                 </button>
-                <div *ngIf="openAcc === 'ship'" class="acc-content">
-                  <p>{{ product.shippingInfo }}</p>
+                <div class="acc-wrapper" [class.open]="openAcc === 'ship'">
+                  <div class="acc-inner">
+                    <div class="acc-content">
+                      <p>{{ product.shippingInfo }}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -616,6 +628,38 @@ import { WishlistService } from '../../core/services/wishlist.service';
       font-size: 1.1rem;
       color: var(--brand-mocha-brown);
       cursor: pointer;
+      transition: color 0.25s ease;
+    }
+
+    .acc-item.active .acc-header {
+      color: var(--brand-warm-gold);
+    }
+
+    .acc-icon {
+      font-size: 1.2rem;
+      font-weight: 600;
+      line-height: 1;
+      display: inline-block;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.25s ease;
+    }
+
+    .acc-item.active .acc-icon {
+      transform: rotate(45deg);
+      color: var(--brand-warm-gold);
+    }
+
+    .acc-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .acc-wrapper.open {
+      grid-template-rows: 1fr;
+    }
+
+    .acc-inner {
+      overflow: hidden;
     }
 
     .acc-content {
@@ -623,6 +667,14 @@ import { WishlistService } from '../../core/services/wishlist.service';
       font-size: 0.92rem;
       color: #555555;
       line-height: 1.6;
+      opacity: 0;
+      transform: translateY(-6px);
+      transition: opacity 0.3s ease 0.05s, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.05s;
+    }
+
+    .acc-wrapper.open .acc-content {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .spec-table {
@@ -662,6 +714,22 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private cartService = inject(CartService);
   private wishlistService = inject(WishlistService);
   private wishlistSub!: Subscription;
+
+  get discountPercentage(): number {
+    if (
+      this.product &&
+      this.product.compareAtPrice !== undefined &&
+      this.product.compareAtPrice !== null &&
+      Number(this.product.compareAtPrice) > Number(this.product.price) &&
+      Number(this.product.compareAtPrice) > 0
+    ) {
+      const price = Number(this.product.price) || 0;
+      const compareAtPrice = Number(this.product.compareAtPrice) || 0;
+      const savings = compareAtPrice - price;
+      return Math.round((savings / compareAtPrice) * 100);
+    }
+    return 0;
+  }
 
   get isInCart(): boolean {
     if (!this.product) return false;

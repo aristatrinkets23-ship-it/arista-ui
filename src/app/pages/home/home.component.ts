@@ -356,7 +356,10 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
               
               <div class="arrival-card-price-row">
                 <span class="price-current">₹{{ product.price | number:'1.0-0' }}</span>
-                <span class="price-original" *ngIf="product.compareAtPrice">₹{{ product.compareAtPrice | number:'1.0-0' }}</span>
+                <span class="price-original" *ngIf="product.compareAtPrice && product.compareAtPrice > product.price">₹{{ product.compareAtPrice | number:'1.0-0' }}</span>
+                <span *ngIf="getDiscountPercentage(product) > 0" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: 4px; display: inline-block;">
+                  {{ getDiscountPercentage(product) }}% OFF
+                </span>
               </div>
 
               <button class="arrival-add-bag-btn" (click)="addToBag(product, $event)">
@@ -526,17 +529,18 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             >
               <span class="faq-question-text">{{ faq.question }}</span>
               <span class="faq-toggle-icon">
-                <svg *ngIf="!faq.isOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <svg *ngIf="faq.isOpen" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
               </span>
             </button>
-            <div class="faq-answer-panel" *ngIf="faq.isOpen">
-              <p class="faq-answer-text">{{ faq.answer }}</p>
+            <div class="faq-answer-wrapper" [class.open]="faq.isOpen">
+              <div class="faq-answer-inner">
+                <div class="faq-answer-panel">
+                  <p class="faq-answer-text">{{ faq.answer }}</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -2402,14 +2406,20 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       border: 1px solid rgba(91, 70, 54, 0.12);
       border-radius: 12px;
       overflow: hidden;
-      transition: all 0.3s ease;
+      transition: background-color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, transform 0.3s ease;
       box-shadow: 0 2px 8px rgba(91, 70, 54, 0.04);
+    }
+
+    .faq-item:hover {
+      border-color: rgba(207, 168, 116, 0.5);
+      transform: translateY(-2px);
     }
 
     .faq-item.active {
       background: #FFFFFF;
       border-color: var(--brand-warm-gold, #CFA874);
-      box-shadow: 0 6px 20px rgba(207, 168, 116, 0.15);
+      box-shadow: 0 8px 24px rgba(207, 168, 116, 0.18);
+      transform: translateY(-2px);
     }
 
     .faq-question-btn {
@@ -2427,7 +2437,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       font-size: 1.1rem;
       font-weight: 600;
       color: var(--brand-mocha-brown, #5B4636);
-      transition: color 0.2s ease;
+      transition: color 0.25s ease;
     }
 
     .faq-item.active .faq-question-btn {
@@ -2444,7 +2454,11 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: all 0.2s ease;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .faq-toggle-icon svg {
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     .faq-item.active .faq-toggle-icon {
@@ -2452,10 +2466,36 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       color: #FFFFFF;
     }
 
+    .faq-item.active .faq-toggle-icon svg {
+      transform: rotate(45deg);
+    }
+
+    /* Smooth Expand/Collapse Grid Animation */
+    .faq-answer-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .faq-answer-wrapper.open {
+      grid-template-rows: 1fr;
+    }
+
+    .faq-answer-inner {
+      overflow: hidden;
+    }
+
     .faq-answer-panel {
       padding: 0 24px 24px 24px;
       border-top: 1px solid rgba(91, 70, 54, 0.08);
-      animation: fadeIn 0.25s ease-out;
+      opacity: 0;
+      transform: translateY(-8px);
+      transition: opacity 0.3s ease 0.06s, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.06s;
+    }
+
+    .faq-answer-wrapper.open .faq-answer-panel {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .faq-answer-text {
@@ -2503,7 +2543,11 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   ];
 
   toggleFaq(index: number): void {
-    this.faqs[index].isOpen = !this.faqs[index].isOpen;
+    const wasOpen = this.faqs[index].isOpen;
+    this.faqs.forEach(faq => (faq.isOpen = false));
+    if (!wasOpen) {
+      this.faqs[index].isOpen = true;
+    }
   }
 
   currentSlideIndex = 0;
@@ -2700,6 +2744,22 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
         revealTargets.forEach(el => el.classList.add('in-view', 'revealed'));
       }
     }
+  }
+
+  getDiscountPercentage(product: ProductCardData): number {
+    if (
+      product &&
+      product.compareAtPrice !== undefined &&
+      product.compareAtPrice !== null &&
+      Number(product.compareAtPrice) > Number(product.price) &&
+      Number(product.compareAtPrice) > 0
+    ) {
+      const price = Number(product.price) || 0;
+      const compareAtPrice = Number(product.compareAtPrice) || 0;
+      const savings = compareAtPrice - price;
+      return Math.round((savings / compareAtPrice) * 100);
+    }
+    return 0;
   }
 
   addToBag(product: ProductCardData, event: Event): void {

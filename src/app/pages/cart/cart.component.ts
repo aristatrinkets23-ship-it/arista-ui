@@ -73,7 +73,13 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
               </div>
 
               <div class="item-price">
-                ₹{{ item.product.price | number:'1.2-2' }}
+                <span class="main-price">₹{{ item.product.price | number:'1.2-2' }}</span>
+                <span *ngIf="item.product.compareAtPrice && item.product.compareAtPrice > item.product.price" class="compare-price-small" style="display: block; text-decoration: line-through; color: #888; font-size: 0.78rem;">
+                  ₹{{ item.product.compareAtPrice | number:'1.2-2' }}
+                </span>
+                <span *ngIf="getDiscountPercentage(item.product) > 0" class="discount-tag" style="display: inline-block; background: #FEF2F2; color: #DC2626; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-top: 2px;">
+                  {{ getDiscountPercentage(item.product) }}% OFF
+                </span>
               </div>
 
               <div class="item-qty">
@@ -483,6 +489,22 @@ export class CartComponent implements OnInit, OnDestroy {
   removeItem(item: any): void {
     const targetId = (item?.product?.id !== undefined && item?.product?.id !== null) ? item.product.id : item?.product?.slug;
     this.cartService.removeFromCart(targetId, item?.selectedMetal);
+  }
+
+  getDiscountPercentage(product: any): number {
+    if (
+      product &&
+      product.compareAtPrice !== undefined &&
+      product.compareAtPrice !== null &&
+      Number(product.compareAtPrice) > Number(product.price) &&
+      Number(product.compareAtPrice) > 0
+    ) {
+      const price = Number(product.price) || 0;
+      const compareAtPrice = Number(product.compareAtPrice) || 0;
+      const savings = compareAtPrice - price;
+      return Math.round((savings / compareAtPrice) * 100);
+    }
+    return 0;
   }
 
   clearCart(): void {

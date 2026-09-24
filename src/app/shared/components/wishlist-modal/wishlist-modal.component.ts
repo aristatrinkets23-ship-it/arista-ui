@@ -44,7 +44,15 @@ import { CartService } from '../../../core/services/cart.service';
               <h4 class="item-name">
                 <a [routerLink]="['/product', item.slug]" (click)="closeModal()">{{ item.name }}</a>
               </h4>
-              <div class="item-price">₹{{ item.price | number:'1.2-2' }}</div>
+              <div class="item-price">
+                <span>₹{{ item.price | number:'1.2-2' }}</span>
+                <span *ngIf="item.compareAtPrice && item.compareAtPrice > item.price" style="text-decoration: line-through; color: #888; font-size: 0.8rem; margin-left: 6px;">
+                  ₹{{ item.compareAtPrice | number:'1.2-2' }}
+                </span>
+                <span *ngIf="getDiscountPercentage(item) > 0" style="background: #FEF2F2; color: #DC2626; font-weight: 700; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; margin-left: 6px; display: inline-block;">
+                  {{ getDiscountPercentage(item) }}% OFF
+                </span>
+              </div>
             </div>
 
             <div class="item-actions">
@@ -328,6 +336,22 @@ export class WishlistModalComponent {
 
   closeModal(): void {
     this.closed.emit();
+  }
+
+  getDiscountPercentage(product: ProductCardData): number {
+    if (
+      product &&
+      product.compareAtPrice !== undefined &&
+      product.compareAtPrice !== null &&
+      Number(product.compareAtPrice) > Number(product.price) &&
+      Number(product.compareAtPrice) > 0
+    ) {
+      const price = Number(product.price) || 0;
+      const compareAtPrice = Number(product.compareAtPrice) || 0;
+      const savings = compareAtPrice - price;
+      return Math.round((savings / compareAtPrice) * 100);
+    }
+    return 0;
   }
 
   isItemInCart(item: ProductCardData): boolean {

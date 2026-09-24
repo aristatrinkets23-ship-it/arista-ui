@@ -75,6 +75,9 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
           <span *ngIf="product.compareAtPrice && product.compareAtPrice > product.price" class="compare-price">
             ₹{{ product.compareAtPrice | number:'1.2-2' }}
           </span>
+          <span *ngIf="discountPercentage > 0" class="discount-pill">
+            {{ discountPercentage }}% OFF
+          </span>
         </div>
         <div class="add-btn-wrapper">
           <button
@@ -214,6 +217,19 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       z-index: 2;
     }
 
+    .off-badge {
+      background: #DC2626;
+      color: #FFFFFF;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+      text-transform: uppercase;
+    }
+
     .wishlist-btn {
       position: absolute;
       top: 8px;
@@ -310,6 +326,19 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       color: var(--color-text-muted);
     }
 
+    .discount-pill {
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FCA5A5;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      line-height: 1.2;
+    }
+
     .add-btn-wrapper {
       display: flex;
       justify-content: center;
@@ -372,6 +401,22 @@ export class ProductCardComponent implements OnInit, OnDestroy {
   private wishlistService = inject(WishlistService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+
+  get discountPercentage(): number {
+    if (
+      this.product &&
+      this.product.compareAtPrice !== undefined &&
+      this.product.compareAtPrice !== null &&
+      Number(this.product.compareAtPrice) > Number(this.product.price) &&
+      Number(this.product.compareAtPrice) > 0
+    ) {
+      const price = Number(this.product.price) || 0;
+      const compareAtPrice = Number(this.product.compareAtPrice) || 0;
+      const savings = compareAtPrice - price;
+      return Math.round((savings / compareAtPrice) * 100);
+    }
+    return 0;
+  }
 
   get productImages(): string[] {
     if (this.product && this.product.images && this.product.images.length > 0) {
