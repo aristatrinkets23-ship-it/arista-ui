@@ -84,14 +84,9 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
             (click)="onQuickAdd($event)"
             [title]="'Add ' + (product.name || 'item') + ' to cart'"
           >
-            <ng-container *ngIf="justAdded">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="display: inline-block; vertical-align: -2px; margin-right: 4px;">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              ✓ Added!
-            </ng-container>
+           
             <ng-container *ngIf="!justAdded && itemQtyInCart > 0">
-              + Add More ({{ itemQtyInCart }} in Bag)
+               ✓ Added
             </ng-container>
             <ng-container *ngIf="!justAdded && itemQtyInCart === 0">
               + Add to Cart
