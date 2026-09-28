@@ -2425,7 +2425,7 @@ export class AdminComponent implements OnInit {
     careGuide: 'Handle with care. Store in protective velvet pouch after use. Avoid contact with perfumes and hairsprays.',
     shippingInfo: 'Complimentary insured express delivery within 3-5 business days.',
     specifications: [
-      { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' },
+      { label: 'Craftsmanship', value: 'Demi Fine, Anti Tarnish Finish' },
       { label: 'Certification', value: 'BIS Hallmarked Gold' }
     ] as Array<{ label: string, value: string }>
   };
@@ -2830,7 +2830,7 @@ export class AdminComponent implements OnInit {
       }));
     } else {
       specsList = [
-        { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' },
+        { label: 'Craftsmanship', value: 'Demi Fine, Anti Tarnish Finish' },
         { label: 'Certification', value: 'BIS Hallmarked Gold' }
       ];
     }
@@ -3564,7 +3564,7 @@ export class AdminComponent implements OnInit {
       careGuide: 'Handle with care. Store in protective velvet pouch after use.',
       shippingInfo: 'Complimentary insured express delivery within 3-5 business days.',
       specifications: [
-        { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' },
+        { label: 'Craftsmanship', value: 'Demi Fine, Anti Tarnish Finish' },
         { label: 'Certification', value: 'BIS Hallmarked Gold' }
       ]
     };

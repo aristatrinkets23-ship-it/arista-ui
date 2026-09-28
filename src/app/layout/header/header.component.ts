@@ -136,7 +136,7 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
             <span>Bag {{ cartCount > 0 ? '(' + cartCount + ')' : '' }}</span>
           </a>
         </div>
-        <p class="drawer-tagline">Arista Trinkets &bull; Handcrafted Fine Jewellery</p>
+        <p class="drawer-tagline">Arista Trinkets &bull; Demi Fine, Anti Tarnish Jewellery</p>
       </div>
     </div>
     <div class="drawer-backdrop" *ngIf="isMobileNavOpen" (click)="toggleMobileNav()"></div>

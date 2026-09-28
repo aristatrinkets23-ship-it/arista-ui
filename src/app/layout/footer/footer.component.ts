@@ -19,7 +19,7 @@ import { Category } from '../../core/models/category.model';
             </a>
           </div>
           <p class="brand-tagline">
-            Handcrafted fine jewellery created with timeless gold, silver, and precious stones for every occasion.
+            Demi fine, anti tarnish jewellery created with timeless gold, silver, and precious stones for every occasion.
           </p>
           <!-- Social Links -->
           <div class="footer-socials" aria-label="Social media connections">

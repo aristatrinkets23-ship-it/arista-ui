@@ -246,7 +246,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 -- -----------------------------------------------------------------------------
 
 INSERT INTO `categories` (`id`, `parent_id`, `name`, `slug`, `description`, `display_order`) VALUES
-(1, NULL, 'Rings', 'rings', 'Exquisite gold and diamond rings handcrafted for every occasion.', 1),
+(1, NULL, 'Rings', 'rings', 'Exquisite demi fine, anti tarnish rings for every occasion.', 1),
 (2, NULL, 'Necklaces', 'necklaces', 'Timeless necklaces, pendants, and chokers.', 2),
 (3, NULL, 'Earrings', 'earrings', 'Elegant studs, hoops, and drop earrings.', 3),
 (4, NULL, 'Bracelets', 'bracelets', 'Bangles, chain bracelets, and diamond cuffs.', 4);

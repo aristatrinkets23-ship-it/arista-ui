@@ -110,7 +110,7 @@
 - Headline: Playfair Display serif, italic, with text-shadow for depth
 - Subtext: Montserrat, `text-mocha/70`
 - CTA button: Gold background, rounded-full, with complex box-shadow
-- Trust badges: 4 circular icons - HANDCRAFTED, ETHICAL, LIFETIME, GIFT READY
+- Trust badges: 4 circular icons - DEMI FINE & ANTI TARNISH, ETHICAL, LIFETIME, GIFT READY
 - Marquee strip: Trust messaging - FREE SHIPPING, 30-DAY RETURNS, SECURE PAYMENT
 - Staggered entrance animations via Framer Motion
 

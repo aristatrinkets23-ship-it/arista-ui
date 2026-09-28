@@ -28,7 +28,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
           <span class="hero-eyebrow animate-child">The Complete Collection</span>
           <h1 class="hero-title animate-child">Fine & Fashion Jewellery</h1>
           <p class="hero-desc animate-child">
-            Explore handcrafted gold rings, layered necklaces, pearl drop earrings, and diamond cuff bracelets.
+            Explore demi fine, anti tarnish jewellery: rings, layered necklaces, pearl drop earrings, and cuff bracelets.
           </p>
         </div>
       </div>

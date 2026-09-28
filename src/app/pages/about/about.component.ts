@@ -44,7 +44,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
           <img src="/assets/images/about-heritage-artisan.jpg" alt="Arista Fine Jewellery Collection Box" class="story-img" />
           <div class="story-img-badge">
             <span class="badge-number">100%</span>
-            <span class="badge-text">Artisan Hand-Crafted</span>
+            <span class="badge-text">Demi Fine & Anti-Tarnish</span>
           </div>
         </div>
       </div>

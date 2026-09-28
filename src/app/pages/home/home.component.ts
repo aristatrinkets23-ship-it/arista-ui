@@ -26,11 +26,11 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       <div class="hero-bg-overlay"></div>
       <div class="container hero-container">
         <div class="hero-content">
-          <!-- Handcrafted Elegance Eyebrow -->
+          <!-- Demi Fine, Anti Tarnish Jewellery Eyebrow -->
           <div class="hero-eyebrow-wrapper">
             <span class="hero-eyebrow-line"></span>
             <span class="hero-eyebrow-text">
-              <span class="hero-diamond-dot">◆</span> Handcrafted Elegance <span class="hero-diamond-dot">◆</span>
+              <span class="hero-diamond-dot">◆</span> Demi Fine, Anti Tarnish Jewellery <span class="hero-diamond-dot">◆</span>
             </span>
             <span class="hero-eyebrow-line"></span>
           </div>
@@ -64,7 +64,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                 </svg>
               </div>
-              <span class="hero-feature-title">HANDCRAFTED</span>
+              <span class="hero-feature-title">DEMI FINE & ANTI TARNISH</span>
               <span class="hero-feature-sub">Small-Batch Made</span>
             </div>
 
@@ -153,7 +153,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 3h12l4 6-10 12L2 9z"></path>
             </svg>
-            HANDCRAFTED QUALITY
+            DEMI FINE & ANTI TARNISH
           </span>
           <span class="marquee-sep">|</span>
           <span class="marquee-item">
@@ -186,7 +186,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 3h12l4 6-10 12L2 9z"></path>
             </svg>
-            HANDCRAFTED QUALITY
+            DEMI FINE & ANTI TARNISH
           </span>
           <span class="marquee-sep">|</span>
           <span class="marquee-item">
@@ -512,7 +512,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
         <div class="faq-header text-center">
           <span class="faq-eyebrow">HELP & INFORMATION</span>
           <h2 class="faq-title">Frequently Asked <em>Questions</em></h2>
-          <p class="faq-subtitle">Everything you need to know about our handcrafted jewellery, certification, and services.</p>
+          <p class="faq-subtitle">Everything you need to know about our demi fine, anti tarnish jewellery, certification, and services.</p>
         </div>
 
         <div class="faq-accordion-wrapper">
@@ -2536,7 +2536,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       isOpen: false
     },
     {
-      question: 'How should I care for and clean my handcrafted jewellery?',
+      question: 'How should I care for and clean my demi fine, anti tarnish jewellery?',
       answer: 'Store your pieces individually in soft velvet pouches away from direct moisture. We provide a complimentary luxury polishing cloth and care guide with every order.',
       isOpen: false
     }
@@ -2560,7 +2560,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       id: 'bow-pearl-flatlay',
       type: 'Curated Suite',
       icon: '✨',
-      title: 'Handcrafted Bow & Pearl Suite',
+      title: 'Demi Fine, Anti Tarnish Bow & Pearl Suite',
       subtitle: '18K Gold & South Sea Pearl',
       description: '18K gold ribbon bow pendant necklace with South Sea pearl drop, bow earrings, and matching ring set.',
       image: '/assets/images/slideshow-1.jpg',

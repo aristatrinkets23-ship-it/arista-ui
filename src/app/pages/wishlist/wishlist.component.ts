@@ -54,7 +54,7 @@ import { CartService } from '../../core/services/cart.service';
           <div class="empty-icon">💎</div>
           <h2 class="empty-title">Your Wishlist is Empty</h2>
           <p class="empty-desc">
-            You haven't saved any fine jewellery pieces yet. Explore our handcrafted collections and click the heart icon on any product card to curate your private favorites vault!
+            You haven't saved any pieces yet. Explore our demi fine, anti tarnish jewellery collections and click the heart icon on any product card to curate your private favorites vault!
           </p>
           <div class="empty-actions">
             <a routerLink="/shop" class="btn-shop-now">

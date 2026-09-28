@@ -436,13 +436,13 @@ export class MockDataService {
       available: true,
       inStock: true,
       stockQuantity: newProd.stockQuantity || 10,
-      description: newProd.description || 'Exquisite handcrafted fine jewellery piece by Arista Trinkets.',
+      description: newProd.description || 'Exquisite demi fine, anti tarnish jewellery piece by Arista Trinkets.',
       materials: newProd.materials && newProd.materials.length > 0 ? newProd.materials : ['18K Warm Gold', 'Sterling Silver', 'Rose Gold'],
       careGuide: newProd.careGuide || 'Handle with care. Store in protective velvet pouch after use.',
       shippingInfo: newProd.shippingInfo || 'Complimentary insured express delivery within 3-5 business days.',
       metalType: (newProd.materials && newProd.materials.length > 0) ? newProd.materials[0] : (newProd.metalType || '18K Warm Gold'),
       specifications: newProd.specifications && newProd.specifications.length > 0 ? newProd.specifications : [
-        { label: 'Craftsmanship', value: 'Handcrafted Atelier Finish' },
+        { label: 'Craftsmanship', value: 'Demi Fine, Anti Tarnish Finish' },
         { label: 'Certification', value: 'BIS Hallmarked Gold' }
       ]
     };
