@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, inject, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
@@ -362,13 +362,23 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                 </span>
               </div>
 
-              <button class="arrival-add-bag-btn" (click)="addToBag(product, $event)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                  <line x1="3" y1="6" x2="21" y2="6"></line>
-                  <path d="M16 10a4 4 0 0 1-8 0"></path>
-                </svg>
-                <span>ADD TO BAG</span>
+              <button
+                class="arrival-add-bag-btn"
+                [class.added]="isItemInCart(product)"
+                (click)="addToBag(product, $event)"
+                [title]="isItemInCart(product) ? 'Go to Cart' : 'Add to Bag'"
+              >
+                <ng-container *ngIf="isItemInCart(product)">
+                  <span>GO TO CART &rarr;</span>
+                </ng-container>
+                <ng-container *ngIf="!isItemInCart(product)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                  </svg>
+                  <span>ADD TO BAG</span>
+                </ng-container>
               </button>
             </div>
           </div>
@@ -2047,6 +2057,20 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       transform: translateY(-2px);
     }
 
+    .arrival-add-bag-btn.added {
+      background: var(--brand-mocha-brown, #3A2E28);
+      color: var(--brand-pearl-beige, #FAF7F2);
+      border-color: var(--brand-mocha-brown, #3A2E28);
+      box-shadow: 0 2px 8px rgba(58, 46, 40, 0.25);
+    }
+
+    .arrival-add-bag-btn.added:hover {
+      background: #231914;
+      color: #FFFFFF;
+      border-color: #231914;
+      transform: translateY(-2px);
+    }
+
     /* Footer / View All Pill Button */
     .arrivals-footer {
       text-align: center;
@@ -2646,7 +2670,9 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private mockDataService = inject(MockDataService);
   private cartService = inject(CartService);
+  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private cartSub?: any;
 
   @HostListener('window:scroll', [])
   onWindowScroll(): void {
@@ -2701,19 +2727,29 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     this.mockDataService.getNewArrivals().subscribe(prods => {
-      this.newArrivals = [...prods].sort((a, b) => {
-        const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
-        const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
-        return idB - idA;
-      }).slice(0, 4);
+      this.newArrivals = (prods || [])
+        .filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'NEW')
+        .sort((a, b) => {
+          const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
+          const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
+          return idB - idA;
+        })
+        .slice(0, 4);
     });
 
     this.mockDataService.getBestsellers().subscribe(prods => {
-      this.bestsellerProducts = [...prods].sort((a, b) => {
-        const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
-        const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
-        return idB - idA;
-      });
+      this.bestsellerProducts = (prods || [])
+        .filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'BESTSELLER')
+        .sort((a, b) => {
+          const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
+          const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
+          return idB - idA;
+        })
+        .slice(0, 6);
+    });
+
+    this.cartSub = this.cartService.cart$.subscribe(() => {
+      this.cdr.detectChanges();
     });
 
     this.startSlideshowTimer();
@@ -2762,9 +2798,19 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     return 0;
   }
 
+  isItemInCart(product: ProductCardData): boolean {
+    if (!product) return false;
+    const targetId = (product.id !== undefined && product.id !== null) ? product.id : product.slug;
+    return this.cartService.isInCart(targetId);
+  }
+
   addToBag(product: ProductCardData, event: Event): void {
     event.preventDefault();
     event.stopPropagation();
+    if (this.isItemInCart(product)) {
+      this.router.navigate(['/cart']);
+      return;
+    }
     this.cartService.addToCart({
       id: product.id,
       name: product.name,
@@ -2773,9 +2819,13 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       category: product.category,
       slug: product.slug
     } as any, 1);
+    this.cdr.detectChanges();
   }
 
   ngOnDestroy(): void {
+    if (this.cartSub) {
+      this.cartSub.unsubscribe();
+    }
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
     }

@@ -327,20 +327,14 @@ export class MockDataService {
     this.refreshFromApi();
     return this.productsSubject.pipe(
       map(prods => {
-        const newOnly = prods.filter(p => p.badge && String(p.badge).toUpperCase() === 'NEW');
-        let itemsToShow = [...newOnly];
-        if (itemsToShow.length < 4) {
-          const remaining = prods.filter(p => !itemsToShow.some(n => String(n.id) === String(p.id)));
-          itemsToShow = [...itemsToShow, ...remaining];
-        }
-
-        itemsToShow.sort((a, b) => {
-          const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
-          const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
-          return idB - idA;
-        });
-
-        return itemsToShow.slice(0, 4);
+        const newOnly = prods.filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'NEW');
+        return [...newOnly]
+          .sort((a, b) => {
+            const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
+            const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
+            return idB - idA;
+          })
+          .slice(0, 4);
       })
     );
   }
@@ -349,21 +343,14 @@ export class MockDataService {
     this.refreshFromApi();
     return this.productsSubject.pipe(
       map(prods => {
-        const bestsellers = prods.filter(p => p.badge && String(p.badge).toUpperCase() === 'BESTSELLER');
-        let itemsToShow = [...bestsellers];
-
-        if (itemsToShow.length < 4) {
-          const remaining = prods.filter(p => !itemsToShow.some(b => String(b.id) === String(p.id)));
-          itemsToShow = [...itemsToShow, ...remaining];
-        }
-
-        itemsToShow.sort((a, b) => {
-          const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
-          const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
-          return idB - idA;
-        });
-
-        return itemsToShow.slice(0, 6);
+        const bestsellers = prods.filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'BESTSELLER');
+        return [...bestsellers]
+          .sort((a, b) => {
+            const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
+            const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
+            return idB - idA;
+          })
+          .slice(0, 6);
       })
     );
   }
