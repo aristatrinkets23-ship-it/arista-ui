@@ -20,6 +20,7 @@ export const API_ENDPOINTS = {
     BY_NUMBER: (orderNumber: string) => `${BASE_URL}/orders/${orderNumber}`
   },
   HOMEPAGE_CONFIG: `${BASE_URL}/homepage-config`,
+  ENQUIRIES: `${BASE_URL}/enquiries`,
   CART: {
     GET: `${BASE_URL}/cart`,
     ADD: `${BASE_URL}/cart/items`,
