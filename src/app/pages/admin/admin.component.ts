@@ -59,7 +59,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
           <div class="metric-card">
             <span class="metric-label">Total Completed Orders</span>
-            <span class="metric-value">{{ mockOrders.length }}</span>
+            <span class="metric-value">{{ ordersList.length }}</span>
             <span class="metric-sub">Active Customer Orders</span>
           </div>
 
@@ -92,9 +92,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             type="button"
             class="tab-btn"
             [class.active]="activeTab === 'orders'"
-            (click)="activeTab = 'orders'"
+            (click)="activeTab = 'orders'; loadAdminOrders()"
           >
-            Customer Orders ({{ mockOrders.length }})
+            Customer Orders ({{ ordersList.length }})
           </button>
           <button
             type="button"
@@ -238,52 +238,156 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
         </div>
 
-        <!-- TAB 2: CUSTOMER ORDERS TABLE -->
+        <!-- TAB 3: CUSTOMER ORDERS TABLE WITH FILTERS -->
         <div *ngIf="activeTab === 'orders'" class="tab-content">
+          <!-- Filter Toolbar Card -->
+          <div class="filter-toolbar-card" style="background: #FFFFFF; border: 1px solid var(--color-border); padding: 18px 20px; border-radius: var(--radius-md); margin-bottom: 20px; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+              <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.25rem;">
+                Customer Orders &amp; Fulfillment Tracker ({{ ordersList.length }})
+              </h3>
+              <button type="button" class="btn-cancel" style="padding: 6px 16px; font-size: 0.8rem;" (click)="resetOrderFilters()">
+                ↻ Reset All Filters
+              </button>
+            </div>
+
+            <!-- Filter Controls Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; align-items: end;">
+              
+              <!-- Search Filter -->
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--brand-mocha-brown); margin-bottom: 4px;">Search Order / Customer</label>
+                <input
+                  type="text"
+                  [(ngModel)]="orderSearchQuery"
+                  (keyup.enter)="loadAdminOrders()"
+                  placeholder="Order #, Name, Email, TRK..."
+                  style="padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); font-size: 0.85rem;"
+                />
+              </div>
+
+              <!-- Order Status Filter -->
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--brand-mocha-brown); margin-bottom: 4px;">Fulfillment Status</label>
+                <select [(ngModel)]="orderFilterStatus" (change)="loadAdminOrders()" style="padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); font-size: 0.85rem;">
+                  <option value="">All Fulfillment Statuses</option>
+                  <option value="PENDING">PENDING</option>
+                  <option value="PROCESSING">PROCESSING</option>
+                  <option value="SHIPPED">SHIPPED</option>
+                  <option value="DELIVERED">DELIVERED</option>
+                  <option value="CANCELLED">CANCELLED</option>
+                </select>
+              </div>
+
+              <!-- Payment Status Filter -->
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--brand-mocha-brown); margin-bottom: 4px;">Payment Status</label>
+                <select [(ngModel)]="orderFilterPaymentStatus" (change)="loadAdminOrders()" style="padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); font-size: 0.85rem;">
+                  <option value="">All Payment Statuses</option>
+                  <option value="PENDING">PENDING</option>
+                  <option value="PAID">PAID</option>
+                  <option value="FAILED">FAILED</option>
+                  <option value="REFUNDED">REFUNDED</option>
+                </select>
+              </div>
+
+              <!-- Date From Filter -->
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--brand-mocha-brown); margin-bottom: 4px;">Placed Date From</label>
+                <input
+                  type="date"
+                  [(ngModel)]="orderFilterDateFrom"
+                  (change)="loadAdminOrders()"
+                  style="padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); font-size: 0.85rem;"
+                />
+              </div>
+
+              <!-- Date To Filter -->
+              <div class="form-group" style="margin: 0;">
+                <label style="font-size: 0.75rem; font-weight: 700; color: var(--brand-mocha-brown); margin-bottom: 4px;">Placed Date To</label>
+                <input
+                  type="date"
+                  [(ngModel)]="orderFilterDateTo"
+                  (change)="loadAdminOrders()"
+                  style="padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); font-size: 0.85rem;"
+                />
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Orders Data Table -->
           <div class="table-responsive">
             <table class="admin-table">
               <thead>
                 <tr>
                   <th>Order Reference</th>
                   <th>Customer Details</th>
-                  <th>Payment Method</th>
+                  <th>Payment Method &amp; Status</th>
                   <th>Total Amount</th>
-                  <th>Payment Status</th>
                   <th>Fulfillment Status</th>
-                  <th>Update Action</th>
+                  <th>Item Details</th>
+                  <th>Update Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngIf="mockOrders.length === 0">
+                <tr *ngIf="isLoadingOrders">
                   <td colspan="7" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
-                    No data found in customer orders. New customer orders will appear here.
+                    Loading customer orders...
                   </td>
                 </tr>
-                <tr *ngFor="let order of mockOrders">
+                <tr *ngIf="!isLoadingOrders && ordersList.length === 0">
+                  <td colspan="7" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
+                    No orders found matching the selected filters.
+                  </td>
+                </tr>
+                <tr *ngFor="let order of ordersList">
                   <td>
-                    <strong class="order-no">#{{ order.number }}</strong>
-                    <span class="order-date">{{ order.date }}</span>
+                    <strong class="order-no" style="font-size: 0.95rem; color: var(--brand-mocha-brown);">#{{ order.order_number || order.number }}</strong>
+                    <span class="order-date" style="display: block; font-size: 0.78rem; color: #666; margin-top: 2px;">
+                      📅 {{ order.ordered_at || order.created_at || order.date }}
+                    </span>
+                    <span *ngIf="order.tracking_code" style="display: inline-block; background: var(--brand-pearl-beige); color: var(--brand-mocha-brown); font-family: monospace; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; margin-top: 4px; border: 1px solid var(--color-border);">
+                      🏷️ {{ order.tracking_code }}
+                    </span>
                   </td>
                   <td>
-                    <strong class="cust-name">{{ order.customer }}</strong>
-                    <span class="cust-email">{{ order.email }}</span>
+                    <strong class="cust-name">{{ order.customer_name || order.customer }}</strong>
+                    <span class="cust-email" style="display: block; font-size: 0.8rem; color: #666;">{{ order.customer_email || order.email }}</span>
+                    <span *ngIf="order.customer_phone" style="display: block; font-size: 0.78rem; color: #888;">📞 {{ order.customer_phone }}</span>
                   </td>
                   <td>
-                    <span class="pay-method">{{ order.paymentMethod }}</span>
+                    <span class="pay-method" style="font-weight: 600; display: block; font-size: 0.82rem;">{{ order.payment_method || order.paymentMethod }}</span>
+                    <span class="status-badge paid" *ngIf="(order.payment_status || order.paymentStatus) === 'PAID'">PAID (RAZORPAY)</span>
+                    <span class="status-badge pending" *ngIf="(order.payment_status || order.paymentStatus) === 'PENDING'">PENDING</span>
+                    <span class="status-badge failed" *ngIf="(order.payment_status || order.paymentStatus) === 'FAILED'" style="background: #FFEBEE; color: #C62828;">FAILED</span>
                   </td>
                   <td>
-                    <strong class="item-price">₹{{ order.total | number }}</strong>
+                    <strong class="item-price" style="font-size: 1rem; color: var(--brand-warm-gold);">₹{{ (order.total_amount || order.total) | number }}</strong>
                   </td>
                   <td>
-                    <span class="status-badge paid" *ngIf="order.paymentStatus === 'PAID'">PAID (RAZORPAY)</span>
-                    <span class="status-badge pending" *ngIf="order.paymentStatus === 'PENDING'">PENDING</span>
+                    <span class="status-badge shipped" *ngIf="(order.order_status || order.status) === 'SHIPPED'">SHIPPED</span>
+                    <span class="status-badge processing" *ngIf="(order.order_status || order.status) === 'PROCESSING'">PROCESSING</span>
+                    <span class="status-badge delivered" *ngIf="(order.order_status || order.status) === 'DELIVERED'" style="background: #E8F5E9; color: #2E7D32;">DELIVERED</span>
+                    <span class="status-badge cancelled" *ngIf="(order.order_status || order.status) === 'CANCELLED'" style="background: #FFEBEE; color: #C62828;">CANCELLED</span>
+                    <span class="status-badge pending" *ngIf="(order.order_status || order.status) === 'PENDING'">PENDING</span>
+
+                    <div style="font-size: 0.73rem; color: #555555; margin-top: 4px; font-weight: 500;">
+                      <span *ngIf="(order.order_status || order.status) === 'PROCESSING'">⏱ In Progress: {{ order.processing_at || order.ordered_at }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'SHIPPED'">🚚 Shipped: {{ order.shipped_at || order.ordered_at }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'DELIVERED'">✓ Delivered: {{ order.delivered_at || order.ordered_at }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'CANCELLED'">✕ Cancelled: {{ order.cancelled_at || order.ordered_at }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'PENDING'">📅 Placed: {{ order.ordered_at || order.created_at }}</span>
+                    </div>
                   </td>
                   <td>
-                    <span class="status-badge shipped" *ngIf="order.status === 'SHIPPED'">SHIPPED</span>
-                    <span class="status-badge processing" *ngIf="order.status === 'PROCESSING'">PROCESSING</span>
+                    <button type="button" class="btn-action edit" (click)="selectedOrderForDetails = order">
+                      📦 View Items ({{ (order.items?.length || 0) }})
+                    </button>
                   </td>
                   <td>
-                    <select class="status-select" [value]="order.status" (change)="updateOrderStatus(order, $event)">
+                    <select class="status-select" [value]="order.order_status || order.status" (change)="updateOrderStatus(order, $event)">
+                      <option value="PENDING">PENDING</option>
                       <option value="PROCESSING">PROCESSING</option>
                       <option value="SHIPPED">SHIPPED</option>
                       <option value="DELIVERED">DELIVERED</option>
@@ -293,6 +397,124 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 </tr>
               </tbody>
             </table>
+          </div>
+
+          <!-- Pagination Bar (10 Orders Per Page) -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 20px; padding: 14px 18px; background: #FFFFFF; border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+            <span style="font-size: 0.85rem; color: #666666; font-weight: 500;">
+              Showing Page <strong>{{ orderCurrentPage }}</strong> of <strong>{{ orderTotalPages }}</strong> ({{ orderTotalItems }} Total Orders)
+            </span>
+
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+              <button
+                type="button"
+                class="btn-cancel"
+                style="padding: 6px 14px; font-size: 0.82rem;"
+                [disabled]="orderCurrentPage === 1"
+                (click)="loadAdminOrders(orderCurrentPage - 1)"
+              >
+                ‹ Previous
+              </button>
+
+              <button
+                *ngFor="let pageNum of orderPageNumbers"
+                type="button"
+                style="padding: 6px 12px; border-radius: 4px; font-size: 0.82rem; font-weight: 700; cursor: pointer; border: 1px solid var(--color-border); transition: all 0.15s ease;"
+                [style.background]="pageNum === orderCurrentPage ? 'var(--brand-warm-gold)' : '#FFFFFF'"
+                [style.color]="pageNum === orderCurrentPage ? 'var(--brand-mocha-brown)' : '#555555'"
+                (click)="loadAdminOrders(pageNum)"
+              >
+                {{ pageNum }}
+              </button>
+
+              <button
+                type="button"
+                class="btn-cancel"
+                style="padding: 6px 14px; font-size: 0.82rem;"
+                [disabled]="orderCurrentPage === orderTotalPages || orderTotalPages === 0"
+                (click)="loadAdminOrders(orderCurrentPage + 1)"
+              >
+                Next ›
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ORDER ITEMS DETAILS MODAL OVERLAY POPUP -->
+        <div *ngIf="selectedOrderForDetails" class="modal-backdrop" (click)="selectedOrderForDetails = null">
+          <div class="modal-card" style="max-width: 600px;" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2 class="form-title" style="margin:0;">Order Items Details (#{{ selectedOrderForDetails.order_number || selectedOrderForDetails.number }})</h2>
+              <button type="button" class="btn-close" (click)="selectedOrderForDetails = null">&times;</button>
+            </div>
+
+            <div style="margin-top: 16px;">
+              <div style="background: var(--brand-pearl-beige); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px;">
+                <div><strong>Customer:</strong> {{ selectedOrderForDetails.customer_name || selectedOrderForDetails.customer }} ({{ selectedOrderForDetails.customer_email || selectedOrderForDetails.email }})</div>
+                <div *ngIf="selectedOrderForDetails.customer_phone"><strong>Phone:</strong> {{ selectedOrderForDetails.customer_phone }}</div>
+                <div><strong>Shipping Address:</strong> {{ selectedOrderForDetails.shipping_address }}, {{ selectedOrderForDetails.city }}, {{ selectedOrderForDetails.state }} - {{ selectedOrderForDetails.pincode }}</div>
+                <div *ngIf="selectedOrderForDetails.tracking_code"><strong>Tracking Code:</strong> <code style="color: var(--brand-warm-gold); font-weight: bold;">{{ selectedOrderForDetails.tracking_code }}</code></div>
+              </div>
+
+              <!-- Status Progress Timeline with Timestamps -->
+              <h4 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 16px 0 10px 0;">Fulfillment Status Timeline:</h4>
+              <div style="background: #FFFFFF; border: 1px solid var(--color-border); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 10px;">
+                  <div style="padding: 8px; border-radius: 6px; background: #FAF7F2; border-left: 3px solid #CFA874;">
+                    <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">1. Placed Date</span>
+                    <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.ordered_at || selectedOrderForDetails.created_at }}</strong>
+                  </div>
+                  <div style="padding: 8px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.processing_at ? '3px solid #9C27B0' : '3px solid #E0E0E0'">
+                    <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">2. In Progress</span>
+                    <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.processing_at || 'Pending' }}</strong>
+                  </div>
+                  <div style="padding: 8px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.shipped_at ? '3px solid #0288D1' : '3px solid #E0E0E0'">
+                    <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">3. Shipped Date</span>
+                    <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.shipped_at || 'Pending' }}</strong>
+                  </div>
+                  <div style="padding: 8px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.delivered_at ? '3px solid #2E7D32' : '3px solid #E0E0E0'">
+                    <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">4. Delivered Date</span>
+                    <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.delivered_at || 'Pending' }}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <h4 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin-bottom: 10px;">Itemized Products:</h4>
+              <div class="table-responsive">
+                <table class="admin-table" style="font-size: 0.85rem;">
+                  <thead>
+                    <tr>
+                      <th>Product Name</th>
+                      <th>Metal Type</th>
+                      <th>Qty</th>
+                      <th>Unit Price</th>
+                      <th>Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="!selectedOrderForDetails.items || selectedOrderForDetails.items.length === 0">
+                      <td colspan="5" style="text-align: center; color: #888;">No itemized details attached to order.</td>
+                    </tr>
+                    <tr *ngFor="let item of selectedOrderForDetails.items">
+                      <td><strong>{{ item.product_name }}</strong></td>
+                      <td>{{ item.metal_type || '18K Warm Gold' }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>₹{{ item.unit_price | number }}</td>
+                      <td><strong style="color: var(--brand-warm-gold);">₹{{ item.total_price | number }}</strong></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border);">
+                <span>Total Amount Paid:</span>
+                <strong style="font-size: 1.2rem; color: var(--brand-warm-gold);">₹{{ (selectedOrderForDetails.total_amount || selectedOrderForDetails.total) | number }}</strong>
+              </div>
+            </div>
+
+            <div class="modal-footer" style="margin-top: 20px;">
+              <button type="button" class="btn-cancel" (click)="selectedOrderForDetails = null">Close Details</button>
+            </div>
           </div>
         </div>
 
@@ -2448,6 +2670,110 @@ export class AdminComponent implements OnInit {
     }
   }
 
+  ordersList: any[] = [];
+  isLoadingOrders: boolean = false;
+  orderFilterStatus: string = '';
+  orderFilterPaymentStatus: string = '';
+  orderFilterDateFrom: string = '';
+  orderFilterDateTo: string = '';
+  orderSearchQuery: string = '';
+  selectedOrderForDetails: any = null;
+
+  orderCurrentPage: number = 1;
+  orderPageSize: number = 10;
+  orderTotalItems: number = 0;
+  orderTotalPages: number = 1;
+
+  get orderPageNumbers(): number[] {
+    const pages: number[] = [];
+    const max = Math.max(this.orderTotalPages, 1);
+    for (let i = 1; i <= max; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  async loadAdminOrders(page: number = this.orderCurrentPage): Promise<void> {
+    this.orderCurrentPage = page;
+    this.isLoadingOrders = true;
+    try {
+      const offset = (page - 1) * this.orderPageSize;
+      const params = new URLSearchParams();
+      params.append('limit', String(this.orderPageSize));
+      params.append('offset', String(offset));
+
+      if (this.orderFilterStatus) params.append('status', this.orderFilterStatus);
+      if (this.orderFilterPaymentStatus) params.append('paymentStatus', this.orderFilterPaymentStatus);
+      if (this.orderFilterDateFrom) params.append('dateFrom', this.orderFilterDateFrom);
+      if (this.orderFilterDateTo) params.append('dateTo', this.orderFilterDateTo);
+      if (this.orderSearchQuery.trim()) params.append('search', this.orderSearchQuery.trim());
+
+      const token = this.authService.getToken();
+      const res = await fetch(`${API_ENDPOINTS.ADMIN.DASHBOARD.replace('/dashboard', '/orders')}?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data && data.success && data.data && data.data.orders) {
+        this.ordersList = data.data.orders;
+        if (data.data.pagination) {
+          this.orderTotalItems = data.data.pagination.total || 0;
+          this.orderTotalPages = data.data.pagination.pages || Math.ceil(this.orderTotalItems / this.orderPageSize) || 1;
+        }
+      } else {
+        this.ordersList = [];
+        this.orderTotalItems = 0;
+        this.orderTotalPages = 1;
+      }
+    } catch (err) {
+      this.ordersList = [];
+      this.orderTotalItems = 0;
+      this.orderTotalPages = 1;
+    } finally {
+      this.isLoadingOrders = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  resetOrderFilters(): void {
+    this.orderFilterStatus = '';
+    this.orderFilterPaymentStatus = '';
+    this.orderFilterDateFrom = '';
+    this.orderFilterDateTo = '';
+    this.orderSearchQuery = '';
+    this.orderCurrentPage = 1;
+    this.loadAdminOrders(1);
+  }
+
+  async updateOrderStatus(order: any, event: Event): Promise<void> {
+    const selectElem = event.target as HTMLSelectElement;
+    const newStatus = selectElem.value;
+    const orderId = order.id || order.order_number;
+    if (!orderId) return;
+
+    try {
+      const token = this.authService.getToken();
+      const res = await fetch(API_ENDPOINTS.ADMIN.ORDER_STATUS(orderId), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus, orderStatus: newStatus })
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        order.order_status = newStatus;
+        order.status = newStatus;
+        this.showToast(`Order #${order.order_number || order.number} status updated to ${newStatus} in database.`, 'success');
+        this.loadAdminOrders();
+      } else {
+        this.showToast(data?.message || 'Failed to update order status.', 'error');
+      }
+    } catch (err: any) {
+      this.showToast(`Error updating order status: ${err.message}`, 'error');
+    }
+  }
+
   mockOrders: any[] = [];
 
   toastMessage: string = '';
@@ -2495,6 +2821,7 @@ export class AdminComponent implements OnInit {
     }
 
     this.loadAdminUsers();
+    this.loadAdminOrders();
 
     this.mockDataService.getProducts().subscribe(prods => {
       const uniqueProdsMap = new Map<string, ProductCardData>();
@@ -3398,10 +3725,7 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  updateOrderStatus(order: any, event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    order.status = select.value;
-  }
+
 
   onCategoryNameChange(name: string): void {
     this.newCategory.name = name;

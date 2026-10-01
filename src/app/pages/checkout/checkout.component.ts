@@ -68,9 +68,15 @@ declare var Razorpay: any;
                 </div>
               </div>
 
-              <div class="form-group">
-                <label>Email Address *</label>
-                <input type="email" [(ngModel)]="shipping.email" name="email" placeholder="name@example.com" required />
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Email Address *</label>
+                  <input type="email" [(ngModel)]="shipping.email" name="email" placeholder="name@example.com" required />
+                </div>
+                <div class="form-group">
+                  <label>Phone Number</label>
+                  <input type="tel" [(ngModel)]="shipping.phone" name="phone" placeholder="e.g. +91 9876543210" />
+                </div>
               </div>
 
               <div class="form-group">
@@ -645,6 +651,42 @@ declare var Razorpay: any;
       justify-content: center;
       flex-wrap: wrap;
     }
+
+    .btn-gold {
+      background: var(--brand-warm-gold) !important;
+      color: var(--brand-mocha-brown) !important;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 12px 28px;
+      border-radius: 50px;
+      text-decoration: none !important;
+      display: inline-block;
+      transition: all var(--transition-fast);
+      box-shadow: 0 4px 12px rgba(207, 168, 116, 0.25);
+    }
+    .btn-gold:hover {
+      background: #E2B882 !important;
+      color: #382A1F !important;
+      transform: translateY(-1px);
+    }
+
+    .btn-mocha {
+      background: var(--brand-mocha-brown) !important;
+      color: #FFFFFF !important;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 12px 28px;
+      border-radius: 50px;
+      text-decoration: none !important;
+      display: inline-block;
+      transition: all var(--transition-fast);
+      box-shadow: 0 4px 12px rgba(91, 70, 54, 0.25);
+    }
+    .btn-mocha:hover {
+      background: #443427 !important;
+      color: #FFFFFF !important;
+      transform: translateY(-1px);
+    }
   `]
 })
 export class CheckoutComponent implements OnInit, OnDestroy {
@@ -670,6 +712,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     address: '',
     city: '',
     state: '',
@@ -773,8 +816,46 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       }
     }
 
-    const totalAmount = this.cart ? this.cart.total : 45000;
-    this.generatedOrderNumber = `ART-${Math.floor(100000 + Math.random() * 900000)}`;
+    const totalAmount = this.cart?.total || 0;
+    
+    // 1. Create order on backend DB to obtain sequential order number (ART-000001 series)
+    let orderNumber = '';
+
+    try {
+      const orderItems = (this.cart?.items || []).map(item => ({
+        title: item.product.name,
+        name: item.product.name,
+        price: item.product.price,
+        metalType: item.selectedMetal || '18K Warm Gold',
+        quantity: item.quantity
+      }));
+
+      const createRes = await fetch(API_ENDPOINTS.ORDERS.CREATE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
+          customerEmail: this.shipping.email,
+          customerPhone: this.shipping.phone,
+          shippingAddress: this.shipping.address,
+          city: this.shipping.city,
+          state: this.shipping.state,
+          pincode: this.shipping.pincode,
+          items: orderItems,
+          totalAmount: totalAmount,
+          paymentMethod: this.selectedPayment.toUpperCase()
+        })
+      });
+
+      const resData = await createRes.json();
+      if (resData && resData.success && resData.data && resData.data.orderNumber) {
+        orderNumber = resData.data.orderNumber;
+      }
+    } catch (err) {
+      // API call failed
+    }
+
+    this.generatedOrderNumber = orderNumber;
 
     if (this.selectedPayment === 'razorpay') {
       await this.loadRazorpayScript();
@@ -792,7 +873,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           const resData = await response.json();
           if (resData && resData.success && resData.data) {
             const options = {
-              key: resData.data.keyId || 'rzp_test_AristaTrinkets2026',
+              key: resData.data.keyId || '',
               amount: resData.data.amount,
               currency: 'INR',
               name: 'Arista Trinkets Jewellery',
@@ -803,9 +884,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
                 await this.verifyRazorpayPayment(payRes);
               },
               prefill: {
-                name: `${this.shipping.firstName} ${this.shipping.lastName}`,
+                name: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
                 email: this.shipping.email,
-                contact: '9999999999'
+                contact: this.shipping.phone
               },
               theme: {
                 color: '#CFA874'
@@ -823,7 +904,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       }
     }
 
-    // Direct fallback completion for COD or mock offline flow
+    // Direct completion for COD or mock offline flow
     this.paymentVerified = this.selectedPayment === 'razorpay';
     this.orderPlaced = true;
     this.isProcessing = false;

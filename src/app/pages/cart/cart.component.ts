@@ -1,12 +1,13 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { CartSummary } from '../../core/models/cart.model';
 import { CartService } from '../../core/services/cart.service';
+import { AuthService } from '../../core/services/auth.service';
 import { resolveProductImage, getFallbackProductImage } from '../../core/utils/image-utils';
 
 @Component({
@@ -31,6 +32,55 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
         </div>
       </div>
     </section>
+
+    <!-- ─── Auth Modal Popup ──────────────────────────────────────────────── -->
+    <div *ngIf="showAuthBanner()" class="auth-modal-backdrop" (click)="onBackdropClick($event)">
+      <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+
+        <!-- Close Button -->
+        <button type="button" class="auth-modal-close" (click)="showAuthBanner.set(false)" aria-label="Close dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+
+        <!-- Icon -->
+        <div class="auth-modal-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </div>
+
+        <!-- Content -->
+        <h2 id="authModalTitle" class="auth-modal-title">Sign In to Continue</h2>
+        <p class="auth-modal-desc">
+          Please sign in or create an account to securely proceed to checkout.
+        </p>
+
+        <!-- Actions -->
+        <div class="auth-modal-actions">
+          <a
+            [routerLink]="['/account']"
+            [queryParams]="{ redirect: 'checkout' }"
+            class="auth-modal-btn-primary"
+            (click)="showAuthBanner.set(false)"
+          >
+            Sign In to Continue &rarr;
+          </a>
+          <button
+            type="button"
+            class="auth-modal-btn-secondary"
+            (click)="proceedAsGuest()"
+          >
+            Maybe Later
+          </button>
+        </div>
+
+        <!-- Divider hint -->
+        <p class="auth-modal-hint">New here? <a [routerLink]="['/account']" [queryParams]="{ redirect: 'checkout', tab: 'register' }" (click)="showAuthBanner.set(false)">Create an account</a></p>
+      </div>
+    </div>
 
     <!-- Main Cart Content -->
     <section class="section-padding">
@@ -125,19 +175,24 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
               <div class="summary-divider"></div>
 
               <div class="summary-row total-row">
-                <span>Total Amount</span>
+                <span class="total-label">Total Amount</span>
                 <span class="total-val">₹{{ cart.total | number:'1.2-2' }}</span>
               </div>
 
-              <a routerLink="/checkout" class="btn-checkout-link">
-                <app-button variant="primary" size="lg">Proceed to Checkout &rarr;</app-button>
-              </a>
+              <!-- Proceed to Checkout Button -->
+              <button
+                type="button"
+                class="btn-checkout"
+                (click)="proceedToCheckout()"
+              >
+                PROCEED TO CHECKOUT &rarr;
+              </button>
 
               <div class="security-guarantee">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#CFA874" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;">
                   <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                 </svg>
-                <span>Insured Delivery & 100% Authentic Jewellery Guarantee</span>
+                <span>Insured Delivery &amp; 100% Authentic Jewellery Guarantee</span>
               </div>
             </div>
           </div>
@@ -398,68 +453,278 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
 
     /* Order Summary Card */
     .summary-card {
-      background-color: var(--brand-pearl-beige);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: 28px;
+      background-color: #faf8f4;
+      border: 1px solid #e8e0d4;
+      border-radius: 12px;
+      padding: 24px 24px 20px;
+      position: sticky;
+      top: 24px;
     }
 
     .summary-title {
-      font-family: var(--font-serif);
-      font-size: 1.4rem;
-      color: var(--brand-mocha-brown);
-      margin-bottom: 20px;
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--brand-mocha-brown, #5B4636);
+      margin: 0 0 18px;
+      padding-bottom: 14px;
+      border-bottom: 2px solid #e8e0d4;
     }
 
     .summary-row {
       display: flex;
       justify-content: space-between;
-      font-size: 0.92rem;
-      color: #555555;
-      margin-bottom: 12px;
+      align-items: center;
+      font-size: 0.88rem;
+      color: #666;
+      margin-bottom: 10px;
+    }
+
+    .summary-label {
+      color: #666;
+    }
+
+    .summary-value {
+      color: var(--brand-mocha-brown, #5B4636);
+      font-weight: 500;
     }
 
     .free-tag {
       color: #2E7D32;
       font-weight: 700;
+      font-size: 0.82rem;
     }
 
     .summary-divider {
       height: 1px;
-      background-color: var(--color-border);
-      margin: 16px 0;
+      background-color: #e8e0d4;
+      margin: 14px 0;
     }
 
     .total-row {
-      font-size: 1.1rem;
+      align-items: baseline;
+    }
+
+    .total-label {
+      font-size: 0.95rem;
       font-weight: 700;
-      color: var(--brand-mocha-brown);
+      color: var(--brand-mocha-brown, #5B4636);
     }
 
     .total-val {
-      font-size: 1.3rem;
-      color: var(--brand-mocha-brown);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--brand-mocha-brown, #5B4636);
+      letter-spacing: -0.5px;
     }
 
-    .btn-checkout-link {
+    /* Checkout CTA Button */
+    .btn-checkout {
       display: block;
-      margin-top: 24px;
+      width: 100%;
+      margin-top: 18px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #CFA874 0%, #B8935A 100%);
+      color: #fff;
+      font-family: var(--font-sans, sans-serif);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      box-shadow: 0 4px 14px rgba(207, 168, 116, 0.32);
+    }
+
+    .btn-checkout:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    /* Security Guarantee */
+    .security-guarantee {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin-top: 14px;
+      font-size: 0.76rem;
+      color: #888;
+      line-height: 1.45;
+    }
+
+    .security-guarantee span {
+      flex: 1;
+    }
+
+    /* ── Auth Modal Popup ────────────────────────────────────────────────── */
+    :host {
+      display: block;
+    }
+
+    .auth-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: rgba(26, 18, 11, 0.55);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: backdropFadeIn 0.22s ease;
+    }
+
+    @keyframes backdropFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .auth-modal {
+      background: #fffdf9;
+      border-radius: 16px;
+      padding: 40px 36px 32px;
+      width: 100%;
+      max-width: 420px;
+      position: relative;
+      box-shadow:
+        0 32px 64px rgba(26, 18, 11, 0.22),
+        0 8px 24px rgba(26, 18, 11, 0.12);
+      text-align: center;
+      animation: modalPopIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes modalPopIn {
+      from { opacity: 0; transform: scale(0.88) translateY(16px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .auth-modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: #f5f0eb;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #888;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .auth-modal-close:hover {
+      background: #ede5da;
+      color: #333;
+    }
+
+    .auth-modal-icon {
+      width: 68px;
+      height: 68px;
+      margin: 0 auto 20px;
+      background: linear-gradient(135deg, #CFA874 0%, #B8935A 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(207, 168, 116, 0.35);
+    }
+
+    .auth-modal-title {
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: var(--brand-mocha-brown, #5B4636);
+      margin: 0 0 10px;
+      letter-spacing: -0.2px;
+    }
+
+    .auth-modal-desc {
+      font-size: 0.9rem;
+      color: #6A5544;
+      margin: 0 0 28px;
+      line-height: 1.6;
+      max-width: 300px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .auth-modal-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .auth-modal-btn-primary {
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, #CFA874 0%, #B8935A 100%);
+      color: #fff;
+      font-size: 0.92rem;
+      font-weight: 700;
+      padding: 14px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      transition: opacity 0.2s, transform 0.15s;
+      box-shadow: 0 4px 14px rgba(207, 168, 116, 0.35);
+    }
+
+    .auth-modal-btn-primary:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+
+    .auth-modal-btn-secondary {
+      display: block;
+      width: 100%;
+      background: transparent;
+      border: 1.5px solid #CFA874;
+      color: var(--brand-mocha-brown, #5B4636);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 12px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .auth-modal-btn-secondary:hover {
+      background: #CFA874;
+      color: #fff;
+    }
+
+    .auth-modal-hint {
+      margin: 20px 0 0;
+      font-size: 0.8rem;
+      color: #999;
+    }
+
+    .auth-modal-hint a {
+      color: #B8935A;
+      font-weight: 600;
       text-decoration: none;
     }
 
-    .security-guarantee {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 20px;
-      font-size: 0.78rem;
-      color: #666666;
-      line-height: 1.4;
-    }
+    .auth-modal-hint a:hover { text-decoration: underline; }
 
-    .security-guarantee svg {
-      color: var(--brand-warm-gold);
-      flex-shrink: 0;
+    /* Checkout button — block button */
+    .btn-checkout-link {
+      display: block;
+      width: 100%;
+      margin-top: 24px;
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      text-align: center;
     }
   `]
 })
@@ -467,7 +732,12 @@ export class CartComponent implements OnInit, OnDestroy {
   cart!: CartSummary;
   private cartSub!: Subscription;
 
+  /** Controls visibility of the sign-in required banner */
+  showAuthBanner = signal(false);
+
   private cartService = inject(CartService);
+  private authService = inject(AuthService);
+  private router      = inject(Router);
 
   ngOnInit(): void {
     this.cartSub = this.cartService.cart$.subscribe(summary => {
@@ -505,6 +775,32 @@ export class CartComponent implements OnInit, OnDestroy {
       return Math.round((savings / compareAtPrice) * 100);
     }
     return 0;
+  }
+
+  /**
+   * Called when user clicks "Proceed to Checkout".
+   * - If authenticated → navigate to /checkout
+   * - If not authenticated → open the modal popup
+   */
+  proceedToCheckout(): void {
+    if (this.authService.isAuthenticated()) {
+      this.showAuthBanner.set(false);
+      this.router.navigate(['/checkout']);
+    } else {
+      this.showAuthBanner.set(true);
+    }
+  }
+
+  /** Close the modal only — checkout requires login */
+  proceedAsGuest(): void {
+    this.showAuthBanner.set(false);
+  }
+
+  /** Close modal when clicking the dark backdrop (outside the dialog box) */
+  onBackdropClick(event: MouseEvent): void {
+    if ((event.target as HTMLElement).classList.contains('auth-modal-backdrop')) {
+      this.showAuthBanner.set(false);
+    }
   }
 
   clearCart(): void {
