@@ -60,6 +60,28 @@ export class AuthService {
     localStorage.removeItem(TOKEN_KEY);
   }
 
+  async register(name: string, email: string, password: string, phone?: string): Promise<{ success: boolean; message: string; user?: User }> {
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, phone })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const user = data.data.user;
+        const token = data.data.token;
+        this.setSession(user, token);
+        return { success: true, message: data.message || 'Account created successfully', user };
+      } else {
+        return { success: false, message: data.message || 'Registration failed.' };
+      }
+    } catch (err) {
+      return { success: false, message: 'Server is offline. Unable to process registration.' };
+    }
+  }
+
   async login(email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> {
     try {
       const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
@@ -78,28 +100,58 @@ export class AuthService {
         return { success: false, message: data.message || 'Invalid email or password.' };
       }
     } catch (err) {
-      // Offline fallback for demo / standalone operation with STRICT password validation
-      const cleanEmail = email.trim().toLowerCase();
-      const cleanPassword = password.trim();
-      const isAdminEmail = cleanEmail.includes('admin') || cleanEmail === 'admin@aristatrinkets.com';
+      return { success: false, message: 'Unable to connect to authentication server.' };
+    }
+  }
 
-      if (isAdminEmail) {
-        if (cleanPassword !== 'admin123') {
-          return { success: false, message: 'Invalid admin password. Access denied.' };
-        }
-        const mockUser: User = { id: 99, name: 'Arista Store Administrator', email: cleanEmail, role: 'ADMIN' };
-        const mockToken = 'mock_jwt_token_' + Date.now();
-        this.setSession(mockUser, mockToken);
-        return { success: true, message: 'Signed in successfully (Offline Mode).', user: mockUser };
-      } else {
-        if (cleanPassword !== 'customer123' && cleanPassword !== 'password123') {
-          return { success: false, message: 'Invalid email or password.' };
-        }
-        const mockUser: User = { id: 1, name: 'Valued Collector', email: cleanEmail, role: 'CUSTOMER' };
-        const mockToken = 'mock_jwt_token_' + Date.now();
-        this.setSession(mockUser, mockToken);
-        return { success: true, message: 'Signed in successfully (Offline Mode).', user: mockUser };
+  async requestPasswordResetOtp(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        return { success: true, message: data.message };
       }
+      return { success: false, message: data.message || 'Failed to send OTP code.' };
+    } catch (err) {
+      return { success: false, message: 'Server connection error. Please try again.' };
+    }
+  }
+
+  async verifyPasswordResetOtp(email: string, otp: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.VERIFY_OTP, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data.message || 'Invalid or expired OTP code.' };
+    } catch (err) {
+      return { success: false, message: 'Server connection error. Please try again.' };
+    }
+  }
+
+  async resetPasswordWithOtp(email: string, otp: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.RESET_PASSWORD_OTP, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, newPassword })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data.message || 'Password reset failed.' };
+    } catch (err) {
+      return { success: false, message: 'Server connection error. Please try again.' };
     }
   }
 

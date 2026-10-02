@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -23,13 +23,13 @@ import { CartService } from '../../core/services/cart.service';
     <!-- Main Account Section -->
     <section class="section-padding">
       <div class="container">
-        <!-- Auth Tabs (Sign In / Register / My Account) -->
+        <!-- Auth Tabs (Sign In / Register / Forgot / My Account) -->
         <div class="account-tabs">
           <button
             *ngIf="activeTab !== 'dashboard'"
             type="button"
             [class.active]="activeTab === 'login'"
-            (click)="activeTab = 'login'"
+            (click)="activeTab = 'login'; loginError = '';"
             class="account-tab-btn"
           >
             Sign In
@@ -38,10 +38,17 @@ import { CartService } from '../../core/services/cart.service';
             *ngIf="activeTab !== 'dashboard'"
             type="button"
             [class.active]="activeTab === 'register'"
-            (click)="activeTab = 'register'"
+            (click)="activeTab = 'register'; registerError = '';"
             class="account-tab-btn"
           >
             Create Account
+          </button>
+          <button
+            *ngIf="activeTab === 'forgot'"
+            type="button"
+            class="account-tab-btn active"
+          >
+            Reset Password
           </button>
           <button
             *ngIf="activeTab === 'dashboard'"
@@ -56,14 +63,43 @@ import { CartService } from '../../core/services/cart.service';
         <div *ngIf="activeTab === 'login'" class="auth-card">
           <h2 class="auth-card-title">Welcome Back to Arista</h2>
           <p class="auth-card-desc">Sign in to access your saved wishlist, order history, and private invitations.</p>
-          <form (submit)="onLoginSubmit($event)" class="auth-form">
+          <div *ngIf="loginError" class="auth-alert error">{{ loginError }}</div>
+          <form novalidate (submit)="onLoginSubmit($event)" class="auth-form">
             <div class="form-group">
               <label class="form-label">Email Address *</label>
-              <input type="email" [(ngModel)]="loginEmail" name="email" placeholder="name&#64;example.com" required class="form-input" />
+              <input type="email" [(ngModel)]="loginEmail" name="email" placeholder="name&#64;example.com" class="form-input" />
             </div>
             <div class="form-group">
-              <label class="form-label">Password *</label>
-              <input type="password" [(ngModel)]="loginPassword" name="password" placeholder="••••••••" required class="form-input" />
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label class="form-label">Password *</label>
+                <button type="button" (click)="activeTab = 'forgot'; forgotStep = 1; forgotError = ''; forgotSuccess = '';" style="background: none; border: none; padding: 0; font-size: 0.8rem; color: var(--brand-warm-gold); font-weight: 600; cursor: pointer; text-decoration: underline;">
+                  Forgot Password?
+                </button>
+              </div>
+              <div class="password-field-wrapper">
+                <input
+                  [type]="showLoginPassword ? 'text' : 'password'"
+                  [(ngModel)]="loginPassword"
+                  name="password"
+                  placeholder="••••••••"
+                  class="form-input"
+                />
+                <button
+                  type="button"
+                  class="btn-toggle-eye"
+                  (click)="showLoginPassword = !showLoginPassword"
+                  [title]="showLoginPassword ? 'Hide Password' : 'Show Password'"
+                >
+                  <svg *ngIf="!showLoginPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg *ngIf="showLoginPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
             </div>
             <div class="auth-submit-wrap">
               <app-button type="submit" variant="primary" size="sm" [rounded]="true">Sign In &rarr;</app-button>
@@ -76,22 +112,126 @@ import { CartService } from '../../core/services/cart.service';
           </form>
         </div>
 
+        <!-- Forgot Password Form (OTP Flow) -->
+        <div *ngIf="activeTab === 'forgot'" class="auth-card">
+          <h2 class="auth-card-title">Reset Your Password</h2>
+          <p class="auth-card-desc" *ngIf="forgotStep === 1">Enter your registered email address to receive a 6-digit security code.</p>
+          <p class="auth-card-desc" *ngIf="forgotStep === 2">Enter the 6-digit code sent to {{ forgotEmail }} and your new password.</p>
+
+          <div *ngIf="forgotError" class="auth-alert error">{{ forgotError }}</div>
+          <div *ngIf="forgotSuccess" class="auth-alert success">{{ forgotSuccess }}</div>
+
+          <!-- Step 1: Request 6-Digit OTP -->
+          <form *ngIf="forgotStep === 1" novalidate (submit)="onRequestOtpSubmit($event)" class="auth-form">
+            <div class="form-group">
+              <label class="form-label">Registered Email Address *</label>
+              <input type="email" [(ngModel)]="forgotEmail" name="forgotEmail" placeholder="name&#64;example.com" class="form-input" />
+            </div>
+            <div class="auth-submit-wrap">
+              <app-button type="submit" variant="primary" size="sm" [rounded]="true" [disabled]="otpLoading">
+                <span *ngIf="!otpLoading">Send Verification Code &rarr;</span>
+                <span *ngIf="otpLoading">Sending Code...</span>
+              </app-button>
+            </div>
+            <div style="text-align: center; margin-top: 16px;">
+              <button type="button" (click)="activeTab = 'login'" style="background: none; border: none; font-size: 0.85rem; color: var(--brand-mocha-brown); font-weight: 600; cursor: pointer; text-decoration: underline;">
+                &larr; Return to Sign In
+              </button>
+            </div>
+          </form>
+
+          <!-- Step 2: Enter OTP Code & New Password -->
+          <form *ngIf="forgotStep === 2" novalidate (submit)="onResetPasswordSubmit($event)" class="auth-form">
+            <div class="form-group">
+              <label class="form-label">6-Digit Verification Code *</label>
+              <input type="text" [(ngModel)]="forgotOtp" name="forgotOtp" placeholder="e.g. 684920" maxlength="6" style="letter-spacing: 4px; font-weight: 700; text-align: center; font-size: 1.1rem;" class="form-input" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">New Password *</label>
+              <div class="password-field-wrapper">
+                <input
+                  [type]="showResetPassword ? 'text' : 'password'"
+                  [(ngModel)]="newPassword"
+                  name="newPassword"
+                  placeholder="Enter your new password"
+                  class="form-input"
+                />
+                <button
+                  type="button"
+                  class="btn-toggle-eye"
+                  (click)="showResetPassword = !showResetPassword"
+                  [title]="showResetPassword ? 'Hide Password' : 'Show Password'"
+                >
+                  <svg *ngIf="!showResetPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg *ngIf="showResetPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="auth-submit-wrap">
+              <app-button type="submit" variant="primary" size="sm" [rounded]="true" [disabled]="otpLoading">
+                <span *ngIf="!otpLoading">Reset Password & Sign In &rarr;</span>
+                <span *ngIf="otpLoading">Updating Password...</span>
+              </app-button>
+            </div>
+            <div style="text-align: center; margin-top: 16px; display: flex; justify-content: space-between;">
+              <button type="button" (click)="forgotStep = 1; forgotError = ''; forgotSuccess = '';" style="background: none; border: none; font-size: 0.82rem; color: #666; font-weight: 600; cursor: pointer; text-decoration: underline;">
+                &larr; Resend Code
+              </button>
+              <button type="button" (click)="activeTab = 'login'" style="background: none; border: none; font-size: 0.82rem; color: var(--brand-mocha-brown); font-weight: 600; cursor: pointer; text-decoration: underline;">
+                Return to Sign In
+              </button>
+            </div>
+          </form>
+        </div>
+
         <!-- Register Form -->
         <div *ngIf="activeTab === 'register'" class="auth-card">
           <h2 class="auth-card-title">Join The Arista Club</h2>
           <p class="auth-card-desc">Create your private member account for priority access to new collection releases.</p>
-          <form (submit)="onRegisterSubmit($event)" class="auth-form">
+          <div *ngIf="registerError" class="auth-alert error">{{ registerError }}</div>
+          <form novalidate (submit)="onRegisterSubmit($event)" class="auth-form">
             <div class="form-group">
               <label class="form-label">Full Name *</label>
-              <input type="text" [(ngModel)]="regName" name="name" placeholder="e.g. Lady Catherine" required class="form-input" />
+              <input type="text" [(ngModel)]="regName" name="name" placeholder="e.g. Lady Catherine" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">Email Address *</label>
-              <input type="email" [(ngModel)]="regEmail" name="email" placeholder="name&#64;example.com" required class="form-input" />
+              <input type="email" [(ngModel)]="regEmail" name="email" placeholder="name&#64;example.com" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">Password *</label>
-              <input type="password" [(ngModel)]="regPassword" name="password" placeholder="Create a secure password" required class="form-input" />
+              <div class="password-field-wrapper">
+                <input
+                  [type]="showRegisterPassword ? 'text' : 'password'"
+                  [(ngModel)]="regPassword"
+                  name="password"
+                  placeholder="Create a secure password"
+                  class="form-input"
+                />
+                <button
+                  type="button"
+                  class="btn-toggle-eye"
+                  (click)="showRegisterPassword = !showRegisterPassword"
+                  [title]="showRegisterPassword ? 'Hide Password' : 'Show Password'"
+                >
+                  <svg *ngIf="!showRegisterPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                  <svg *ngIf="showRegisterPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                  </svg>
+                </button>
+              </div>
             </div>
             <div class="auth-submit-wrap">
               <app-button type="submit" variant="primary" size="sm" [rounded]="true">Create Account &rarr;</app-button>
@@ -246,6 +386,28 @@ import { CartService } from '../../core/services/cart.service';
       text-align: center;
       margin-bottom: 24px;
     }
+    .auth-alert.error {
+      background: #FFEBEE;
+      color: #C62828;
+      border: 1px solid #FFCDD2;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.86rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+    .auth-alert.success {
+      background: #E8F5E9;
+      color: #2E7D32;
+      border: 1px solid #C8E6C9;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.86rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-align: center;
+    }
     .auth-form {
       display: flex;
       flex-direction: column;
@@ -274,6 +436,37 @@ import { CartService } from '../../core/services/cart.service';
       border-radius: var(--radius-sm);
       font-family: var(--font-sans);
       font-size: 0.95rem;
+    }
+    .password-field-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .password-field-wrapper .form-input {
+      width: 100%;
+      padding-right: 44px;
+    }
+    .btn-toggle-eye {
+      position: absolute;
+      right: 10px;
+      background: transparent;
+      border: none;
+      outline: none;
+      border-radius: 50%;
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+      transition: all var(--transition-fast);
+      user-select: none;
+      color: var(--brand-mocha-brown);
+    }
+    .btn-toggle-eye:hover {
+      opacity: 1;
+      background: rgba(207, 168, 116, 0.15);
     }
 
     .dashboard-shell {
@@ -448,14 +641,28 @@ import { CartService } from '../../core/services/cart.service';
   `]
 })
 export class AccountComponent implements OnInit {
-  activeTab: 'login' | 'register' | 'dashboard' = 'login';
+  activeTab: 'login' | 'register' | 'forgot' | 'dashboard' = 'login';
 
   loginEmail: string = '';
   loginPassword: string = '';
+  showLoginPassword: boolean = false;
+  loginError: string = '';
 
   regName: string = '';
   regEmail: string = '';
   regPassword: string = '';
+  showRegisterPassword: boolean = false;
+  registerError: string = '';
+
+  // Forgot password OTP flow properties
+  forgotStep: 1 | 2 = 1;
+  forgotEmail: string = '';
+  forgotOtp: string = '';
+  newPassword: string = '';
+  showResetPassword: boolean = false;
+  forgotError: string = '';
+  forgotSuccess: string = '';
+  otpLoading: boolean = false;
 
   currentUser: any = null;
   showLogoutModal: boolean = false;
@@ -463,6 +670,7 @@ export class AccountComponent implements OnInit {
   private authService = inject(AuthService);
   private cartService = inject(CartService);
   private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     if (this.authService.isAuthenticated()) {
@@ -488,25 +696,154 @@ export class AccountComponent implements OnInit {
 
   async onLoginSubmit(event: Event): Promise<void> {
     event.preventDefault();
-    if (!this.loginEmail || !this.loginPassword) return;
+    this.loginError = '';
 
-    const res = await this.authService.login(this.loginEmail, this.loginPassword);
-    if (res.success && res.user) {
-      this.currentUser = res.user;
-      if (res.user.role === 'ADMIN' || res.user.role === 'SUPER_ADMIN') {
-        this.router.navigate(['/admin']);
+    const cleanEmail = (this.loginEmail || '').trim();
+    const cleanPassword = (this.loginPassword || '').trim();
+
+    if (!cleanEmail && !cleanPassword) {
+      this.loginError = 'Please enter your email address and password.';
+      this.cdr.detectChanges();
+      return;
+    }
+    if (!cleanEmail) {
+      this.loginError = 'Please enter your email address.';
+      this.cdr.detectChanges();
+      return;
+    }
+    if (!cleanPassword) {
+      this.loginError = 'Please enter your password.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    try {
+      const res = await this.authService.login(cleanEmail, cleanPassword);
+      if (res.success && res.user) {
+        this.currentUser = res.user;
+        if (res.user.role === 'ADMIN' || res.user.role === 'SUPER_ADMIN') {
+          this.router.navigate(['/admin']);
+        } else {
+          this.activeTab = 'dashboard';
+        }
       } else {
-        this.activeTab = 'dashboard';
+        this.loginError = res.message || 'Invalid email or password.';
       }
-    } else {
-      alert(res.message);
+    } catch (err: any) {
+      this.loginError = err?.message || 'An error occurred during sign in.';
+    } finally {
+      this.cdr.detectChanges();
     }
   }
 
-  onRegisterSubmit(event: Event): void {
+  async onRegisterSubmit(event: Event): Promise<void> {
     event.preventDefault();
-    alert('Account created successfully! Welcome to The Arista Club.');
-    this.activeTab = 'dashboard';
+    this.registerError = '';
+
+    const cleanName = (this.regName || '').trim();
+    const cleanEmail = (this.regEmail || '').trim();
+    const cleanPassword = (this.regPassword || '').trim();
+
+    if (!cleanName || !cleanEmail || !cleanPassword) {
+      this.registerError = 'Please fill in all required fields (Full Name, Email Address, and Password).';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    try {
+      const res = await this.authService.register(cleanName, cleanEmail, cleanPassword);
+      if (res.success && res.user) {
+        this.currentUser = res.user;
+        this.activeTab = 'dashboard';
+      } else {
+        this.registerError = res.message || 'Registration failed.';
+      }
+    } catch (err: any) {
+      this.registerError = err?.message || 'An error occurred during registration.';
+    } finally {
+      this.cdr.detectChanges();
+    }
+  }
+
+  async onRequestOtpSubmit(event: Event): Promise<void> {
+    event.preventDefault();
+    this.forgotError = '';
+    this.forgotSuccess = '';
+
+    const cleanEmail = (this.forgotEmail || '').trim();
+    if (!cleanEmail) {
+      this.forgotError = 'Please enter your registered email address.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.otpLoading = true;
+    this.cdr.detectChanges();
+
+    try {
+      const res = await this.authService.requestPasswordResetOtp(cleanEmail);
+      if (res.success) {
+        this.forgotSuccess = res.message;
+        this.forgotStep = 2;
+      } else {
+        this.forgotError = res.message || 'Failed to send verification code.';
+      }
+    } catch (err: any) {
+      this.forgotError = err?.message || 'An error occurred while sending code.';
+    } finally {
+      this.otpLoading = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  async onResetPasswordSubmit(event: Event): Promise<void> {
+    event.preventDefault();
+    this.forgotError = '';
+    this.forgotSuccess = '';
+
+    const cleanEmail = (this.forgotEmail || '').trim();
+    const cleanOtp = (this.forgotOtp || '').trim();
+    const cleanNewPassword = (this.newPassword || '').trim();
+
+    if (!cleanOtp) {
+      this.forgotError = 'Please enter the 6-digit verification code.';
+      this.cdr.detectChanges();
+      return;
+    }
+    if (!cleanNewPassword) {
+      this.forgotError = 'Please enter your new password.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.otpLoading = true;
+    this.cdr.detectChanges();
+
+    try {
+      const res = await this.authService.resetPasswordWithOtp(cleanEmail, cleanOtp, cleanNewPassword);
+      if (res.success) {
+        this.forgotSuccess = res.message;
+        this.loginEmail = cleanEmail;
+        this.loginPassword = cleanNewPassword;
+        this.loginError = '';
+        setTimeout(() => {
+          this.activeTab = 'login';
+          this.loginError = 'Password reset successfully! Please sign in with your new password.';
+          this.forgotStep = 1;
+          this.forgotOtp = '';
+          this.newPassword = '';
+          this.forgotSuccess = '';
+          this.cdr.detectChanges();
+        }, 1500);
+      } else {
+        this.forgotError = res.message || 'Failed to reset password.';
+      }
+    } catch (err: any) {
+      this.forgotError = err?.message || 'An error occurred while resetting password.';
+    } finally {
+      this.otpLoading = false;
+      this.cdr.detectChanges();
+    }
   }
 
   onLogout(): void {
