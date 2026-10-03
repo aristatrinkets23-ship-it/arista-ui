@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
@@ -56,15 +56,47 @@ declare var Razorpay: any;
             </div>
 
             <h2 class="section-title">Shipping Address</h2>
+
+            <div *ngIf="addressValidationError" class="auth-alert error" style="margin-bottom: 16px;">
+              ⚠️ {{ addressValidationError }}
+            </div>
+
+            <!-- Saved Delivery Address Selector Bar (When user has saved addresses) -->
+            <div class="saved-address-selector-box" *ngIf="isLoggedIn && savedAddresses.length > 0">
+              <div class="saved-addr-top-bar">
+                <div class="saved-addr-header-info">
+                  <span class="saved-addr-icon">📍</span>
+                  <span class="saved-addr-title">Saved Delivery Addresses ({{ savedAddresses.length }})</span>
+                  <span class="badge-prefilled" *ngIf="selectedSavedAddressId !== 'new'">✓ Auto-filled in Form Below</span>
+                </div>
+                <a routerLink="/account" [queryParams]="{ tab: 'addresses' }" class="link-manage-addresses">
+                  Manage in Account &rarr;
+                </a>
+              </div>
+
+              <div class="saved-addr-select-row">
+                <select
+                  [ngModel]="selectedSavedAddressId"
+                  (ngModelChange)="onSavedAddressSelectChange($event)"
+                  class="saved-addr-dropdown-input"
+                >
+                  <option *ngFor="let addr of savedAddresses" [value]="addr.id">
+                    {{ addr.full_name || addr.fullName }} — {{ addr.address_line || addr.addressLine }}, {{ addr.city }}, {{ addr.state }} - {{ addr.pincode }} {{ (addr.is_default || addr.isDefault) ? '★ [Default Address]' : '' }}
+                  </option>
+                  <option value="new">+ Enter a New / Different Shipping Address</option>
+                </select>
+              </div>
+            </div>
+
             <form (submit)="placeOrder($event)" class="checkout-form">
               <div class="form-row">
                 <div class="form-group">
                   <label>First Name *</label>
-                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" placeholder="e.g. Priya" required />
+                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" placeholder="e.g. Lata" required />
                 </div>
                 <div class="form-group">
                   <label>Last Name *</label>
-                  <input type="text" [(ngModel)]="shipping.lastName" name="lastName" placeholder="e.g. Sharma" required />
+                  <input type="text" [(ngModel)]="shipping.lastName" name="lastName" placeholder="e.g. Mangeshkar" required />
                 </div>
               </div>
 
@@ -74,8 +106,8 @@ declare var Razorpay: any;
                   <input type="email" [(ngModel)]="shipping.email" name="email" placeholder="name@example.com" required />
                 </div>
                 <div class="form-group">
-                  <label>Phone Number</label>
-                  <input type="tel" [(ngModel)]="shipping.phone" name="phone" placeholder="e.g. +91 9876543210" />
+                  <label>Phone Number *</label>
+                  <input type="tel" [(ngModel)]="shipping.phone" (input)="onPhoneInput($event)" name="phone" placeholder="e.g. 9876543210" maxlength="10" required />
                 </div>
               </div>
 
@@ -95,8 +127,16 @@ declare var Razorpay: any;
                 </div>
                 <div class="form-group">
                   <label>PIN Code *</label>
-                  <input type="text" [(ngModel)]="shipping.pincode" name="pincode" placeholder="e.g. 400020" required />
+                  <input type="tel" [(ngModel)]="shipping.pincode" (input)="onPincodeInput($event)" name="pincode" placeholder="e.g. 400020" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required />
                 </div>
+              </div>
+
+              <!-- Auto-save to account checkbox for logged-in users when entering a new address -->
+              <div *ngIf="isLoggedIn && (selectedSavedAddressId === 'new' || savedAddresses.length === 0)" style="margin-bottom: 18px; background: #FAF7F2; border: 1px solid #E8E0D7; border-radius: 8px; padding: 12px 16px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #2C221E; margin: 0;">
+                  <input type="checkbox" [(ngModel)]="saveNewAddressToAccount" name="saveNewAddr" />
+                  <span>Save this shipping address to my Arista Account for faster future checkouts</span>
+                </label>
               </div>
 
               <!-- Guest Option to Create Account -->
@@ -192,7 +232,21 @@ declare var Razorpay: any;
               <span class="badge-status">{{ paymentVerified ? 'RAZORPAY VERIFIED (PAID)' : 'ORDER RECEIVED' }}</span>
             </div>
             <div class="success-actions">
-              <a routerLink="/shop" class="btn-gold">Continue Shopping</a>
+              <a
+                *ngIf="generatedOrderNumber"
+                [href]="getInvoicePdfUrl(generatedOrderNumber)"
+                target="_blank"
+                class="btn-gold"
+                style="display: inline-flex; align-items: center; gap: 8px;"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Tax Invoice (PDF)
+              </a>
+              <a routerLink="/shop" class="btn-mocha">Continue Shopping</a>
               <a routerLink="/account" class="btn-mocha">View Account Orders</a>
             </div>
           </div>
@@ -354,6 +408,81 @@ declare var Razorpay: any;
       padding: 4px 12px;
       border-radius: 50px;
       cursor: pointer;
+    }
+
+    /* Saved Address Quick Selector Bar */
+    .saved-address-selector-box {
+      background: #FAF7F2;
+      border: 1.5px solid #D1C7BD;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      box-shadow: 0 2px 8px rgba(44, 34, 30, 0.04);
+    }
+    .saved-addr-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .saved-addr-header-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .saved-addr-icon {
+      font-size: 1.1rem;
+    }
+    .saved-addr-title {
+      font-weight: 700;
+      color: #2C221E;
+      font-size: 0.95rem;
+      letter-spacing: 0.2px;
+    }
+    .badge-prefilled {
+      background: #E8F5E9;
+      color: #2E7D32;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid #C8E6C9;
+      letter-spacing: 0.3px;
+    }
+    .link-manage-addresses {
+      font-size: 0.82rem;
+      color: var(--brand-warm-gold, #B8860B);
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .link-manage-addresses:hover {
+      color: #8C6608;
+    }
+    .saved-addr-select-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .saved-addr-dropdown-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #D1C7BD;
+      border-radius: 8px;
+      background: #FFFFFF;
+      color: #2C221E;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .saved-addr-dropdown-input:focus {
+      border-color: var(--brand-warm-gold, #B8860B);
+      box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.12);
     }
 
     .create-account-box {
@@ -721,14 +850,22 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   private cartService = inject(CartService);
   private authService = inject(AuthService);
+  private route       = inject(ActivatedRoute);
+  private cdr         = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.cartSub = this.cartService.cart$.subscribe(summary => {
       this.cart = summary;
+      this.cdr.detectChanges();
     });
 
     this.checkUserSession();
   }
+
+  savedAddresses: any[] = [];
+  selectedSavedAddressId: any = 'new';
+  saveNewAddressToAccount: boolean = true;
+  addressValidationError: string = '';
 
   private checkUserSession(): void {
     this.isLoggedIn = this.authService.isAuthenticated();
@@ -739,8 +876,93 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.shipping.firstName = this.shipping.firstName || names[0] || '';
         this.shipping.lastName = this.shipping.lastName || names.slice(1).join(' ') || '';
         this.shipping.email = this.shipping.email || this.currentUser.email || '';
+        this.shipping.phone = this.shipping.phone || this.currentUser.phone || '';
+        this.loadSavedAddresses();
       }
     }
+  }
+
+  async loadSavedAddresses(): Promise<void> {
+    if (!this.isLoggedIn || !this.currentUser?.email) return;
+    try {
+      const token = this.authService.getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch(`${API_ENDPOINTS.ADDRESSES.LIST}?email=${encodeURIComponent(this.currentUser.email)}`, {
+        headers
+      });
+      const data = await res.json();
+      if (res.ok && data.success && Array.isArray(data.data) && data.data.length > 0) {
+        this.savedAddresses = data.data;
+
+        // Check if query param addressId was passed
+        const targetId = this.route.snapshot.queryParams['addressId'];
+        let matchedAddr = null;
+        if (targetId) {
+          matchedAddr = this.savedAddresses.find(a => String(a.id) === String(targetId));
+        }
+        if (!matchedAddr) {
+          matchedAddr = this.savedAddresses.find(a => a.is_default || a.isDefault) || this.savedAddresses[0];
+        }
+
+        if (matchedAddr) {
+          this.selectedSavedAddressId = matchedAddr.id;
+          this.applySavedAddress(matchedAddr);
+        }
+      }
+      this.cdr.detectChanges();
+    } catch (err) {
+      console.error('Failed to load saved addresses:', err);
+    }
+  }
+
+  getSelectedAddress(): any {
+    return this.savedAddresses.find(a => String(a.id) === String(this.selectedSavedAddressId));
+  }
+
+  selectSavedAddress(addr: any): void {
+    this.selectedSavedAddressId = addr.id;
+    this.applySavedAddress(addr);
+    this.cdr.detectChanges();
+  }
+
+  switchToNewAddressMode(): void {
+    this.selectedSavedAddressId = 'new';
+    this.shipping.address = '';
+    this.shipping.city = '';
+    this.shipping.state = '';
+    this.shipping.pincode = '';
+    this.saveNewAddressToAccount = true;
+    this.cdr.detectChanges();
+  }
+
+  applySavedAddress(addr: any): void {
+    if (!addr) return;
+    const names = (addr.full_name || addr.fullName || this.currentUser?.name || '').trim().split(' ');
+    this.shipping.firstName = names[0] || this.shipping.firstName || '';
+    this.shipping.lastName = names.slice(1).join(' ') || this.shipping.lastName || '';
+    this.shipping.phone = addr.phone || this.shipping.phone || this.currentUser?.phone || '';
+    this.shipping.email = this.shipping.email || this.currentUser?.email || '';
+    this.shipping.address = addr.address_line || addr.addressLine || '';
+    this.shipping.city = addr.city || '';
+    this.shipping.state = addr.state || '';
+    this.shipping.pincode = addr.pincode || '';
+    this.cdr.detectChanges();
+  }
+
+  onSavedAddressSelectChange(val: any): void {
+    this.selectedSavedAddressId = val;
+    if (val === 'new') {
+      this.switchToNewAddressMode();
+    } else {
+      const addr = this.savedAddresses.find(a => String(a.id) === String(val));
+      if (addr) {
+        this.applySavedAddress(addr);
+      }
+    }
+    this.cdr.detectChanges();
   }
 
   async onInlineLogin(event: Event): Promise<void> {
@@ -762,6 +984,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       this.showAuthModal = false;
       this.authModalEmail = '';
       this.authModalPassword = '';
+
+      this.loadSavedAddresses();
     } else {
       this.authErrorMessage = res.message || 'Invalid email or password.';
     }
@@ -771,7 +995,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.authService.logout();
     this.isLoggedIn = false;
     this.currentUser = null;
-    // NOTE: All typed address details (shipping.address, city, pincode, etc.) and cart items remain 100% intact!
+    this.savedAddresses = [];
+    this.selectedSavedAddressId = 'new';
   }
 
   ngOnDestroy(): void {
@@ -794,8 +1019,50 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     });
   }
 
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digitsOnly = input.value.replace(/\D/g, '').slice(0, 10);
+    this.shipping.phone = digitsOnly;
+    input.value = digitsOnly;
+  }
+
+  onPincodeInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digitsOnly = input.value.replace(/\D/g, '').slice(0, 6);
+    this.shipping.pincode = digitsOnly;
+    input.value = digitsOnly;
+  }
+
   async placeOrder(event: Event): Promise<void> {
     event.preventDefault();
+    this.addressValidationError = '';
+
+    // STRICT VALIDATION: Ensure street address, city, state, pincode, and 10-digit mobile phone are non-empty & valid!
+    if (!this.shipping.firstName.trim() || !this.shipping.lastName.trim() || !this.shipping.email.trim() ||
+        !this.shipping.address.trim() || !this.shipping.city.trim() || !this.shipping.state.trim() || !this.shipping.pincode.trim()) {
+      this.addressValidationError = 'Please fill in all required fields — First Name, Last Name, Email, Street Address, City, State, and PIN Code.';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const cleanPin = this.shipping.pincode.replace(/\D/g, '');
+    if (!/^\d{6}$/.test(cleanPin)) {
+      this.addressValidationError = 'PIN Code must be exactly 6 digits (e.g. 395003).';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+
+    const cleanPhone = (this.shipping.phone || '').replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+      this.addressValidationError = 'Please enter a valid 10-digit Indian mobile number (e.g. 9876543210).';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     this.isProcessing = true;
 
     // If guest checked "Create an account", register them seamlessly in background
@@ -850,6 +1117,32 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       const resData = await createRes.json();
       if (resData && resData.success && resData.data && resData.data.orderNumber) {
         orderNumber = resData.data.orderNumber;
+
+        // Auto-save new shipping address to user's account if requested
+        if (this.isLoggedIn && (this.selectedSavedAddressId === 'new' || this.savedAddresses.length === 0) && this.saveNewAddressToAccount) {
+          try {
+            const token = this.authService.getToken();
+            await fetch(API_ENDPOINTS.ADDRESSES.CREATE, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: token ? `Bearer ${token}` : ''
+              },
+              body: JSON.stringify({
+                fullName: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
+                phone: this.shipping.phone,
+                addressLine: this.shipping.address,
+                city: this.shipping.city,
+                state: this.shipping.state,
+                pincode: this.shipping.pincode,
+                email: this.shipping.email,
+                isDefault: this.savedAddresses.length === 0
+              })
+            });
+          } catch (e) {
+            // Non-blocking
+          }
+        }
       }
     } catch (err) {
       // API call failed
@@ -946,5 +1239,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       return Math.round((savings / compareAtPrice) * 100);
     }
     return 0;
+  }
+
+  getInvoicePdfUrl(orderNumber: string): string {
+    return API_ENDPOINTS.ORDERS.INVOICE_PDF(orderNumber);
   }
 }

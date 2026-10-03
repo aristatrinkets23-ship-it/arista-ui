@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { CartItem, CartSummary } from '../models/cart.model';
 import { ProductCardData } from '../models/product-card-data.model';
 import { AuthService } from './auth.service';
+import { SettingsService } from './settings.service';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
 
 const GUEST_CART_EXPIRY_DAYS = 30;
@@ -22,11 +23,18 @@ export class CartService {
   cart$: Observable<CartSummary>;
 
   private authService = inject(AuthService);
+  private settingsService = inject(SettingsService);
 
   constructor() {
     const loadedItems = this.loadCartFromStorage();
     this.cartSubject = new BehaviorSubject<CartSummary>(this.calculateSummary(loadedItems));
     this.cart$ = this.cartSubject.asObservable();
+
+    // Recompute cart summary whenever admin store settings (delivery fee, free threshold) update
+    this.settingsService.settings$.subscribe(() => {
+      const currentItems = this.currentCart?.items || this.loadCartFromStorage();
+      this.cartSubject.next(this.calculateSummary(currentItems));
+    });
 
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', (event) => {
@@ -43,7 +51,8 @@ export class CartService {
 
   private initAuthSync(): void {
     if (this.authService.isAuthenticated()) {
-      this.syncWithBackendOrMerge();
+      // User is already logged in on page load/refresh: fetch canonical cart from backend (NEVER merge!)
+      this.fetchCartFromBackend();
     }
 
     let prevToken = this.authService.getToken();
@@ -51,13 +60,15 @@ export class CartService {
       setInterval(() => {
         const currentToken = this.authService.getToken();
         if (currentToken !== prevToken) {
+          const justLoggedIn = !prevToken && !!currentToken;
           prevToken = currentToken;
-          if (currentToken) {
-            this.syncWithBackendOrMerge();
-          } else {
-            // User logged out: restore guest local cart
-            const guestItems = this.loadCartFromStorage();
-            this.cartSubject.next(this.calculateSummary(guestItems));
+          if (justLoggedIn) {
+            // User just logged in: merge guest cart into account once
+            this.mergeGuestCartOnLogin();
+          } else if (!currentToken) {
+            // User logged out: clear cart
+            this.clearLocalStorage();
+            this.cartSubject.next(this.calculateSummary([]));
           }
         }
       }, 500);
@@ -90,7 +101,7 @@ export class CartService {
     return item ? item.quantity : 0;
   }
 
-  async syncWithBackendOrMerge(): Promise<void> {
+  async mergeGuestCartOnLogin(): Promise<void> {
     const token = this.authService.getToken();
     if (!token) return;
 
@@ -105,12 +116,14 @@ export class CartService {
         });
         const data = await response.json();
         if (response.ok && data.success && data.data) {
-          this.clearLocalStorage();
+          if (Array.isArray(data.data.items)) {
+            this.saveCartToStorage(data.data.items);
+          }
           this.cartSubject.next(data.data);
           return;
         }
       } catch (err) {
-        console.warn('Could not merge cart with backend:', err);
+        console.warn('Could not merge guest cart with backend:', err);
       }
     }
 
@@ -127,6 +140,9 @@ export class CartService {
       });
       const data = await response.json();
       if (response.ok && data.success && data.data) {
+        if (Array.isArray(data.data.items)) {
+          this.saveCartToStorage(data.data.items);
+        }
         this.cartSubject.next(data.data);
       }
     } catch (err) {
@@ -136,6 +152,13 @@ export class CartService {
 
   async addToCart(product: ProductCardData, quantity: number = 1, selectedMetal?: string): Promise<void> {
     if (!product) return;
+    const isOutOfStock = product.inStock === false ||
+      (product.stockQuantity !== undefined && product.stockQuantity !== null && Number(product.stockQuantity) <= 0) ||
+      product.available === false;
+    if (isOutOfStock) {
+      console.warn('Cannot add out-of-stock product to cart:', product.name);
+      return;
+    }
     const addQty = Math.max(1, Number(quantity) || 1);
     const metal = selectedMetal || '18K Warm Gold';
 
@@ -154,6 +177,9 @@ export class CartService {
         });
         const data = await response.json();
         if (response.ok && data.success && data.data) {
+          if (Array.isArray(data.data.items)) {
+            this.saveCartToStorage(data.data.items);
+          }
           this.cartSubject.next(data.data);
           return;
         }
@@ -234,6 +260,9 @@ export class CartService {
         });
         const data = await response.json();
         if (response.ok && data.success && data.data) {
+          if (Array.isArray(data.data.items)) {
+            this.saveCartToStorage(data.data.items);
+          }
           this.cartSubject.next(data.data);
           return;
         }
@@ -278,6 +307,9 @@ export class CartService {
         });
         const data = await response.json();
         if (response.ok && data.success && data.data) {
+          if (Array.isArray(data.data.items)) {
+            this.saveCartToStorage(data.data.items);
+          }
           this.cartSubject.next(data.data);
           return;
         }
@@ -308,6 +340,7 @@ export class CartService {
         });
         const data = await response.json();
         if (response.ok && data.success && data.data) {
+          this.clearLocalStorage();
           this.cartSubject.next(data.data);
           return;
         }
@@ -469,11 +502,16 @@ export class CartService {
   }
 
   private calculateSummary(items: CartItem[]): CartSummary {
+    const settings = this.settingsService.currentSettings;
     const validItems = Array.isArray(items) ? items : [];
     const itemCount = validItems.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0);
     const subtotal = validItems.reduce((acc, item) => acc + ((Number(item.product?.price) || 0) * (Number(item.quantity) || 0)), 0);
-    const estimatedShipping = subtotal > 5000 || subtotal === 0 ? 0 : 500;
-    const estimatedTax = Math.round(subtotal * 0.03); // 3% GST
+
+    const freeThreshold = Number(settings.freeDeliveryThreshold) || 600;
+    const baseDelivery = Number(settings.deliveryCharge) !== undefined ? Number(settings.deliveryCharge) : 50;
+    const estimatedShipping = (subtotal >= freeThreshold || subtotal === 0) ? 0 : baseDelivery;
+    const gstRate = Number(settings.gstPercentage) || 3.0;
+    const estimatedTax = Math.round(subtotal * (gstRate / 100));
     const total = subtotal + estimatedShipping + estimatedTax;
 
     return {
@@ -482,7 +520,11 @@ export class CartService {
       subtotal,
       estimatedShipping,
       estimatedTax,
-      total
+      total,
+      freeDeliveryThreshold: freeThreshold,
+      deliveryCharge: baseDelivery,
+      remainingForFreeDelivery: Math.max(0, freeThreshold - subtotal),
+      isFreeDeliveryUnlocked: subtotal >= freeThreshold && subtotal > 0
     };
   }
 }

@@ -5,6 +5,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  phone?: string;
   role: 'CUSTOMER' | 'ADMIN' | 'SUPER_ADMIN';
 }
 
@@ -43,6 +44,21 @@ export class AuthService {
       return JSON.parse(data);
     } catch {
       return null;
+    }
+  }
+
+  updateCurrentUser(user: Partial<User>): void {
+    const current = this.userSignal();
+    if (current) {
+      const updated: User = {
+        id: user.id !== undefined ? user.id : current.id,
+        name: user.name !== undefined ? user.name : current.name,
+        email: user.email !== undefined ? user.email : current.email,
+        phone: user.phone !== undefined ? user.phone : (current.phone || ''),
+        role: user.role !== undefined ? user.role : current.role
+      };
+      this.userSignal.set(updated);
+      localStorage.setItem(USER_KEY, JSON.stringify(updated));
     }
   }
 
@@ -180,13 +196,17 @@ export class AuthService {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
-      if (response.ok && data.success) {
+      if (response.ok && data.success && data.data) {
         const currentUser = this.userSignal();
-        if (currentUser) {
-          const updatedUser = { ...currentUser, role: data.data.role || currentUser.role };
-          this.userSignal.set(updatedUser);
-          localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-        }
+        const updatedUser: User = {
+          id: data.data.id || currentUser?.id || 0,
+          name: data.data.name || currentUser?.name || '',
+          email: data.data.email || currentUser?.email || '',
+          phone: data.data.phone !== undefined ? data.data.phone : (currentUser?.phone || ''),
+          role: data.data.role || currentUser?.role || 'CUSTOMER'
+        };
+        this.userSignal.set(updatedUser);
+        localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
         return true;
       }
       if (this.checkUnauthorized(response, data)) {

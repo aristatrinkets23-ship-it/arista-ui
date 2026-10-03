@@ -16,11 +16,27 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   template: `
-    <!-- Floating Toast Notification Banner -->
-    <div class="toast-notification" *ngIf="toastMessage" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
-      <span class="toast-icon">{{ toastType === 'success' ? '✓' : '✕' }}</span>
-      <span class="toast-text">{{ toastMessage }}</span>
-      <button type="button" class="btn-close-toast" (click)="toastMessage = ''">&times;</button>
+    <!-- Floating Luxury Toast Notification Banner -->
+    <div class="toast-notification-wrap" *ngIf="toastMessage">
+      <div class="toast-card" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
+        <div class="toast-icon-box">
+          <svg *ngIf="toastType === 'success'" class="toast-svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <svg *ngIf="toastType === 'error'" class="toast-svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div class="toast-content">
+          <div class="toast-title">{{ toastTitle || (toastType === 'success' ? 'Success' : 'Notice') }}</div>
+          <div class="toast-message">{{ toastMessage }}</div>
+        </div>
+        <button type="button" class="btn-close-toast" (click)="dismissToast()" aria-label="Close notification">
+          <svg class="close-icon-svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- Admin Top Header Banner -->
@@ -42,7 +58,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
     <!-- Main Admin Container -->
     <section class="section-padding bg-pearl">
-      <div class="container">
+      <div class="container admin-container">
         <!-- Analytics Cards Grid -->
         <div class="metrics-grid">
           <div class="metric-card">
@@ -112,6 +128,14 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           >
             🖼 Homepage Photos
           </button>
+          <button
+            type="button"
+            class="tab-btn"
+            [class.active]="activeTab === 'settings'"
+            (click)="activeTab = 'settings'; loadStoreSettings()"
+          >
+            ⚙ Store &amp; GST Settings
+          </button>
         </div>
 
         <!-- TAB 1: CATEGORIES CATALOG TABLE -->
@@ -126,6 +150,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             <table class="admin-table">
               <thead>
                 <tr>
+                  <th style="width: 48px; text-align: center;">#</th>
                   <th>Poster</th>
                   <th>Category Name</th>
                   <th>Slug / Path</th>
@@ -136,11 +161,14 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               </thead>
               <tbody>
                 <tr *ngIf="categories.length === 0">
-                  <td colspan="6" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
+                  <td colspan="7" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
                     No data found in category catalog. Click <strong>+ Add New Category</strong> above to create collections.
                   </td>
                 </tr>
-                <tr *ngFor="let cat of categories">
+                <tr *ngFor="let cat of pagedCategories; let i = index">
+                  <td style="text-align: center; font-weight: 700; color: var(--brand-mocha-brown); font-size: 0.88rem;">
+                    {{ (categoryCurrentPage - 1) * categoryPageSize + i + 1 }}
+                  </td>
                   <td>
                     <img [src]="cat.image" [alt]="cat.name" (error)="onTableImageError($event)" class="table-thumb" style="width: 54px; height: 54px; object-fit: cover; border-radius: 8px;" />
                   </td>
@@ -166,12 +194,48 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               </tbody>
             </table>
           </div>
+
+          <!-- Pagination Controls for Categories -->
+          <div *ngIf="categories.length > 0" class="pagination-bar">
+            <div class="pagination-info">
+              Showing <strong>{{ (categoryCurrentPage - 1) * categoryPageSize + 1 }}</strong> to
+              <strong>{{ getMin(categoryCurrentPage * categoryPageSize, categories.length) }}</strong> of
+              <strong>{{ categories.length }}</strong> categories
+            </div>
+            <div class="pagination-controls">
+              <div class="page-size-selector">
+                <label>Per page:</label>
+                <select [(ngModel)]="categoryPageSize" (change)="onCategoryPageSizeChange()">
+                  <option [ngValue]="5">5</option>
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="20">20</option>
+                  <option [ngValue]="50">50</option>
+                </select>
+              </div>
+              <button type="button" class="btn-page" [disabled]="categoryCurrentPage === 1" (click)="setCategoryPage(categoryCurrentPage - 1)">&larr; Prev</button>
+              <button *ngFor="let p of categoryPageNumbers" type="button" class="btn-page-num" [class.active]="p === categoryCurrentPage" (click)="setCategoryPage(p)">{{ p }}</button>
+              <button type="button" class="btn-page" [disabled]="categoryCurrentPage === categoryTotalPages" (click)="setCategoryPage(categoryCurrentPage + 1)">Next &rarr;</button>
+            </div>
+          </div>
         </div>
 
         <!-- TAB 2: PRODUCT CATALOG TABLE -->
         <div *ngIf="activeTab === 'products'" class="tab-content">
-          <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.2rem;">Product Catalog ({{ products.length }})</h3>
+          <div class="tab-action-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+              <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 0; font-size: 1.2rem;">Product Catalog ({{ filteredProducts.length }})</h3>
+              
+              <!-- Visibility Filter Dropdown -->
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--brand-mocha-brown);">Visibility Filter:</label>
+                <select [(ngModel)]="productFilterVisibility" (change)="productCurrentPage = 1" style="padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--color-border); font-size: 0.82rem; font-weight: 600; color: var(--brand-mocha-brown); background: #FFFFFF;">
+                  <option value="all">All Products ({{ products.length }})</option>
+                  <option value="active">🟢 Active Only ({{ activeProductsCount }})</option>
+                  <option value="inactive">🔴 Hidden / Inactive Only ({{ inactiveProductsCount }})</option>
+                </select>
+              </div>
+            </div>
+
             <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="openAddProductModal()">
               + Add New Jewellery Piece
             </button>
@@ -180,22 +244,27 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             <table class="admin-table">
               <thead>
                 <tr>
-                  <th>Jewel</th>
-                  <th>Name & Category</th>
-                  <th>Price</th>
-                  <th>Compare Price</th>
-                  <th>Badge</th>
-                  <th>Stock Status</th>
-                  <th>Actions</th>
+                  <th style="width: 44px; text-align: center; white-space: nowrap;">#</th>
+                  <th style="width: 70px; white-space: nowrap;">Jewel</th>
+                  <th style="min-width: 180px; white-space: nowrap;">Name &amp; Category</th>
+                  <th style="width: 110px; white-space: nowrap;">Price</th>
+                  <th style="width: 130px; white-space: nowrap;">Compare Price</th>
+                  <th style="width: 100px; white-space: nowrap;">Badge</th>
+                  <th style="width: 130px; white-space: nowrap;">Stock Status</th>
+                  <th style="width: 110px; white-space: nowrap;">Visibility</th>
+                  <th style="width: 120px; text-align: center; white-space: nowrap;">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr *ngIf="products.length === 0">
-                  <td colspan="7" style="text-align: center; padding: 36px; color: #7A6658;">
-                    No products found in catalog. Click <strong>+ Add New Jewellery Piece</strong> above to create a product.
+                <tr *ngIf="filteredProducts.length === 0">
+                  <td colspan="9" style="text-align: center; padding: 36px; color: #7A6658;">
+                    No products found matching the selected visibility filter. Click <strong>+ Add New Jewellery Piece</strong> above to create a product.
                   </td>
                 </tr>
-                <tr *ngFor="let item of products">
+                <tr *ngFor="let item of pagedProducts; let i = index">
+                  <td style="text-align: center; font-weight: 700; color: var(--brand-mocha-brown); font-size: 0.88rem;">
+                    {{ (productCurrentPage - 1) * productPageSize + i + 1 }}
+                  </td>
                   <td>
                     <img
                       [src]="item.image || defaultImage"
@@ -208,10 +277,10 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                     <strong class="item-name">{{ item.name }}</strong>
                     <span class="item-category">{{ item.category }}</span>
                   </td>
-                  <td>
+                  <td style="white-space: nowrap;">
                     <strong class="item-price">₹{{ item.price | number }}</strong>
                   </td>
-                  <td>
+                  <td style="white-space: nowrap;">
                     <span class="item-compare" *ngIf="item.compareAtPrice">₹{{ item.compareAtPrice | number }}</span>
                     <span *ngIf="getDiscountPercentage(item) > 0" style="display: inline-block; background: #FEF2F2; color: #DC2626; font-weight: 700; font-size: 0.68rem; padding: 2px 6px; border-radius: 10px; margin-left: 6px;">
                       {{ getDiscountPercentage(item) }}% OFF
@@ -222,13 +291,21 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                     <span class="badge-tag" *ngIf="item.badge">{{ item.badge }}</span>
                     <span *ngIf="!item.badge">-</span>
                   </td>
-                  <td>
-                    <span class="stock-pill in-stock" *ngIf="item.inStock !== false">In Stock ({{ item.stockQuantity || 10 }})</span>
-                    <span class="stock-pill out-stock" *ngIf="item.inStock === false">Out of Stock</span>
+                  <td style="white-space: nowrap;">
+                    <span class="stock-pill in-stock" *ngIf="item.inStock !== false && (item.stockQuantity === undefined || item.stockQuantity > 0)">In Stock ({{ item.stockQuantity !== undefined ? item.stockQuantity : 10 }})</span>
+                    <span class="stock-pill out-stock" *ngIf="item.inStock === false || item.stockQuantity === 0">Out of Stock</span>
+                  </td>
+                  <td style="white-space: nowrap;">
+                    <span class="badge-status success" *ngIf="item.available !== false && item.isActive !== false" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
+                      🟢 Active
+                    </span>
+                    <span class="badge-status error" *ngIf="item.available === false || item.isActive === false" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;">
+                      🔴 Hidden
+                    </span>
                   </td>
                   <td>
-                    <div class="action-btns">
-                      <button type="button" class="btn-action edit" (click)="editProduct(item)">Edit Product</button>
+                    <div class="action-btns" style="justify-content: center;">
+                      <button type="button" class="btn-action edit" (click)="editProduct(item)">Edit</button>
                       <button type="button" class="btn-action delete" (click)="promptDeleteProduct(item)">Delete</button>
                     </div>
                   </td>
@@ -236,10 +313,80 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               </tbody>
             </table>
           </div>
+
+          <!-- Pagination Controls for Products -->
+          <div *ngIf="products.length > 0" class="pagination-bar">
+            <div class="pagination-info">
+              Showing <strong>{{ (productCurrentPage - 1) * productPageSize + 1 }}</strong> to
+              <strong>{{ getMin(productCurrentPage * productPageSize, products.length) }}</strong> of
+              <strong>{{ products.length }}</strong> products
+            </div>
+            <div class="pagination-controls">
+              <div class="page-size-selector">
+                <label>Per page:</label>
+                <select [(ngModel)]="productPageSize" (change)="onProductPageSizeChange()">
+                  <option [ngValue]="5">5</option>
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="20">20</option>
+                  <option [ngValue]="50">50</option>
+                </select>
+              </div>
+              <button type="button" class="btn-page" [disabled]="productCurrentPage === 1" (click)="setProductPage(productCurrentPage - 1)">&larr; Prev</button>
+              <button *ngFor="let p of productPageNumbers" type="button" class="btn-page-num" [class.active]="p === productCurrentPage" (click)="setProductPage(p)">{{ p }}</button>
+              <button type="button" class="btn-page" [disabled]="productCurrentPage === productTotalPages" (click)="setProductPage(productCurrentPage + 1)">Next &rarr;</button>
+            </div>
+          </div>
         </div>
 
         <!-- TAB 3: CUSTOMER ORDERS TABLE WITH FILTERS -->
         <div *ngIf="activeTab === 'orders'" class="tab-content">
+          <!-- Order Financial Summary Metric Cards -->
+          <div class="orders-summary-cards" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <!-- Card 1: Total Orders Value -->
+            <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-left: 4px solid var(--brand-warm-gold); padding: 18px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--brand-mocha-brown);">Total Orders Value</div>
+              <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 1.65rem; font-weight: 700; color: var(--brand-mocha-brown); margin: 6px 0 2px 0;">
+                ₹{{ orderSummaryMetrics.totalRevenue | number:'1.0-0' }}
+              </div>
+              <div style="font-size: 0.78rem; color: #666; font-weight: 500;">
+                Across {{ orderTotalItems || ordersList.length }} total order(s)
+              </div>
+            </div>
+
+            <!-- Card 2: Paid Amount -->
+            <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-left: 4px solid #10B981; padding: 18px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #047857;">Paid / Collected Revenue</div>
+              <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 1.65rem; font-weight: 700; color: #047857; margin: 6px 0 2px 0;">
+                ₹{{ orderSummaryMetrics.paidRevenue | number:'1.0-0' }}
+              </div>
+              <div style="font-size: 0.78rem; color: #059669; font-weight: 500;">
+                ✓ Verified Paid Payments
+              </div>
+            </div>
+
+            <!-- Card 3: Pending Amount -->
+            <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-left: 4px solid #F59E0B; padding: 18px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #D97706;">Pending Payment Amount</div>
+              <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 1.65rem; font-weight: 700; color: #D97706; margin: 6px 0 2px 0;">
+                ₹{{ orderSummaryMetrics.pendingRevenue | number:'1.0-0' }}
+              </div>
+              <div style="font-size: 0.78rem; color: #B45309; font-weight: 500;">
+                ⏳ Cash on Delivery / Unpaid
+              </div>
+            </div>
+
+            <!-- Card 4: Cancelled Amount -->
+            <div style="background: #FFFFFF; border: 1px solid var(--color-border); border-left: 4px solid #EF4444; padding: 18px 20px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+              <div style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #DC2626;">Cancelled Orders Value</div>
+              <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-size: 1.65rem; font-weight: 700; color: #DC2626; margin: 6px 0 2px 0;">
+                ₹{{ orderSummaryMetrics.cancelledRevenue | number:'1.0-0' }}
+              </div>
+              <div style="font-size: 0.78rem; color: #B91C1C; font-weight: 500;">
+                ✕ Returned / Cancelled Orders
+              </div>
+            </div>
+          </div>
+
           <!-- Filter Toolbar Card -->
           <div class="filter-toolbar-card" style="background: #FFFFFF; border: 1px solid var(--color-border); padding: 18px 20px; border-radius: var(--radius-md); margin-bottom: 20px; box-shadow: var(--shadow-sm);">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
@@ -316,77 +463,111 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             </div>
           </div>
 
-          <!-- Orders Data Table -->
-          <div class="table-responsive">
-            <table class="admin-table">
+          <!-- Orders Data Table (No Horizontal Scroll) -->
+          <div class="orders-table-wrapper">
+            <table class="admin-table orders-table">
               <thead>
                 <tr>
-                  <th>Order Reference</th>
-                  <th>Customer Details</th>
-                  <th>Payment Method &amp; Status</th>
-                  <th>Total Amount</th>
-                  <th>Fulfillment Status</th>
-                  <th>Item Details</th>
-                  <th>Update Status</th>
+                  <th style="width: 32px; text-align: center;">#</th>
+                  <th style="width: 110px;">Order</th>
+                  <th style="width: 140px;">Customer</th>
+                  <th style="width: 115px;">Payment</th>
+                  <th style="width: 85px; text-align: right;">Total</th>
+                  <th style="width: 120px;">Fulfillment</th>
+                  <th style="width: 105px;">Item Details</th>
+                  <th style="width: 115px;">Update Status</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngIf="isLoadingOrders">
-                  <td colspan="7" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
+                  <td colspan="8" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
                     Loading customer orders...
                   </td>
                 </tr>
                 <tr *ngIf="!isLoadingOrders && ordersList.length === 0">
-                  <td colspan="7" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
+                  <td colspan="8" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
                     No orders found matching the selected filters.
                   </td>
                 </tr>
-                <tr *ngFor="let order of ordersList">
+                <tr *ngFor="let order of ordersList; let i = index">
+                  <td style="text-align: center; font-weight: 700; color: var(--brand-mocha-brown); font-size: 0.8rem;">
+                    {{ (orderCurrentPage - 1) * orderPageSize + i + 1 }}
+                  </td>
                   <td>
-                    <strong class="order-no" style="font-size: 0.95rem; color: var(--brand-mocha-brown);">#{{ order.order_number || order.number }}</strong>
-                    <span class="order-date" style="display: block; font-size: 0.78rem; color: #666; margin-top: 2px;">
+                    <strong class="order-no" style="font-size: 0.88rem; color: var(--brand-mocha-brown); display: block;">#{{ order.order_number || order.number }}</strong>
+                    <span class="order-date" style="display: block; font-size: 0.72rem; color: #666; margin-top: 1px;">
                       📅 {{ order.ordered_at || order.created_at || order.date }}
                     </span>
-                    <span *ngIf="order.tracking_code" style="display: inline-block; background: var(--brand-pearl-beige); color: var(--brand-mocha-brown); font-family: monospace; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; margin-top: 4px; border: 1px solid var(--color-border);">
+                    <span *ngIf="order.tracking_code" style="display: inline-block; background: var(--brand-pearl-beige); color: var(--brand-mocha-brown); font-family: monospace; font-size: 0.68rem; padding: 1px 5px; border-radius: 3px; margin-top: 2px; border: 1px solid var(--color-border);">
                       🏷️ {{ order.tracking_code }}
                     </span>
                   </td>
                   <td>
-                    <strong class="cust-name">{{ order.customer_name || order.customer }}</strong>
-                    <span class="cust-email" style="display: block; font-size: 0.8rem; color: #666;">{{ order.customer_email || order.email }}</span>
-                    <span *ngIf="order.customer_phone" style="display: block; font-size: 0.78rem; color: #888;">📞 {{ order.customer_phone }}</span>
+                    <strong class="cust-name" style="font-size: 0.85rem; color: #2C221E; display: block;">{{ order.customer_name || order.customer }}</strong>
+                    <span class="cust-email" style="display: block; font-size: 0.74rem; color: #666; word-break: break-all;">{{ order.customer_email || order.email }}</span>
+                    <span *ngIf="order.customer_phone" style="display: block; font-size: 0.72rem; color: #888;">📞 {{ order.customer_phone }}</span>
                   </td>
                   <td>
-                    <span class="pay-method" style="font-weight: 600; display: block; font-size: 0.82rem;">{{ order.payment_method || order.paymentMethod }}</span>
-                    <span class="status-badge paid" *ngIf="(order.payment_status || order.paymentStatus) === 'PAID'">PAID (RAZORPAY)</span>
-                    <span class="status-badge pending" *ngIf="(order.payment_status || order.paymentStatus) === 'PENDING'">PENDING</span>
-                    <span class="status-badge failed" *ngIf="(order.payment_status || order.paymentStatus) === 'FAILED'" style="background: #FFEBEE; color: #C62828;">FAILED</span>
-                  </td>
-                  <td>
-                    <strong class="item-price" style="font-size: 1rem; color: var(--brand-warm-gold);">₹{{ (order.total_amount || order.total) | number }}</strong>
-                  </td>
-                  <td>
-                    <span class="status-badge shipped" *ngIf="(order.order_status || order.status) === 'SHIPPED'">SHIPPED</span>
-                    <span class="status-badge processing" *ngIf="(order.order_status || order.status) === 'PROCESSING'">PROCESSING</span>
-                    <span class="status-badge delivered" *ngIf="(order.order_status || order.status) === 'DELIVERED'" style="background: #E8F5E9; color: #2E7D32;">DELIVERED</span>
-                    <span class="status-badge cancelled" *ngIf="(order.order_status || order.status) === 'CANCELLED'" style="background: #FFEBEE; color: #C62828;">CANCELLED</span>
-                    <span class="status-badge pending" *ngIf="(order.order_status || order.status) === 'PENDING'">PENDING</span>
+                    <div style="display: flex; flex-direction: column; gap: 3px; align-items: flex-start;">
+                      <span class="pay-method" style="font-weight: 700; font-size: 0.76rem; color: #444;">{{ order.payment_method || order.paymentMethod }}</span>
+                      
+                      <span class="status-badge paid" *ngIf="(order.payment_status || order.paymentStatus) === 'PAID'" style="font-size: 0.68rem; padding: 2px 7px;">
+                        PAID
+                      </span>
+                      
+                      <div *ngIf="(order.payment_status || order.paymentStatus) === 'PENDING'" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">
+                        <span class="status-badge pending" style="font-size: 0.68rem; padding: 2px 6px;">PENDING</span>
+                        <button
+                          type="button"
+                          class="btn-mark-paid"
+                          (click)="toggleOrderPaymentStatus(order, 'PAID')"
+                          title="Mark Cash as Collected / Paid"
+                        >
+                          ✓ Paid
+                        </button>
+                      </div>
 
-                    <div style="font-size: 0.73rem; color: #555555; margin-top: 4px; font-weight: 500;">
-                      <span *ngIf="(order.order_status || order.status) === 'PROCESSING'">⏱ In Progress: {{ order.processing_at || order.ordered_at }}</span>
-                      <span *ngIf="(order.order_status || order.status) === 'SHIPPED'">🚚 Shipped: {{ order.shipped_at || order.ordered_at }}</span>
-                      <span *ngIf="(order.order_status || order.status) === 'DELIVERED'">✓ Delivered: {{ order.delivered_at || order.ordered_at }}</span>
-                      <span *ngIf="(order.order_status || order.status) === 'CANCELLED'">✕ Cancelled: {{ order.cancelled_at || order.ordered_at }}</span>
-                      <span *ngIf="(order.order_status || order.status) === 'PENDING'">📅 Placed: {{ order.ordered_at || order.created_at }}</span>
+                      <span class="status-badge failed" *ngIf="(order.payment_status || order.paymentStatus) === 'FAILED'" style="background: #FFEBEE; color: #C62828; font-size: 0.68rem; padding: 2px 6px;">
+                        FAILED
+                      </span>
+                    </div>
+                  </td>
+                  <td style="text-align: right;">
+                    <strong class="item-price" style="font-size: 0.95rem; color: var(--brand-warm-gold);">₹{{ (order.total_amount || order.total) | number }}</strong>
+                  </td>
+                  <td>
+                    <span class="status-badge shipped" *ngIf="(order.order_status || order.status) === 'SHIPPED'" style="font-size: 0.7rem; padding: 2px 8px;">SHIPPED</span>
+                    <span class="status-badge processing" *ngIf="(order.order_status || order.status) === 'PROCESSING'" style="font-size: 0.7rem; padding: 2px 8px;">PROCESSING</span>
+                    <span class="status-badge delivered" *ngIf="(order.order_status || order.status) === 'DELIVERED'" style="background: #E8F5E9; color: #2E7D32; font-size: 0.7rem; padding: 2px 8px;">DELIVERED</span>
+                    <span class="status-badge cancelled" *ngIf="(order.order_status || order.status) === 'CANCELLED'" style="background: #FFEBEE; color: #C62828; font-size: 0.7rem; padding: 2px 8px;">CANCELLED</span>
+                    <span class="status-badge pending" *ngIf="(order.order_status || order.status) === 'PENDING'" style="font-size: 0.7rem; padding: 2px 8px;">PENDING</span>
+
+                    <div style="font-size: 0.68rem; color: #666; margin-top: 3px; font-weight: 500;">
+                      <span *ngIf="(order.order_status || order.status) === 'DELIVERED'">✓ {{ order.delivered_at || order.ordered_at }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'SHIPPED'">🚚 {{ order.shipped_at || order.ordered_at }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'PROCESSING'">⏱ {{ order.processing_at || order.ordered_at }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'CANCELLED'">✕ {{ order.cancelled_at || order.ordered_at }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'PENDING'">📅 {{ order.ordered_at || order.created_at }}</span>
                     </div>
                   </td>
                   <td>
-                    <button type="button" class="btn-action edit" (click)="selectedOrderForDetails = order">
-                      📦 View Items ({{ (order.items?.length || 0) }})
-                    </button>
+                    <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
+                      <button type="button" class="btn-compact-action" (click)="selectedOrderForDetails = order">
+                        📦 Items ({{ (order.items?.length || 0) }})
+                      </button>
+                      <a
+                        [href]="getInvoicePdfUrl(order)"
+                        target="_blank"
+                        download
+                        class="btn-compact-action invoice"
+                        title="Download Official Tax Invoice PDF"
+                      >
+                        📄 Invoice
+                      </a>
+                    </div>
                   </td>
                   <td>
-                    <select class="status-select" [value]="order.order_status || order.status" (change)="updateOrderStatus(order, $event)">
+                    <select class="status-select-compact" [value]="order.order_status || order.status" (change)="promptChangeOrderStatus(order, $event)">
                       <option value="PENDING">PENDING</option>
                       <option value="PROCESSING">PROCESSING</option>
                       <option value="SHIPPED">SHIPPED</option>
@@ -399,43 +580,26 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             </table>
           </div>
 
-          <!-- Pagination Bar (10 Orders Per Page) -->
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 20px; padding: 14px 18px; background: #FFFFFF; border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
-            <span style="font-size: 0.85rem; color: #666666; font-weight: 500;">
-              Showing Page <strong>{{ orderCurrentPage }}</strong> of <strong>{{ orderTotalPages }}</strong> ({{ orderTotalItems }} Total Orders)
-            </span>
-
-            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-              <button
-                type="button"
-                class="btn-cancel"
-                style="padding: 6px 14px; font-size: 0.82rem;"
-                [disabled]="orderCurrentPage === 1"
-                (click)="loadAdminOrders(orderCurrentPage - 1)"
-              >
-                ‹ Previous
-              </button>
-
-              <button
-                *ngFor="let pageNum of orderPageNumbers"
-                type="button"
-                style="padding: 6px 12px; border-radius: 4px; font-size: 0.82rem; font-weight: 700; cursor: pointer; border: 1px solid var(--color-border); transition: all 0.15s ease;"
-                [style.background]="pageNum === orderCurrentPage ? 'var(--brand-warm-gold)' : '#FFFFFF'"
-                [style.color]="pageNum === orderCurrentPage ? 'var(--brand-mocha-brown)' : '#555555'"
-                (click)="loadAdminOrders(pageNum)"
-              >
-                {{ pageNum }}
-              </button>
-
-              <button
-                type="button"
-                class="btn-cancel"
-                style="padding: 6px 14px; font-size: 0.82rem;"
-                [disabled]="orderCurrentPage === orderTotalPages || orderTotalPages === 0"
-                (click)="loadAdminOrders(orderCurrentPage + 1)"
-              >
-                Next ›
-              </button>
+          <!-- Pagination Controls for Customer Orders -->
+          <div *ngIf="!isLoadingOrders && ordersList.length > 0" class="pagination-bar">
+            <div class="pagination-info">
+              Showing <strong>{{ (orderCurrentPage - 1) * orderPageSize + 1 }}</strong> to
+              <strong>{{ getMin(orderCurrentPage * orderPageSize, orderTotalItems || ordersList.length) }}</strong> of
+              <strong>{{ orderTotalItems || ordersList.length }}</strong> orders
+            </div>
+            <div class="pagination-controls">
+              <div class="page-size-selector">
+                <label>Per page:</label>
+                <select [(ngModel)]="orderPageSize" (change)="onOrderPageSizeChange()">
+                  <option [ngValue]="5">5</option>
+                  <option [ngValue]="10">10</option>
+                  <option [ngValue]="20">20</option>
+                  <option [ngValue]="50">50</option>
+                </select>
+              </div>
+              <button type="button" class="btn-page" [disabled]="orderCurrentPage === 1" (click)="setOrderPage(orderCurrentPage - 1)">&larr; Prev</button>
+              <button *ngFor="let p of orderPageNumbers" type="button" class="btn-page-num" [class.active]="p === orderCurrentPage" (click)="setOrderPage(p)">{{ p }}</button>
+              <button type="button" class="btn-page" [disabled]="orderCurrentPage === orderTotalPages || orderTotalPages === 0" (click)="setOrderPage(orderCurrentPage + 1)">Next &rarr;</button>
             </div>
           </div>
         </div>
@@ -512,7 +676,16 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               </div>
             </div>
 
-            <div class="modal-footer" style="margin-top: 20px;">
+            <div class="modal-footer" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+              <a
+                *ngIf="selectedOrderForDetails"
+                [href]="getInvoicePdfUrl(selectedOrderForDetails)"
+                target="_blank"
+                class="btn-save"
+                style="margin: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; font-size: 0.85rem;"
+              >
+                📄 Download Official Tax Invoice (PDF)
+              </a>
               <button type="button" class="btn-cancel" (click)="selectedOrderForDetails = null">Close Details</button>
             </div>
           </div>
@@ -527,7 +700,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   Registered Admin Accounts ({{ createdAdminUsers.length }})
                 </h3>
                 <p style="font-size: 0.82rem; color: #666; margin: 4px 0 0 0;">
-                  Manage administrator accounts registered in the database with access to the Atelier dashboard.
+                  Manage administrator accounts that have access to this Atelier dashboard.
                 </p>
               </div>
               <button type="button" class="btn-save" style="margin-top: 0; padding: 10px 22px;" (click)="openCreateAdminModal()">
@@ -540,6 +713,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               <table class="admin-table">
                 <thead>
                   <tr>
+                    <th style="width: 48px; text-align: center;">#</th>
                     <th>Admin Name</th>
                     <th>Email Address</th>
                     <th>Assigned Role</th>
@@ -550,11 +724,14 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 </thead>
                 <tbody>
                   <tr *ngIf="createdAdminUsers.length === 0">
-                    <td colspan="6" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
-                      No admin accounts found in database. Click <strong>+ Create New Admin User</strong> above to register an admin.
+                    <td colspan="7" style="text-align: center; padding: 36px; color: #7A6658; font-weight: 500;">
+                      No admin accounts found. Click <strong>+ Create New Admin User</strong> above to add one.
                     </td>
                   </tr>
-                  <tr *ngFor="let admin of createdAdminUsers">
+                  <tr *ngFor="let admin of createdAdminUsers; let i = index">
+                    <td style="text-align: center; font-weight: 700; color: var(--brand-mocha-brown); font-size: 0.88rem;">
+                      {{ i + 1 }}
+                    </td>
                     <td>
                       <strong class="item-name">{{ admin.name }}</strong>
                     </td>
@@ -713,6 +890,177 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
         </div>
 
+        <!-- TAB 6: STORE SETTINGS & GST CONFIGURATION -->
+        <div *ngIf="activeTab === 'settings'" class="tab-content">
+          <div style="margin-bottom: 24px; padding: 18px 24px; background: linear-gradient(135deg, #FAF7F2 0%, #F5EFE6 100%); border-radius: 12px; border: 1px solid #E8DFD5; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <h3 style="font-family: var(--font-serif); color: #3A2E26; margin: 0 0 4px 0; font-size: 1.35rem; display: flex; align-items: center; gap: 10px;">
+                <span>⚙️</span> Store Invoicing, GST &amp; Shipping Settings
+              </h3>
+              <p style="margin: 0; color: #6C5F56; font-size: 0.9rem;">
+                Configure your GST details, delivery fees, and business information. Changes take effect immediately on customer carts and invoice PDFs.
+              </p>
+            </div>
+            <button
+              type="button"
+              class="btn-save"
+              style="margin: 0; padding: 12px 28px; font-size: 0.9rem;"
+              [disabled]="isSavingSettings"
+              (click)="saveStoreSettings()"
+            >
+              <span *ngIf="!isSavingSettings">💾 Save Changes</span>
+              <span *ngIf="isSavingSettings">Saving...</span>
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+
+            <!-- CARD 1: GST & LEGAL BUSINESS IDENTITY -->
+            <div style="background: #ffffff; border-radius: 12px; border: 1px solid #E8DFD5; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 24px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1.5px solid #F0E8DD; padding-bottom: 12px;">
+                <span style="background: #FDF3E5; color: #A06414; font-weight: bold; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">Tax &amp; Identity</span>
+                <h4 style="margin: 0; font-family: var(--font-serif); color: #3A2E26; font-size: 1.15rem;">GST &amp; Company Invoicing Profile</h4>
+              </div>
+
+              <div class="product-form" style="margin-top: 0;">
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label style="font-weight: 700; color: #3A2E26; display: flex; justify-content: space-between;">
+                    <span>GSTIN (Goods and Services Tax Number) *</span>
+                    <span *ngIf="gstinValidationError" style="color: #DC2626; font-size: 0.76rem; font-weight: 600;">{{ gstinValidationError }}</span>
+                  </label>
+                  <input
+                    type="text"
+                    [(ngModel)]="storeSettingsForm.gst_number"
+                    (input)="validateGstinInput()"
+                    placeholder="e.g. 24AAACA1234A1Z5"
+                    maxlength="15"
+                    style="text-transform: uppercase; font-family: monospace; font-size: 1rem; letter-spacing: 1px;"
+                    [style.border-color]="gstinValidationError ? '#DC2626' : ''"
+                  />
+                  <small style="color: #777; font-size: 0.74rem; margin-top: 4px; display: block;">
+                    Standard 15-character Indian GST format (2 digits state code + 10 alphanumeric PAN + 1 entity + Z + 1 checksum).
+                  </small>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label style="font-weight: 700; color: #3A2E26;">GST Tax Rate (%) *</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="storeSettingsForm.gst_percentage"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    placeholder="3.0"
+                  />
+                  <small style="color: #777; font-size: 0.74rem; margin-top: 4px; display: block;">
+                    Standard GST on jewellery in India is 3% (1.5% CGST + 1.5% SGST or 3% IGST).
+                  </small>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label style="font-weight: 700; color: #3A2E26;">Registered Business Name *</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="storeSettingsForm.company_name"
+                    placeholder="Arista Trinkets Atelier"
+                  />
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                  <label style="font-weight: 700; color: #3A2E26;">Registered Atelier Address *</label>
+                  <textarea
+                    [(ngModel)]="storeSettingsForm.company_address"
+                    rows="3"
+                    placeholder="Suite 402, Heritage Diamond District, Surat, Gujarat 395003"
+                    style="width: 100%; padding: 10px; border: 1.5px solid #D1C7BD; border-radius: 8px; font-size: 0.88rem;"
+                  ></textarea>
+                </div>
+
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                  <div class="form-group">
+                    <label style="font-weight: 700; color: #3A2E26;">Support Phone</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="storeSettingsForm.company_phone"
+                      placeholder="+91 98765 43210"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label style="font-weight: 700; color: #3A2E26;">Concierge Email</label>
+                    <input
+                      type="email"
+                      [(ngModel)]="storeSettingsForm.company_email"
+                      placeholder="concierge@aristatrinkets.com"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CARD 2: DELIVERY & SHIPPING RULES -->
+            <div style="background: #ffffff; border-radius: 12px; border: 1px solid #E8DFD5; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 24px;">
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px; border-bottom: 1.5px solid #F0E8DD; padding-bottom: 12px;">
+                <span style="background: #E8F5E9; color: #2E7D32; font-weight: bold; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">Shipping Rules</span>
+                <h4 style="margin: 0; font-family: var(--font-serif); color: #3A2E26; font-size: 1.15rem;">Delivery Charge &amp; Free Threshold</h4>
+              </div>
+
+              <div class="product-form" style="margin-top: 0;">
+                <div class="form-group" style="margin-bottom: 16px;">
+                  <label style="font-weight: 700; color: #3A2E26;">Standard Delivery Charge (₹ INR) *</label>
+                  <div style="position: relative;">
+                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #666;">₹</span>
+                    <input
+                      type="number"
+                      [(ngModel)]="storeSettingsForm.delivery_charge"
+                      min="0"
+                      step="1"
+                      placeholder="50"
+                      style="padding-left: 28px;"
+                    />
+                  </div>
+                  <small style="color: #777; font-size: 0.74rem; margin-top: 4px; display: block;">
+                    Applied automatically to cart &amp; checkout when customer subtotal is below the free-delivery threshold.
+                  </small>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                  <label style="font-weight: 700; color: #3A2E26;">Free-Delivery Threshold (₹ INR) *</label>
+                  <div style="position: relative;">
+                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #666;">₹</span>
+                    <input
+                      type="number"
+                      [(ngModel)]="storeSettingsForm.free_delivery_threshold"
+                      min="0"
+                      step="10"
+                      placeholder="600"
+                      style="padding-left: 28px;"
+                    />
+                  </div>
+                  <small style="color: #777; font-size: 0.74rem; margin-top: 4px; display: block;">
+                    Orders with subtotal at or above this amount automatically receive <strong>FREE complimentary delivery</strong>!
+                  </small>
+                </div>
+
+
+
+                <!-- Live Rule Simulation Box -->
+                <div style="background: #FAF7F2; border: 1.5px dashed #D4AF37; border-radius: 8px; padding: 16px; margin-top: 20px;">
+                  <div style="font-weight: 700; font-size: 0.85rem; color: #5B4636; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                    <span>✨</span> Live Customer Storefront Preview:
+                  </div>
+                  <div style="font-size: 0.82rem; color: #666; line-height: 1.5;">
+                    • Subtotal under <strong>₹{{ storeSettingsForm.free_delivery_threshold || 600 }}</strong> &rarr; Customer pays <strong>₹{{ storeSettingsForm.delivery_charge || 50 }}</strong> shipping fee.<br/>
+                    • Subtotal <strong>₹{{ storeSettingsForm.free_delivery_threshold || 600 }}</strong> or more &rarr; Customer receives <strong>FREE Delivery 🎉</strong>.<br/>
+                    • Cart dynamically displays: <em>"Add ₹X more to unlock FREE delivery!"</em>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        </div>
+
 
 
 
@@ -770,6 +1118,13 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 <option value="NEW">NEW</option>
                 <option value="SALE">SALE</option>
                 <option value="BESTSELLER">BESTSELLER</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Storefront Visibility Status *</label>
+              <select [(ngModel)]="editingProduct.isActive" name="editIsActive">
+                <option [ngValue]="true">🟢 Active (Visible to Storefront Customers)</option>
+                <option [ngValue]="false">🔴 Hidden (Hidden from Storefront Catalog)</option>
               </select>
             </div>
           </div>
@@ -1035,6 +1390,13 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 <option value="NEW">NEW</option>
                 <option value="SALE">SALE</option>
                 <option value="BESTSELLER">BESTSELLER</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Storefront Visibility Status *</label>
+              <select [(ngModel)]="newProduct.isActive" name="newIsActive">
+                <option [ngValue]="true">🟢 Active (Visible to Storefront Customers)</option>
+                <option [ngValue]="false">🔴 Hidden (Hidden from Storefront Catalog)</option>
               </select>
             </div>
           </div>
@@ -1431,30 +1793,85 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
         </div>
       </div>
     </div>
+
+    <!-- Order Status Change Confirmation Modal Overlay -->
+    <div class="logout-modal-backdrop" *ngIf="pendingOrderStatusChange" (click)="cancelOrderStatusChange()">
+      <div class="logout-modal-card" (click)="$event.stopPropagation()" style="max-width: 460px;">
+        <div class="modal-icon-wrap" style="background: #FEF3C7; color: #D97706; border-color: #FCD34D;">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13"></rect>
+            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+            <circle cx="5.5" cy="18.5" r="2.5"></circle>
+            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+          </svg>
+        </div>
+
+        <h3 class="modal-title">Confirm Order Status Change</h3>
+        <p class="modal-desc" style="margin-bottom: 16px;">
+          Are you sure you want to update the fulfillment status for Order <strong style="color: var(--brand-mocha-brown);">#{{ pendingOrderStatusChange.order.order_number || pendingOrderStatusChange.order.number }}</strong>?
+        </p>
+
+        <!-- Details Box -->
+        <div style="background: #FAF7F2; border: 1px solid #E8DFD5; border-radius: 8px; padding: 14px; margin-bottom: 20px; text-align: left;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;">
+            <span style="color: #666;">Customer:</span>
+            <strong style="color: #333;">{{ pendingOrderStatusChange.order.customer_name || pendingOrderStatusChange.order.customer }}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #E2D9CF;">
+            <span style="color: #666;">Status Transition:</span>
+            <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.8rem;">
+              <span style="background: #E5E7EB; color: #374151; padding: 3px 8px; border-radius: 4px;">{{ pendingOrderStatusChange.oldStatus }}</span>
+              <span>➔</span>
+              <span style="background: #DBEAFE; color: #1E40AF; padding: 3px 8px; border-radius: 4px;">{{ pendingOrderStatusChange.targetStatus }}</span>
+            </div>
+          </div>
+          <div *ngIf="pendingOrderStatusChange.targetStatus === 'DELIVERED' && (pendingOrderStatusChange.order.payment_method === 'COD' || pendingOrderStatusChange.order.paymentMethod === 'COD')" style="margin-top: 10px; padding: 8px 10px; background: #ECFDF5; border: 1px solid #A7F3D0; border-radius: 6px; font-size: 0.78rem; color: #065F46;">
+            💵 <strong>Cash on Delivery:</strong> Marking as Delivered automatically records payment status as <strong>PAID</strong> (revenue collected).
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="modal-btn-cancel" (click)="cancelOrderStatusChange()">Cancel</button>
+          <button type="button" class="modal-btn-confirm" (click)="confirmOrderStatusChange()">
+            Confirm &amp; Update Status
+          </button>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
     .logout-modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(26, 18, 11, 0.75);
-      backdrop-filter: blur(5px);
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 999999 !important;
+      background: rgba(26, 18, 11, 0.75) !important;
+      backdrop-filter: blur(5px) !important;
+      -webkit-backdrop-filter: blur(5px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 20px !important;
+      box-sizing: border-box !important;
+      margin: 0 !important;
       animation: fadeIn 0.2s ease-out;
     }
 
     .logout-modal-card {
-      background: #FFFFFF;
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-md);
-      padding: 32px 28px;
-      max-width: 420px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+      background: #FFFFFF !important;
+      border: 1px solid var(--color-border) !important;
+      border-radius: var(--radius-md) !important;
+      padding: 32px 28px !important;
+      max-width: 440px !important;
+      width: 100% !important;
+      text-align: center !important;
+      margin: auto !important;
+      position: relative !important;
+      box-shadow: 0 20px 48px rgba(0, 0, 0, 0.3) !important;
       animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -1537,78 +1954,134 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .toast-notification {
+    /* Refined Atelier Luxury Notification Toast */
+    .toast-notification-wrap {
       position: fixed;
       top: 24px;
       right: 24px;
-      z-index: 99999;
-      padding: 12px 18px 12px 20px;
-      border-radius: 50px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      max-width: min(540px, calc(100vw - 32px));
-      animation: fadeInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 999999;
+      pointer-events: none;
+      animation: toastSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    @keyframes fadeInDown {
+    @keyframes toastSlideIn {
       from {
         opacity: 0;
-        transform: translateY(-20px);
+        transform: translateY(-12px) scale(0.96);
       }
       to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
       }
     }
 
-    .toast-notification.success {
-      background: #1B5E20;
-      color: #FFFFFF;
-      border: 1px solid #4CAF50;
+    .toast-card {
+      pointer-events: auto;
+      background: #FFFFFF;
+      color: #1F2937;
+      border-radius: 12px;
+      padding: 13px 16px 13px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      min-width: 320px;
+      max-width: min(460px, calc(100vw - 32px));
+      box-shadow: 0 14px 38px rgba(44, 34, 28, 0.16), 0 4px 12px rgba(44, 34, 28, 0.08);
+      border: 1px solid rgba(205, 162, 115, 0.28);
+      position: relative;
+      overflow: hidden;
     }
 
-    .toast-notification.error {
-      background: #B71C1C;
-      color: #FFFFFF;
-      border: 1px solid #EF5350;
+    .toast-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
     }
 
-    .toast-icon {
-      font-weight: 700;
-      font-size: 1.1rem;
+    .toast-card.success::before {
+      background: #10B981;
+    }
+
+    .toast-card.error::before {
+      background: #EF4444;
+    }
+
+    .toast-icon-box {
       flex-shrink: 0;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
     }
 
-    .toast-text {
+    .toast-card.success .toast-icon-box {
+      background: #ECFDF5;
+      color: #059669;
+    }
+
+    .toast-card.error .toast-icon-box {
+      background: #FEF2F2;
+      color: #DC2626;
+    }
+
+    .toast-svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .toast-content {
       flex: 1;
-      line-height: 1.4;
+      min-width: 0;
+    }
+
+    .toast-title {
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: #1A120B;
+      margin-bottom: 2px;
+      line-height: 1.3;
+    }
+
+    .toast-message {
+      font-size: 0.82rem;
+      color: #5B4636;
+      line-height: 1.45;
       word-break: break-word;
+      font-weight: 500;
     }
 
     .btn-close-toast {
-      background: rgba(255, 255, 255, 0.22);
+      background: transparent;
       border: none;
-      color: #FFFFFF;
-      width: 28px;
-      height: 28px;
-      min-width: 28px;
-      border-radius: 50%;
-      font-size: 1.1rem;
+      color: #9CA3AF;
+      width: 26px;
+      height: 26px;
+      min-width: 26px;
+      border-radius: 6px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
-      transition: all 0.2s ease;
-      margin-left: 4px;
+      transition: all 0.15s ease;
+      padding: 0;
+      margin-left: 2px;
     }
+
     .btn-close-toast:hover {
-      background: rgba(255, 255, 255, 0.4);
-      transform: scale(1.08);
+      background: #F3F4F6;
+      color: #1F2937;
+    }
+
+    .close-icon-svg {
+      width: 14px;
+      height: 14px;
     }
 
     .admin-hero {
@@ -1809,6 +2282,13 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       border-color: var(--brand-mocha-brown);
     }
 
+    .admin-container {
+      max-width: 1440px !important;
+      width: 98% !important;
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+
     .table-responsive {
       background: #FFFFFF;
       border: 1px solid var(--color-border);
@@ -1817,10 +2297,118 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       box-shadow: var(--shadow-sm);
     }
 
+    .orders-table-wrapper {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+      width: 100%;
+    }
+
+    @media (min-width: 1024px) {
+      .orders-table-wrapper {
+        overflow-x: hidden;
+      }
+    }
+
     .admin-table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
+    }
+
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      table-layout: auto;
+    }
+
+    .orders-table th {
+      background: var(--brand-pearl-beige);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--brand-mocha-brown);
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
+    }
+
+    .orders-table td {
+      padding: 9px 8px;
+      border-bottom: 1px solid var(--color-border);
+      vertical-align: middle;
+      font-size: 0.82rem;
+    }
+
+    .orders-table tbody tr:hover {
+      background: #FAF8F5;
+    }
+
+    .btn-compact-action {
+      border: 1px solid var(--color-border);
+      background: #FAF7F2;
+      color: var(--brand-mocha-brown);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      text-decoration: none;
+    }
+
+    .btn-compact-action:hover {
+      background: var(--brand-pearl-beige);
+      border-color: var(--brand-warm-gold);
+    }
+
+    .btn-compact-action.invoice {
+      background: #FFF9EE;
+      color: #9E7422;
+      border-color: #ECD8B6;
+    }
+
+    .btn-compact-action.invoice:hover {
+      background: #FEF3DD;
+    }
+
+    .btn-mark-paid {
+      border: 1px solid #A7F3D0;
+      background: #ECFDF5;
+      color: #065F46;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn-mark-paid:hover {
+      background: #10B981;
+      color: #FFFFFF;
+    }
+
+    .status-select-compact {
+      padding: 4px 6px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--brand-mocha-brown);
+      background: #FFFFFF;
+      width: 100%;
+      max-width: 110px;
+      cursor: pointer;
     }
 
     .admin-table th {
@@ -1831,6 +2419,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       color: var(--brand-mocha-brown);
       padding: 14px 16px;
       border-bottom: 1px solid var(--color-border);
+      white-space: nowrap;
     }
 
     .admin-table td {
@@ -1851,8 +2440,8 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
     .item-name { display: block; color: var(--brand-mocha-brown); }
     .item-category { font-size: 0.78rem; color: var(--color-text-muted); }
-    .item-price { color: var(--brand-mocha-brown); }
-    .item-compare { text-decoration: line-through; color: var(--color-text-muted); font-size: 0.85rem; }
+    .item-price { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; font-weight: 700; color: var(--brand-mocha-brown); }
+    .item-compare { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; text-decoration: line-through; color: var(--color-text-muted); font-size: 0.85rem; }
 
     .badge-tag {
       background: var(--brand-soft-blush);
@@ -2125,29 +2714,36 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
     /* EDIT MODAL POPUP STYLES */
     .modal-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.55);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      padding: 16px;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(0, 0, 0, 0.65) !important;
+      backdrop-filter: blur(4px) !important;
+      -webkit-backdrop-filter: blur(4px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      z-index: 999999 !important;
+      padding: 16px !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
     }
 
     .modal-card {
-      background: #FFFFFF;
-      border-radius: var(--radius-md);
-      width: 100%;
-      max-width: 680px;
-      max-height: 90vh;
-      overflow-y: auto;
-      padding: 28px;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
-      border: 1px solid var(--brand-warm-gold);
+      background: #FFFFFF !important;
+      border-radius: var(--radius-md) !important;
+      width: 100% !important;
+      max-width: 680px !important;
+      max-height: calc(100vh - 40px) !important;
+      overflow-y: auto !important;
+      margin: auto !important;
+      padding: 28px !important;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25) !important;
+      border: 1px solid var(--brand-warm-gold) !important;
     }
 
     .modal-header {
@@ -2563,14 +3159,238 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       text-transform: uppercase !important;
       line-height: 24px !important;
     }
+
+    /* Pagination Bar Styles */
+    .pagination-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 18px;
+      padding: 14px 20px;
+      background: #FFFFFF;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      flex-wrap: wrap;
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+    .pagination-info {
+      font-size: 0.85rem;
+      color: #665C54;
+    }
+    .pagination-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .page-size-selector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.82rem;
+      color: var(--brand-mocha-brown);
+      margin-right: 8px;
+    }
+    .page-size-selector select {
+      padding: 5px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      font-size: 0.82rem;
+      background: #FAF7F2;
+      color: var(--brand-mocha-brown);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-page {
+      background: #FAF7F2;
+      border: 1px solid var(--color-border);
+      color: var(--brand-mocha-brown);
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-page:hover:not(:disabled) {
+      background: var(--brand-warm-gold);
+      color: #FFFFFF;
+      border-color: var(--brand-warm-gold);
+    }
+    .btn-page:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .btn-page-num {
+      background: #FFFFFF;
+      border: 1px solid var(--color-border);
+      color: var(--brand-mocha-brown);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-page-num:hover {
+      border-color: var(--brand-warm-gold);
+      color: var(--brand-warm-gold);
+    }
+    .btn-page-num.active {
+      background: var(--brand-mocha-brown);
+      border-color: var(--brand-mocha-brown);
+      color: #FFFFFF;
+      font-weight: 700;
+    }
   `]
 })
 export class AdminComponent implements OnInit {
   defaultImage = DEFAULT_FALLBACK_IMAGE;
-  activeTab: 'products' | 'add-product' | 'categories' | 'add-category' | 'orders' | 'credentials' | 'homepage-photos' = 'categories';
+  activeTab: 'products' | 'add-product' | 'categories' | 'add-category' | 'orders' | 'credentials' | 'homepage-photos' | 'settings' = 'categories';
+  
+  storeSettingsForm = {
+    gst_number: '24AAACA1234A1Z5',
+    gst_percentage: 3.0,
+    delivery_charge: 50.0,
+    free_delivery_threshold: 600.0,
+    company_name: 'Arista Trinkets Atelier',
+    company_address: 'Atelier Suite 402, Heritage Diamond District, Surat, Gujarat 395003',
+    company_phone: '+91 98765 43210',
+    company_email: 'concierge@aristatrinkets.com',
+    invoice_prefix: 'INV-'
+  };
+  isLoadingSettings: boolean = false;
+  isSavingSettings: boolean = false;
+  gstinValidationError: string = '';
+
   products: ProductCardData[] = [];
   categories: Category[] = [];
   successMessage: string = '';
+
+  // ── Pagination State for Categories ──
+  categoryCurrentPage: number = 1;
+  categoryPageSize: number = 10;
+
+  get pagedCategories(): Category[] {
+    const start = (this.categoryCurrentPage - 1) * this.categoryPageSize;
+    return this.categories.slice(start, start + this.categoryPageSize);
+  }
+
+  get categoryTotalPages(): number {
+    return Math.ceil(this.categories.length / this.categoryPageSize) || 1;
+  }
+
+  get categoryPageNumbers(): number[] {
+    const pages: number[] = [];
+    const max = Math.max(this.categoryTotalPages, 1);
+    for (let i = 1; i <= max; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  setCategoryPage(page: number): void {
+    if (page >= 1 && page <= this.categoryTotalPages) {
+      this.categoryCurrentPage = page;
+    }
+  }
+
+  onCategoryPageSizeChange(): void {
+    this.categoryCurrentPage = 1;
+  }
+
+  // ── Pagination State for Products ──
+  productCurrentPage: number = 1;
+  productPageSize: number = 10;
+
+  productFilterVisibility: string = 'all';
+
+  get activeProductsCount(): number {
+    return (this.products || []).filter(p => p.available !== false && (p as any).isActive !== false).length;
+  }
+
+  get inactiveProductsCount(): number {
+    return (this.products || []).filter(p => p.available === false || (p as any).isActive === false).length;
+  }
+
+  get filteredProducts(): ProductCardData[] {
+    if (this.productFilterVisibility === 'active') {
+      return (this.products || []).filter(p => p.available !== false && (p as any).isActive !== false);
+    } else if (this.productFilterVisibility === 'inactive') {
+      return (this.products || []).filter(p => p.available === false || (p as any).isActive === false);
+    }
+    return this.products || [];
+  }
+
+  get pagedProducts(): ProductCardData[] {
+    const start = (this.productCurrentPage - 1) * this.productPageSize;
+    return this.filteredProducts.slice(start, start + this.productPageSize);
+  }
+
+  get productTotalPages(): number {
+    return Math.ceil(this.filteredProducts.length / this.productPageSize) || 1;
+  }
+
+  async toggleProductActiveStatus(product: any): Promise<void> {
+    const isCurrentlyActive = product.available !== false && product.isActive !== false;
+    const newStatus = !isCurrentlyActive;
+    const actionLabel = newStatus ? 'published to storefront' : 'hidden from storefront';
+
+    try {
+      const token = this.authService.getToken();
+      await fetch(API_ENDPOINTS.ADMIN.PRODUCT_BY_ID(product.id), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...product,
+          available: newStatus,
+          isActive: newStatus
+        })
+      });
+    } catch (err) {}
+
+    product.available = newStatus;
+    product.isActive = newStatus;
+
+    this.mockDataService.updateProduct(product.id, {
+      available: newStatus,
+      isActive: newStatus
+    } as any);
+
+    this.showToast(`Product "${product.name}" is now ${actionLabel}.`, 'success');
+    this.cdr.detectChanges();
+  }
+
+  get productPageNumbers(): number[] {
+    const pages: number[] = [];
+    const max = Math.max(this.productTotalPages, 1);
+    for (let i = 1; i <= max; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  setProductPage(page: number): void {
+    if (page >= 1 && page <= this.productTotalPages) {
+      this.productCurrentPage = page;
+    }
+  }
+
+  onProductPageSizeChange(): void {
+    this.productCurrentPage = 1;
+  }
+
+  getMin(a: number, b: number): number {
+    return Math.min(a, b);
+  }
 
   homepageEditorialPhoto: string = '/assets/images/editorial-artisanal-craft.jpg';
   newEditorialPhotoPreview: string = '';
@@ -2584,6 +3404,7 @@ export class AdminComponent implements OnInit {
   adminUser: any = null;
   showLogoutModal: boolean = false;
   deleteTarget: { type: 'product' | 'category' | 'user'; id: number | string; name: string } | null = null;
+  pendingOrderStatusChange: { order: any; targetStatus: string; oldStatus: string; selectElem: HTMLSelectElement } | null = null;
 
   editingProduct: any = null;
   editSuccessMessage: string = '';
@@ -2633,6 +3454,15 @@ export class AdminComponent implements OnInit {
     status: string;
   }> = [];
 
+  get lowStockCount(): number {
+    if (!this.products || this.products.length === 0) return 0;
+    return this.products.filter(p =>
+      p.inStock === false ||
+      (p as any).in_stock === 0 ||
+      (p.stockQuantity !== undefined && p.stockQuantity !== null && Number(p.stockQuantity) <= 5)
+    ).length;
+  }
+
   newProduct = {
     name: '',
     category: '',
@@ -2640,6 +3470,7 @@ export class AdminComponent implements OnInit {
     compareAtPrice: '',
     badge: 'NEW',
     stockQuantity: '',
+    isActive: true,
     image: '',
     images: [] as string[],
     description: '',
@@ -2679,6 +3510,13 @@ export class AdminComponent implements OnInit {
   orderSearchQuery: string = '';
   selectedOrderForDetails: any = null;
 
+  orderSummaryMetrics = {
+    totalRevenue: 0,
+    paidRevenue: 0,
+    pendingRevenue: 0,
+    cancelledRevenue: 0
+  };
+
   orderCurrentPage: number = 1;
   orderPageSize: number = 10;
   orderTotalItems: number = 0;
@@ -2691,6 +3529,16 @@ export class AdminComponent implements OnInit {
       pages.push(i);
     }
     return pages;
+  }
+
+  setOrderPage(page: number): void {
+    if (page >= 1 && page <= this.orderTotalPages) {
+      this.loadAdminOrders(page);
+    }
+  }
+
+  onOrderPageSizeChange(): void {
+    this.loadAdminOrders(1);
   }
 
   async loadAdminOrders(page: number = this.orderCurrentPage): Promise<void> {
@@ -2715,6 +3563,16 @@ export class AdminComponent implements OnInit {
       const data = await res.json();
       if (data && data.success && data.data && data.data.orders) {
         this.ordersList = data.data.orders;
+        if (data.data.summary) {
+          this.orderSummaryMetrics = {
+            totalRevenue: Number(data.data.summary.totalRevenue) || 0,
+            paidRevenue: Number(data.data.summary.paidRevenue) || 0,
+            pendingRevenue: Number(data.data.summary.pendingRevenue) || 0,
+            cancelledRevenue: Number(data.data.summary.cancelledRevenue) || 0
+          };
+        } else {
+          this.calculateOrderMetricsFromList();
+        }
         if (data.data.pagination) {
           this.orderTotalItems = data.data.pagination.total || 0;
           this.orderTotalPages = data.data.pagination.pages || Math.ceil(this.orderTotalItems / this.orderPageSize) || 1;
@@ -2723,15 +3581,37 @@ export class AdminComponent implements OnInit {
         this.ordersList = [];
         this.orderTotalItems = 0;
         this.orderTotalPages = 1;
+        this.calculateOrderMetricsFromList();
       }
     } catch (err) {
       this.ordersList = [];
       this.orderTotalItems = 0;
       this.orderTotalPages = 1;
+      this.calculateOrderMetricsFromList();
     } finally {
       this.isLoadingOrders = false;
       this.cdr.detectChanges();
     }
+  }
+
+  calculateOrderMetricsFromList(): void {
+    const total = this.ordersList.reduce((acc, o) => acc + (Number(o.total_amount || o.total) || 0), 0);
+    const paid = this.ordersList
+      .filter(o => (o.payment_status || o.paymentStatus) === 'PAID')
+      .reduce((acc, o) => acc + (Number(o.total_amount || o.total) || 0), 0);
+    const pending = this.ordersList
+      .filter(o => (o.payment_status || o.paymentStatus) === 'PENDING')
+      .reduce((acc, o) => acc + (Number(o.total_amount || o.total) || 0), 0);
+    const cancelled = this.ordersList
+      .filter(o => (o.order_status || o.status) === 'CANCELLED')
+      .reduce((acc, o) => acc + (Number(o.total_amount || o.total) || 0), 0);
+
+    this.orderSummaryMetrics = {
+      totalRevenue: total,
+      paidRevenue: paid,
+      pendingRevenue: pending,
+      cancelledRevenue: cancelled
+    };
   }
 
   resetOrderFilters(): void {
@@ -2744,9 +3624,39 @@ export class AdminComponent implements OnInit {
     this.loadAdminOrders(1);
   }
 
-  async updateOrderStatus(order: any, event: Event): Promise<void> {
+  promptChangeOrderStatus(order: any, event: Event): void {
     const selectElem = event.target as HTMLSelectElement;
-    const newStatus = selectElem.value;
+    const targetStatus = selectElem.value;
+    const oldStatus = order.order_status || order.status;
+
+    if (targetStatus === oldStatus) return;
+
+    // Revert visual selection back to old status until user confirms in modal
+    selectElem.value = oldStatus;
+
+    this.pendingOrderStatusChange = {
+      order,
+      targetStatus,
+      oldStatus,
+      selectElem
+    };
+    this.cdr.detectChanges();
+  }
+
+  cancelOrderStatusChange(): void {
+    if (this.pendingOrderStatusChange) {
+      this.pendingOrderStatusChange.selectElem.value = this.pendingOrderStatusChange.oldStatus;
+      this.pendingOrderStatusChange = null;
+      this.cdr.detectChanges();
+    }
+  }
+
+  async confirmOrderStatusChange(): Promise<void> {
+    if (!this.pendingOrderStatusChange) return;
+
+    const { order, targetStatus, selectElem } = this.pendingOrderStatusChange;
+    this.pendingOrderStatusChange = null;
+
     const orderId = order.id || order.order_number;
     if (!orderId) return;
 
@@ -2758,27 +3668,77 @@ export class AdminComponent implements OnInit {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ status: newStatus, orderStatus: newStatus })
+        body: JSON.stringify({ status: targetStatus, orderStatus: targetStatus })
       });
       const data = await res.json();
       if (data && data.success) {
-        order.order_status = newStatus;
-        order.status = newStatus;
-        this.showToast(`Order #${order.order_number || order.number} status updated to ${newStatus} in database.`, 'success');
+        order.order_status = targetStatus;
+        order.status = targetStatus;
+        if (data.data?.paymentStatus) {
+          order.payment_status = data.data.paymentStatus;
+          order.paymentStatus = data.data.paymentStatus;
+        } else if (targetStatus === 'DELIVERED' && (order.payment_method === 'COD' || order.paymentMethod === 'COD')) {
+          order.payment_status = 'PAID';
+          order.paymentStatus = 'PAID';
+        }
+        selectElem.value = targetStatus;
+        this.showToast(`Order #${order.order_number || order.number} status updated to ${targetStatus}!`, 'success');
         this.loadAdminOrders();
       } else {
+        selectElem.value = order.order_status || order.status;
         this.showToast(data?.message || 'Failed to update order status.', 'error');
       }
     } catch (err: any) {
+      selectElem.value = order.order_status || order.status;
       this.showToast(`Error updating order status: ${err.message}`, 'error');
     }
+    this.cdr.detectChanges();
+  }
+
+  async toggleOrderPaymentStatus(order: any, targetPaymentStatus: string): Promise<void> {
+    const orderId = order.id || order.order_number;
+    if (!orderId) return;
+
+    try {
+      const token = this.authService.getToken();
+      const res = await fetch(API_ENDPOINTS.ADMIN.ORDER_PAYMENT_STATUS(orderId), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ paymentStatus: targetPaymentStatus })
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        order.payment_status = targetPaymentStatus;
+        order.paymentStatus = targetPaymentStatus;
+        this.showToast(`Order #${order.order_number || order.number} payment marked as ${targetPaymentStatus}!`, 'success');
+        this.loadAdminOrders();
+      } else {
+        this.showToast(data?.message || 'Failed to update payment status.', 'error');
+      }
+    } catch (err: any) {
+      this.showToast(`Error updating payment status: ${err.message}`, 'error');
+    }
+    this.cdr.detectChanges();
   }
 
   mockOrders: any[] = [];
 
   toastMessage: string = '';
   toastType: 'success' | 'error' = 'success';
+  toastTitle: string = '';
   toastTimeout: any = null;
+
+  dismissToast(): void {
+    if (this.toastTimeout) {
+      clearTimeout(this.toastTimeout);
+      this.toastTimeout = null;
+    }
+    this.toastMessage = '';
+    this.cdr.detectChanges();
+  }
 
   private mockDataService = inject(MockDataService);
   private authService = inject(AuthService);
@@ -2786,18 +3746,18 @@ export class AdminComponent implements OnInit {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
-  showToast(message: string, type: 'success' | 'error' = 'success'): void {
+  showToast(message: string, type: 'success' | 'error' = 'success', title?: string): void {
     this.toastMessage = message;
     this.toastType = type;
+    this.toastTitle = title || (type === 'success' ? 'Success' : 'Notice');
     this.cdr.detectChanges();
 
     if (this.toastTimeout) {
       clearTimeout(this.toastTimeout);
     }
     this.toastTimeout = setTimeout(() => {
-      this.toastMessage = '';
-      this.cdr.detectChanges();
-    }, 4000);
+      this.dismissToast();
+    }, 4500);
   }
 
   @HostListener('wheel', ['$event'])
@@ -2822,8 +3782,9 @@ export class AdminComponent implements OnInit {
 
     this.loadAdminUsers();
     this.loadAdminOrders();
+    this.loadStoreSettings();
 
-    this.mockDataService.getProducts().subscribe(prods => {
+    this.mockDataService.getAdminProducts().subscribe(prods => {
       const uniqueProdsMap = new Map<string, ProductCardData>();
       prods.forEach(p => {
         let img = p.image ? p.image.trim() : '';
@@ -2849,6 +3810,103 @@ export class AdminComponent implements OnInit {
     });
 
     this.loadHomepageConfig();
+  }
+
+  getInvoicePdfUrl(order: any): string {
+    if (!order) return '#';
+    const orderNumber = order.order_number || order.orderNumber || order.id;
+    return API_ENDPOINTS.ORDERS.INVOICE_PDF(orderNumber);
+  }
+
+  validateGstinInput(): void {
+    if (!this.storeSettingsForm.gst_number) {
+      this.gstinValidationError = 'GSTIN is required.';
+      return;
+    }
+    const clean = this.storeSettingsForm.gst_number.trim().toUpperCase();
+    this.storeSettingsForm.gst_number = clean;
+    const gstinRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    if (!gstinRegex.test(clean)) {
+      this.gstinValidationError = 'Invalid Indian GSTIN format (e.g. 24AAACA1234A1Z5).';
+    } else {
+      this.gstinValidationError = '';
+    }
+  }
+
+  async loadStoreSettings(): Promise<void> {
+    this.isLoadingSettings = true;
+    try {
+      const token = this.authService.getToken();
+      const res = await fetch(API_ENDPOINTS.ADMIN.SETTINGS, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
+      if (data && data.success && data.data) {
+        this.storeSettingsForm = {
+          gst_number: data.data.gst_number || '24AAACA1234A1Z5',
+          gst_percentage: Number(data.data.gst_percentage) !== undefined ? Number(data.data.gst_percentage) : 3.0,
+          delivery_charge: Number(data.data.delivery_charge) !== undefined ? Number(data.data.delivery_charge) : 50.0,
+          free_delivery_threshold: Number(data.data.free_delivery_threshold) !== undefined ? Number(data.data.free_delivery_threshold) : 600.0,
+          company_name: data.data.company_name || 'Arista Trinkets Atelier',
+          company_address: data.data.company_address || 'Atelier Suite 402, Heritage Diamond District, Surat, Gujarat 395003',
+          company_phone: data.data.company_phone || '+91 98765 43210',
+          company_email: data.data.company_email || 'concierge@aristatrinkets.com',
+          invoice_prefix: data.data.invoice_prefix || 'INV-'
+        };
+        this.validateGstinInput();
+      }
+    } catch (err: any) {
+      this.showToast(`Failed to load store settings: ${err.message}`, 'error');
+    } finally {
+      this.isLoadingSettings = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  async saveStoreSettings(): Promise<void> {
+    this.validateGstinInput();
+    if (this.gstinValidationError) {
+      this.showToast('Please fix the GSTIN validation error before saving.', 'error');
+      return;
+    }
+
+    if (!this.storeSettingsForm.company_name?.trim()) {
+      this.showToast('Company name is required for legal invoices.', 'error');
+      return;
+    }
+
+    if (this.storeSettingsForm.delivery_charge < 0 || this.storeSettingsForm.free_delivery_threshold < 0) {
+      this.showToast('Delivery fee and free threshold cannot be negative.', 'error');
+      return;
+    }
+
+    this.isSavingSettings = true;
+    try {
+      const token = this.authService.getToken();
+      const res = await fetch(API_ENDPOINTS.ADMIN.SETTINGS, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(this.storeSettingsForm)
+      });
+      const data = await res.json();
+      if (this.checkAuthError(res, data)) return;
+      if (data && data.success) {
+        this.showToast('Settings saved successfully! Changes are now live.', 'success');
+      } else {
+        this.showToast(data?.message || 'Failed to save settings.', 'error');
+      }
+    } catch (err: any) {
+      this.showToast(`Failed to save settings: ${err.message}`, 'error');
+    } finally {
+      this.isSavingSettings = false;
+      this.cdr.detectChanges();
+    }
   }
 
   loadHomepageConfig(): void {
@@ -3162,6 +4220,17 @@ export class AdminComponent implements OnInit {
       ];
     }
 
+    const rawStock = (product.stockQuantity !== undefined && product.stockQuantity !== null && product.stockQuantity !== '')
+      ? Number(product.stockQuantity)
+      : ((product.stock_quantity !== undefined && product.stock_quantity !== null && product.stock_quantity !== '')
+          ? Number(product.stock_quantity)
+          : 0);
+
+    const isOutOfStock = product.inStock === false || (product as any).in_stock === 0 || rawStock <= 0;
+    const finalStockQty = isOutOfStock ? 0 : rawStock;
+
+    const isProductActive = product.isActive !== false && product.available !== false && (product as any).is_active !== 0;
+
     this.editingProduct = {
       id: product.id,
       name: product.name,
@@ -3171,7 +4240,8 @@ export class AdminComponent implements OnInit {
       badge: product.badge || '',
       image: img || (imagesList.length > 0 ? imagesList[0] : ''),
       images: imagesList,
-      stockQuantity: product.stockQuantity !== undefined && product.stockQuantity !== null ? product.stockQuantity : 0,
+      stockQuantity: finalStockQty,
+      isActive: isProductActive,
       description: product.description || '',
       materialsStr: matsStr,
       careGuide: product.careGuide || product.care_guide || 'Handle with care. Store in protective velvet pouch after use.',
@@ -3242,11 +4312,21 @@ export class AdminComponent implements OnInit {
     const validSpecs = (this.editingProduct.specifications || [])
       .filter((s: any) => s.label && s.label.trim() !== '' && s.value && s.value.trim() !== '');
 
+    const stockQty = (this.editingProduct.stockQuantity !== undefined && this.editingProduct.stockQuantity !== null && this.editingProduct.stockQuantity !== '')
+      ? Math.max(0, Number(this.editingProduct.stockQuantity))
+      : 0;
+    const isStockValid = stockQty > 0;
+
+    const isProductActive = this.editingProduct.isActive !== false;
+
     const payload = {
       ...this.editingProduct,
       name: this.editingProduct.name.trim(),
       price: Number(this.editingProduct.price),
-      stockQuantity: Number(this.editingProduct.stockQuantity) || 0,
+      inStock: isStockValid,
+      stockQuantity: stockQty,
+      available: isProductActive,
+      isActive: isProductActive,
       description: this.editingProduct.description ? this.editingProduct.description.trim() : '',
       image: finalImage,
       images: imagesList,
@@ -3288,16 +4368,19 @@ export class AdminComponent implements OnInit {
       badge: (this.editingProduct.badge as any) || undefined,
       image: finalImage,
       images: imagesList,
-      stockQuantity: Number(this.editingProduct.stockQuantity) || 0,
+      inStock: isStockValid,
+      stockQuantity: stockQty,
+      available: isProductActive,
+      isActive: isProductActive,
       description: this.editingProduct.description ? this.editingProduct.description.trim() : '',
       materials: materialsArray,
       careGuide: this.editingProduct.careGuide || '',
       shippingInfo: this.editingProduct.shippingInfo || '',
       specifications: validSpecs
-    });
+    } as any);
 
     // Update product in local state
-    const index = this.products.findIndex(p => p.id === this.editingProduct.id);
+    const index = this.products.findIndex(p => String(p.id) === String(this.editingProduct.id) || p.slug === this.editingProduct.slug);
     if (index !== -1) {
       this.products[index] = {
         ...this.products[index],
@@ -3307,7 +4390,11 @@ export class AdminComponent implements OnInit {
         compareAtPrice: this.editingProduct.compareAtPrice ? Number(this.editingProduct.compareAtPrice) : undefined,
         badge: (this.editingProduct.badge as any) || undefined,
         image: finalImage,
-        images: imagesList
+        images: imagesList,
+        inStock: isStockValid,
+        stockQuantity: stockQty,
+        available: isProductActive,
+        isActive: isProductActive
       };
     }
 
@@ -3477,17 +4564,10 @@ export class AdminComponent implements OnInit {
         return;
       }
     } catch (err) {
-      // Fallback
+      console.error('Failed to load admin users from database:', err);
     }
-
-    const savedAdmins = localStorage.getItem('arista_created_admins');
-    if (savedAdmins) {
-      try {
-        this.createdAdminUsers = JSON.parse(savedAdmins);
-      } catch {
-        this.createdAdminUsers = [];
-      }
-    }
+    this.createdAdminUsers = [];
+    this.cdr.detectChanges();
   }
 
   async onCreateAdmin(event: Event): Promise<void> {
@@ -3590,14 +4670,15 @@ export class AdminComponent implements OnInit {
       });
       const data = await res.json();
       if (this.checkAuthError(res, data)) return;
-    } catch (err) {
-      // Fallback
+      if (data && data.success) {
+        this.showToast(`Admin user account "${adminName}" revoked and removed.`, 'success');
+        this.loadAdminUsers();
+      } else {
+        this.showToast(data?.message || 'Failed to remove admin user.', 'error');
+      }
+    } catch (err: any) {
+      this.showToast(`Error deleting admin user: ${err.message}`, 'error');
     }
-
-    this.createdAdminUsers = this.createdAdminUsers.filter(a => a.id !== adminId);
-    localStorage.setItem('arista_created_admins', JSON.stringify(this.createdAdminUsers));
-    this.showToast(`Admin user account "${adminName}" revoked and removed.`, 'success');
-    this.loadAdminUsers();
   }
 
   promptDeleteProduct(product: ProductCardData): void {
@@ -3714,14 +4795,15 @@ export class AdminComponent implements OnInit {
         });
         const data = await res.json();
         if (this.checkAuthError(res, data)) return;
-      } catch (err) {
-        // Offline fallback
+        if (data && data.success) {
+          this.showToast(`Admin user account "${name}" revoked and removed.`, 'success');
+          this.loadAdminUsers();
+        } else {
+          this.showToast(data?.message || 'Failed to remove admin user.', 'error');
+        }
+      } catch (err: any) {
+        this.showToast(`Error deleting admin user: ${err.message}`, 'error');
       }
-
-      this.createdAdminUsers = this.createdAdminUsers.filter(a => String(a.id) !== targetStr);
-      localStorage.setItem('arista_created_admins', JSON.stringify(this.createdAdminUsers));
-      this.showToast(`Admin user account "${name}" revoked and removed.`, 'success');
-      this.loadAdminUsers();
     }
   }
 
@@ -3881,6 +4963,7 @@ export class AdminComponent implements OnInit {
       compareAtPrice: '',
       badge: 'NEW',
       stockQuantity: '',
+      isActive: true,
       image: '',
       images: [],
       description: '',

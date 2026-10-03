@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -116,7 +116,7 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
                     <a [routerLink]="['/product', item.product.slug]">{{ item.product.name }}</a>
                   </h3>
                   <span *ngIf="item.selectedMetal" class="item-metal">Metal: {{ item.selectedMetal }}</span>
-                  <button type="button" class="btn-remove" (click)="removeItem(item)">
+                  <button type="button" class="btn-remove" (click)="promptRemoveItem(item)">
                     Remove
                   </button>
                 </div>
@@ -147,7 +147,7 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
 
             <div class="cart-actions-bar">
               <a routerLink="/shop" class="link-continue">&larr; Continue Shopping</a>
-              <button type="button" class="btn-clear" (click)="clearCart()">Clear Bag</button>
+              <button type="button" class="btn-clear" (click)="openClearCartModal()">Clear Bag</button>
             </div>
           </div>
 
@@ -155,6 +155,22 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
           <div class="summary-column">
             <div class="summary-card">
               <h3 class="summary-title">Order Summary</h3>
+
+              <!-- Free Delivery Dynamic Tracker -->
+              <div class="free-delivery-tracker" *ngIf="cart && cart.freeDeliveryThreshold">
+                <div class="delivery-status-msg" *ngIf="!cart.isFreeDeliveryUnlocked">
+                  <span>🚚 Add <strong>₹{{ (cart.remainingForFreeDelivery || 0) | number:'1.0-0' }}</strong> more to get <strong>FREE delivery</strong>!</span>
+                </div>
+                <div class="delivery-status-msg unlocked" *ngIf="cart.isFreeDeliveryUnlocked">
+                  <span>🎉 <strong>Congratulations!</strong> You’ve unlocked <strong>FREE delivery</strong>!</span>
+                </div>
+                <div class="delivery-progress-bar">
+                  <div
+                    class="delivery-progress-fill"
+                    [style.width.%]="getProgressPercent()"
+                  ></div>
+                </div>
+              </div>
 
               <div class="summary-row">
                 <span>Subtotal ({{ cart.itemCount }} item{{ cart.itemCount > 1 ? 's' : '' }})</span>
@@ -199,6 +215,73 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
         </div>
       </div>
     </section>
+
+    <!-- Clear Bag Confirmation Modal Popup -->
+    <div *ngIf="showClearCartModal()" class="auth-modal-backdrop" (click)="onConfirmBackdropClick($event, 'clear')">
+      <div class="auth-modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="clearModalTitle">
+        <button type="button" class="auth-modal-close" (click)="showClearCartModal.set(false)" aria-label="Close dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+
+        <div class="confirm-modal-icon danger">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </div>
+
+        <h2 id="clearModalTitle" class="auth-modal-title">Clear Shopping Bag?</h2>
+        <p class="auth-modal-desc">
+          Are you sure you want to remove all <strong>{{ cart.itemCount }} item{{ cart.itemCount > 1 ? 's' : '' }}</strong> from your shopping bag? This action cannot be undone.
+        </p>
+
+        <div class="confirm-modal-actions">
+          <button type="button" class="btn-confirm-cancel" (click)="showClearCartModal.set(false)">
+            Keep Items
+          </button>
+          <button type="button" class="btn-confirm-danger" (click)="confirmClearCart()">
+            Yes, Clear Bag
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Remove Single Item Confirmation Modal Popup -->
+    <div *ngIf="itemToRemove()" class="auth-modal-backdrop" (click)="onConfirmBackdropClick($event, 'remove')">
+      <div class="auth-modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="removeModalTitle">
+        <button type="button" class="auth-modal-close" (click)="itemToRemove.set(null)" aria-label="Close dialog">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+
+        <div class="confirm-modal-icon warning">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+
+        <h2 id="removeModalTitle" class="auth-modal-title">Remove Item?</h2>
+        <p class="auth-modal-desc">
+          Are you sure you want to remove <strong>{{ itemToRemove()?.product?.name }}</strong> from your bag?
+        </p>
+
+        <div class="confirm-modal-actions">
+          <button type="button" class="btn-confirm-cancel" (click)="itemToRemove.set(null)">
+            Cancel
+          </button>
+          <button type="button" class="btn-confirm-danger" (click)="confirmRemoveItem()">
+            Remove Item
+          </button>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
     .cart-hero {
@@ -495,6 +578,39 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
       font-size: 0.82rem;
     }
 
+    .free-delivery-tracker {
+      background: var(--brand-pearl-beige, #FAF7F2);
+      border: 1px solid #EAE3DC;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+    .delivery-status-msg {
+      font-size: 0.85rem;
+      color: var(--brand-mocha-brown, #5B4636);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .delivery-status-msg.unlocked {
+      color: #2E7D32;
+      font-weight: 600;
+    }
+    .delivery-progress-bar {
+      width: 100%;
+      height: 6px;
+      background: #E8E0D5;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .delivery-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--brand-warm-gold, #CFA874), #B8860B);
+      border-radius: 10px;
+      transition: width 0.3s ease;
+    }
+
     .summary-divider {
       height: 1px;
       background-color: #e8e0d4;
@@ -564,16 +680,23 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
     }
 
     .auth-modal-backdrop {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      background: rgba(26, 18, 11, 0.55);
-      backdrop-filter: blur(3px);
-      -webkit-backdrop-filter: blur(3px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 999999 !important;
+      background: rgba(26, 18, 11, 0.65) !important;
+      backdrop-filter: blur(4px) !important;
+      -webkit-backdrop-filter: blur(4px) !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 20px !important;
+      box-sizing: border-box !important;
+      margin: 0 !important;
       animation: backdropFadeIn 0.22s ease;
     }
 
@@ -589,6 +712,7 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
       width: 100%;
       max-width: 420px;
       position: relative;
+      margin: auto !important;
       box-shadow:
         0 32px 64px rgba(26, 18, 11, 0.22),
         0 8px 24px rgba(26, 18, 11, 0.12);
@@ -720,11 +844,68 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
       display: block;
       width: 100%;
       margin-top: 24px;
-      background: transparent;
-      border: none;
-      padding: 0;
+    }
+
+    /* Confirm Modal Customizations */
+    .confirm-modal-icon {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .confirm-modal-icon.danger {
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FCA5A5;
+      box-shadow: 0 6px 16px rgba(220, 38, 38, 0.15);
+    }
+    .confirm-modal-icon.warning {
+      background: #FFFBEB;
+      color: #D97706;
+      border: 1px solid #FCD34D;
+      box-shadow: 0 6px 16px rgba(217, 119, 6, 0.15);
+    }
+    .confirm-modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      justify-content: center;
+    }
+    .btn-confirm-cancel {
+      flex: 1;
+      background: #F5EFE8;
+      border: 1px solid #D8C8B8;
+      color: var(--brand-mocha-brown, #5B4636);
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 12px 20px;
+      border-radius: 50px;
       cursor: pointer;
-      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .btn-confirm-cancel:hover {
+      background: #EBE1D5;
+      border-color: #C8B8A8;
+    }
+    .btn-confirm-danger {
+      flex: 1;
+      background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+      border: none;
+      color: #FFFFFF;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 12px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(220, 38, 38, 0.32);
+    }
+    .btn-confirm-danger:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
     }
   `]
 })
@@ -735,13 +916,21 @@ export class CartComponent implements OnInit, OnDestroy {
   /** Controls visibility of the sign-in required banner */
   showAuthBanner = signal(false);
 
+  /** Controls visibility of Clear Cart modal */
+  showClearCartModal = signal(false);
+
+  /** Holds target item for remove confirmation */
+  itemToRemove = signal<any>(null);
+
   private cartService = inject(CartService);
   private authService = inject(AuthService);
   private router      = inject(Router);
+  private cdr         = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.cartSub = this.cartService.cart$.subscribe(summary => {
       this.cart = summary;
+      this.cdr.detectChanges();
     });
   }
 
@@ -756,9 +945,30 @@ export class CartComponent implements OnInit, OnDestroy {
     this.cartService.updateQuantity(targetId, qty, item?.selectedMetal);
   }
 
+  promptRemoveItem(item: any): void {
+    this.itemToRemove.set(item);
+  }
+
+  confirmRemoveItem(): void {
+    const item = this.itemToRemove();
+    if (item) {
+      this.removeItem(item);
+      this.itemToRemove.set(null);
+    }
+  }
+
   removeItem(item: any): void {
     const targetId = (item?.product?.id !== undefined && item?.product?.id !== null) ? item.product.id : item?.product?.slug;
     this.cartService.removeFromCart(targetId, item?.selectedMetal);
+  }
+
+  openClearCartModal(): void {
+    this.showClearCartModal.set(true);
+  }
+
+  confirmClearCart(): void {
+    this.cartService.clearCart();
+    this.showClearCartModal.set(false);
   }
 
   getDiscountPercentage(product: any): number {
@@ -777,11 +987,6 @@ export class CartComponent implements OnInit, OnDestroy {
     return 0;
   }
 
-  /**
-   * Called when user clicks "Proceed to Checkout".
-   * - If authenticated → navigate to /checkout
-   * - If not authenticated → open the modal popup
-   */
   proceedToCheckout(): void {
     if (this.authService.isAuthenticated()) {
       this.showAuthBanner.set(false);
@@ -791,20 +996,24 @@ export class CartComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Close the modal only — checkout requires login */
   proceedAsGuest(): void {
     this.showAuthBanner.set(false);
   }
 
-  /** Close modal when clicking the dark backdrop (outside the dialog box) */
   onBackdropClick(event: MouseEvent): void {
     if ((event.target as HTMLElement).classList.contains('auth-modal-backdrop')) {
       this.showAuthBanner.set(false);
     }
   }
 
-  clearCart(): void {
-    this.cartService.clearCart();
+  onConfirmBackdropClick(event: MouseEvent, target: 'clear' | 'remove'): void {
+    if ((event.target as HTMLElement).classList.contains('auth-modal-backdrop')) {
+      if (target === 'clear') {
+        this.showClearCartModal.set(false);
+      } else {
+        this.itemToRemove.set(null);
+      }
+    }
   }
 
   getItemImage(item: any): string {
@@ -818,5 +1027,11 @@ export class CartComponent implements OnInit, OnDestroy {
     if (imgElement) {
       imgElement.src = getFallbackProductImage(item?.product?.category || item?.product?.name);
     }
+  }
+
+  getProgressPercent(): number {
+    if (!this.cart?.freeDeliveryThreshold) return 0;
+    const pct = (this.cart.subtotal / this.cart.freeDeliveryThreshold) * 100;
+    return Math.min(100, Math.max(0, Math.round(pct)));
   }
 }

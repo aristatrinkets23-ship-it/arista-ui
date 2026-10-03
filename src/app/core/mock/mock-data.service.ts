@@ -48,9 +48,10 @@ export class MockDataService {
     this.refreshFromApi();
   }
 
-  async refreshFromApi(): Promise<void> {
+  async refreshFromApi(includeInactive: boolean = true): Promise<void> {
     try {
-      const prodRes = await fetch(API_ENDPOINTS.PRODUCTS.LIST);
+      const url = `${API_ENDPOINTS.PRODUCTS.LIST}?includeInactive=true`;
+      const prodRes = await fetch(url);
       if (prodRes.ok) {
         const prodData = await prodRes.json();
         if (prodData && prodData.success && Array.isArray(prodData.data)) {
@@ -62,6 +63,12 @@ export class MockDataService {
               img = '/' + img;
             }
             const finalImg = img || fallbackImg;
+            const parsedStock = (p.stock_quantity !== undefined && p.stock_quantity !== null && String(p.stock_quantity).trim() !== '')
+              ? Math.max(0, Number(p.stock_quantity))
+              : (p.stockQuantity !== undefined && p.stockQuantity !== null ? Math.max(0, Number(p.stockQuantity)) : (p.in_stock === 0 || p.inStock === false ? 0 : 10));
+            const isProductInStock = Boolean(p.in_stock !== 0 && p.inStock !== false && parsedStock > 0);
+            const isProductActive = Boolean(p.is_active !== 0 && p.is_active !== false && p.isActive !== false && p.available !== false);
+
             return {
               id: Number(p.id) || p.id,
               name: p.name,
@@ -73,9 +80,10 @@ export class MockDataService {
               badge: p.badge || undefined,
               category: catName,
               category_slug: p.category_slug || p.category_name,
-              available: true,
-              inStock: Boolean(p.in_stock !== 0),
-              stockQuantity: Number(p.stock_quantity || 10),
+              available: isProductActive,
+              isActive: isProductActive,
+              inStock: isProductInStock,
+              stockQuantity: isProductInStock ? parsedStock : 0,
               description: p.description || '',
               materials: p.materials ? (typeof p.materials === 'string' ? p.materials.split(',') : p.materials) : ['18K Warm Gold'],
               careGuide: p.care_guide || '',
@@ -87,6 +95,7 @@ export class MockDataService {
           });
 
           this.products = apiProducts;
+          this.productsSubject.next(this.products);
           this.saveProductsToStorage();
         }
       }
@@ -309,11 +318,17 @@ export class MockDataService {
     return of(found);
   }
 
+  getAdminProducts(): Observable<Product[]> {
+    this.refreshFromApi(true);
+    return this.productsSubject.asObservable();
+  }
+
   getFeaturedProducts(): Observable<ProductCardData[]> {
     this.refreshFromApi();
     return this.productsSubject.pipe(
       map(prods => {
-        const sorted = [...prods].sort((a, b) => {
+        const activeProds = prods.filter(p => p.available !== false && (p as any).isActive !== false);
+        const sorted = [...activeProds].sort((a, b) => {
           const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
           const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
           return idB - idA;
@@ -327,7 +342,8 @@ export class MockDataService {
     this.refreshFromApi();
     return this.productsSubject.pipe(
       map(prods => {
-        const newOnly = prods.filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'NEW');
+        const activeProds = prods.filter(p => p.available !== false && (p as any).isActive !== false);
+        const newOnly = activeProds.filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'NEW');
         return [...newOnly]
           .sort((a, b) => {
             const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
@@ -343,7 +359,8 @@ export class MockDataService {
     this.refreshFromApi();
     return this.productsSubject.pipe(
       map(prods => {
-        const bestsellers = prods.filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'BESTSELLER');
+        const activeProds = prods.filter(p => p.available !== false && (p as any).isActive !== false);
+        const bestsellers = activeProds.filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'BESTSELLER');
         return [...bestsellers]
           .sort((a, b) => {
             const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
@@ -359,7 +376,7 @@ export class MockDataService {
     this.refreshFromApi();
     return this.productsSubject.pipe(
       map(prods => {
-        let result = [...prods];
+        let result = prods.filter(p => p.available !== false && (p as any).isActive !== false);
         if (categorySlug && categorySlug !== 'all') {
           const targetNorm = normalizeCategory(categorySlug);
           result = result.filter(p => {
@@ -395,13 +412,18 @@ export class MockDataService {
     const lowerSlug = slug.toLowerCase();
     let found = this.products.find(p => p.slug.toLowerCase() === lowerSlug || p.id.toString() === slug);
     if (!found) {
-      found = this.products.find(p => p.slug.includes(lowerSlug)) || this.products[0];
+      found = this.products.find(p => p.slug.includes(lowerSlug));
+    }
+    if (found && (found.available === false || (found as any).isActive === false)) {
+      return of(undefined);
     }
     return of(found);
   }
 
   getRelatedProducts(currentSlug: string): Observable<ProductCardData[]> {
-    const related = this.products.filter(p => p.slug !== currentSlug).slice(0, 4);
+    const related = this.products
+      .filter(p => p.slug !== currentSlug && p.available !== false && (p as any).isActive !== false)
+      .slice(0, 4);
     return of(related);
   }
 

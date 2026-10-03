@@ -196,7 +196,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             <app-button variant="primary" size="lg">Explore Collections &rarr;</app-button>
           </a>
           <a routerLink="/contact">
-            <app-button variant="outline" size="lg">Contact Concierge</app-button>
+            <app-button variant="outline" size="lg">Contact Us</app-button>
           </a>
         </div>
       </div>
