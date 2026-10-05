@@ -3257,7 +3257,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 export class AdminComponent implements OnInit {
   defaultImage = DEFAULT_FALLBACK_IMAGE;
   activeTab: 'products' | 'add-product' | 'categories' | 'add-category' | 'orders' | 'credentials' | 'homepage-photos' | 'settings' = 'categories';
-  
+
   storeSettingsForm = {
     gst_number: '24AAACA1234A1Z5',
     gst_percentage: 3.0,
@@ -3360,7 +3360,7 @@ export class AdminComponent implements OnInit {
           isActive: newStatus
         })
       });
-    } catch (err) {}
+    } catch (err) { }
 
     product.available = newStatus;
     product.isActive = newStatus;
@@ -4246,8 +4246,8 @@ export class AdminComponent implements OnInit {
     const rawStock = (product.stockQuantity !== undefined && product.stockQuantity !== null && product.stockQuantity !== '')
       ? Number(product.stockQuantity)
       : ((product.stock_quantity !== undefined && product.stock_quantity !== null && product.stock_quantity !== '')
-          ? Number(product.stock_quantity)
-          : 0);
+        ? Number(product.stock_quantity)
+        : 0);
 
     const isOutOfStock = product.inStock === false || (product as any).in_stock === 0 || rawStock <= 0;
     const finalStockQty = isOutOfStock ? 0 : rawStock;
