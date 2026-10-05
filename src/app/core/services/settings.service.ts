@@ -21,7 +21,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   freeDeliveryThreshold: 600.0,
   companyName: 'Arista Trinkets Atelier',
   companyAddress: 'Atelier Suite 402, Heritage Diamond District, Surat, Gujarat 395003',
-  companyPhone: '+91 98765 43210',
+  companyPhone: '+91 90161 34899',
   companyEmail: 'concierge@aristatrinkets.com',
   invoicePrefix: 'INV-'
 };

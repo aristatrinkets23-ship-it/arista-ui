@@ -5,7 +5,7 @@ import { SectionHeadingComponent } from '../../shared/components/section-heading
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ContactForm } from '../../core/models/contact.model';
 import { EnquiryService } from '../../core/services/enquiry.service';
-
+import { SettingsService, StoreSettings } from '../../core/services/settings.service';
 
 @Component({
   selector: 'app-contact',
@@ -46,7 +46,7 @@ import { EnquiryService } from '../../core/services/enquiry.service';
               </div>
               <div class="info-details">
                 <h4 class="card-heading">Flagship Atelier</h4>
-                <p class="card-text">Arista Luxury Quarter, Suite 402<br>Bespoke Boulevard, Mumbai 400001</p>
+                <p class="card-text">{{ settings.companyAddress }}</p>
               </div>
             </div>
 
@@ -59,7 +59,7 @@ import { EnquiryService } from '../../core/services/enquiry.service';
               </div>
               <div class="info-details">
                 <h4 class="card-heading">Concierge Email</h4>
-                <p class="card-text">concierge&#64;aristatrinkets.com<br>care&#64;aristatrinkets.com</p>
+                <p class="card-text">{{ settings.companyEmail }}</p>
               </div>
             </div>
 
@@ -71,7 +71,7 @@ import { EnquiryService } from '../../core/services/enquiry.service';
               </div>
               <div class="info-details">
                 <h4 class="card-heading">Telephone & WhatsApp</h4>
-                <p class="card-text">+91 (0) 800-ARISTA (274782)<br>Mon - Sat: 10:00 AM - 7:00 PM IST</p>
+                <p class="card-text">{{ settings.companyPhone }}<br>Mon &ndash; Sat: 10:00 AM &ndash; 7:00 PM IST</p>
               </div>
             </div>
           </div>
@@ -591,11 +591,21 @@ export class ContactComponent implements AfterViewInit {
     message?: string;
   } = {};
 
+  settings: StoreSettings;
   submitError: string = '';
   isSubmitted: boolean = false;
   isSubmitting: boolean = false;
   private enquiryService = inject(EnquiryService);
+  private settingsService = inject(SettingsService);
   private cdr = inject(ChangeDetectorRef);
+
+  constructor() {
+    this.settings = this.settingsService.currentSettings;
+    this.settingsService.settings$.subscribe(s => {
+      this.settings = s;
+      this.cdr.detectChanges();
+    });
+  }
 
   ngAfterViewInit(): void {
     setTimeout(() => this.initScrollObserver(), 100);
@@ -727,7 +737,9 @@ export class ContactComponent implements AfterViewInit {
   }
 
   openWhatsApp(): void {
-    alert('Direct WhatsApp Concierge link: Opening chat with Arista Jewellery advisor...');
+    const phone = (this.settings?.companyPhone || '9016134899').replace(/\D/g, '');
+    const message = encodeURIComponent('Hello! I would like to speak with an Arista jewellery advisor.');
+    window.open(`https://wa.me/91${phone}?text=${message}`, '_blank', 'noopener');
   }
 }
 

@@ -984,7 +984,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                     <input
                       type="text"
                       [(ngModel)]="storeSettingsForm.company_phone"
-                      placeholder="+91 98765 43210"
+                      placeholder="+91 90161 34899"
                     />
                   </div>
                   <div class="form-group">
@@ -3265,7 +3265,7 @@ export class AdminComponent implements OnInit {
     free_delivery_threshold: 600.0,
     company_name: 'Arista Trinkets Atelier',
     company_address: 'Atelier Suite 402, Heritage Diamond District, Surat, Gujarat 395003',
-    company_phone: '+91 98765 43210',
+    company_phone: '+91 90161 34899',
     company_email: 'concierge@aristatrinkets.com',
     invoice_prefix: 'INV-'
   };
@@ -3875,7 +3875,7 @@ export class AdminComponent implements OnInit {
           free_delivery_threshold: Number(data.data.free_delivery_threshold) !== undefined ? Number(data.data.free_delivery_threshold) : 600.0,
           company_name: data.data.company_name || 'Arista Trinkets Atelier',
           company_address: data.data.company_address || 'Atelier Suite 402, Heritage Diamond District, Surat, Gujarat 395003',
-          company_phone: data.data.company_phone || '+91 98765 43210',
+          company_phone: data.data.company_phone || '+91 90161 34899',
           company_email: data.data.company_email || 'concierge@aristatrinkets.com',
           invoice_prefix: data.data.invoice_prefix || 'INV-'
         };
