@@ -6,7 +6,8 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Category } from '../../core/models/category.model';
-import { MockDataService } from '../../core/mock/mock-data.service';
+import { ProductService } from '../../core/services/product.service';
+import { CategoryService } from '../../core/services/category.service';
 import { CartService } from '../../core/services/cart.service';
 import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
@@ -2668,7 +2669,8 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private isTicking = false;
 
-  private mockDataService = inject(MockDataService);
+  private productService = inject(ProductService);
+  private categoryService = inject(CategoryService);
   private cartService = inject(CartService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
@@ -2718,34 +2720,36 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       })
       .catch(err => console.error('Failed to load homepage config:', err));
 
-    this.mockDataService.getCategories().subscribe(cats => {
-      this.categories = cats;
+    this.categoryService.getCategories().subscribe({
+      next: (cats) => {
+        this.categories = cats;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load categories for home:', err)
     });
 
-    this.mockDataService.getFeaturedProducts().subscribe(prods => {
-      this.featuredProducts = prods;
+    this.productService.getFeaturedProducts().subscribe({
+      next: (prods) => {
+        this.featuredProducts = prods;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load featured products:', err)
     });
 
-    this.mockDataService.getNewArrivals().subscribe(prods => {
-      this.newArrivals = (prods || [])
-        .filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'NEW')
-        .sort((a, b) => {
-          const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
-          const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
-          return idB - idA;
-        })
-        .slice(0, 4);
+    this.productService.getNewArrivals().subscribe({
+      next: (prods) => {
+        this.newArrivals = prods;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load new arrivals:', err)
     });
 
-    this.mockDataService.getBestsellers().subscribe(prods => {
-      this.bestsellerProducts = (prods || [])
-        .filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'BESTSELLER')
-        .sort((a, b) => {
-          const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
-          const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
-          return idB - idA;
-        })
-        .slice(0, 6);
+    this.productService.getBestsellers().subscribe({
+      next: (prods) => {
+        this.bestsellerProducts = prods;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load bestsellers:', err)
     });
 
     this.cartSub = this.cartService.cart$.subscribe(() => {

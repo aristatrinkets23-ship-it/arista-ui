@@ -8,9 +8,10 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Product } from '../../core/models/product.model';
-import { MockDataService } from '../../core/mock/mock-data.service';
+import { ProductService } from '../../core/services/product.service';
 import { CartService } from '../../core/services/cart.service';
 import { WishlistService } from '../../core/services/wishlist.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-product-detail',
@@ -775,10 +776,12 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private mockDataService = inject(MockDataService);
+  private productService = inject(ProductService);
   private cartService = inject(CartService);
   private wishlistService = inject(WishlistService);
+  private cdr = inject(ChangeDetectorRef);
   private wishlistSub!: Subscription;
+  isLoading: boolean = false;
 
   get isOutOfStock(): boolean {
     if (!this.product) return false;
@@ -841,30 +844,49 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   loadProduct(slug: string): void {
-    this.mockDataService.getProductBySlug(slug).subscribe(p => {
-      if (p) {
-        this.product = p;
-        this.currentImageIndex = 0;
-        const imgs = this.productImages;
-        this.selectedImage = imgs[0] || p.image || '/assets/images/placeholder-jewellery.svg';
+    this.isLoading = true;
+    this.productService.getProductBySlug(slug).subscribe({
+      next: (p) => {
+        this.isLoading = false;
+        if (p) {
+          this.product = p;
+          this.currentImageIndex = 0;
+          const imgs = this.productImages;
+          this.selectedImage = imgs[0] || p.image || '/assets/images/placeholder-jewellery.svg';
 
-        if (p.materials && Array.isArray(p.materials) && p.materials.length > 0) {
-          this.metalOptions = p.materials;
-        } else if (typeof (p as any).materials === 'string' && (p as any).materials) {
-          this.metalOptions = ((p as any).materials as string).split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
+          if (p.materials && Array.isArray(p.materials) && p.materials.length > 0) {
+            this.metalOptions = p.materials;
+          } else if (typeof (p as any).materials === 'string' && (p as any).materials) {
+            this.metalOptions = ((p as any).materials as string).split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
+          } else {
+            this.metalOptions = ['18K Warm Gold', 'Sterling Silver', 'Rose Gold'];
+          }
+
+          this.selectedMetal = p.metalType || (this.metalOptions.length > 0 ? this.metalOptions[0] : '18K Warm Gold');
+          this.quantity = 1;
+          this.addedToBagNotice = false;
+
+          this.checkWishlistStatus();
+
+          this.productService.getRelatedProducts(p.slug, p.category).subscribe({
+            next: (rel) => {
+              this.relatedProducts = rel;
+              this.cdr.detectChanges();
+            },
+            error: () => {
+              this.relatedProducts = [];
+            }
+          });
         } else {
-          this.metalOptions = ['18K Warm Gold', 'Sterling Silver', 'Rose Gold'];
+          this.product = undefined;
         }
-
-        this.selectedMetal = p.metalType || (this.metalOptions.length > 0 ? this.metalOptions[0] : '18K Warm Gold');
-        this.quantity = 1;
-        this.addedToBagNotice = false;
-
-        this.checkWishlistStatus();
-
-        this.mockDataService.getRelatedProducts(p.slug).subscribe(rel => {
-          this.relatedProducts = rel;
-        });
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error(`Failed to load product ${slug}:`, err);
+        this.isLoading = false;
+        this.product = undefined;
+        this.cdr.detectChanges();
       }
     });
   }

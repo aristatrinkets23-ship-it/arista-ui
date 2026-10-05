@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { Category } from '../../core/models/category.model';
-import { MockDataService, getDefaultCategoryImage } from '../../core/mock/mock-data.service';
+import { CategoryService, getDefaultCategoryImage } from '../../core/services/category.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-categories',
@@ -234,11 +235,16 @@ import { MockDataService, getDefaultCategoryImage } from '../../core/mock/mock-d
 export class CategoriesComponent implements OnInit {
   categories: Category[] = [];
 
-  private mockDataService = inject(MockDataService);
+  private categoryService = inject(CategoryService);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
-    this.mockDataService.getCategories().subscribe(cats => {
-      this.categories = cats;
+    this.categoryService.getCategories().subscribe({
+      next: (cats) => {
+        this.categories = cats;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load categories:', err)
     });
   }
 

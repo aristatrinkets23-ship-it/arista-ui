@@ -60,6 +60,9 @@ declare var Razorpay: any;
             <div *ngIf="addressValidationError" class="auth-alert error" style="margin-bottom: 16px;">
               ⚠️ {{ addressValidationError }}
             </div>
+            <div *ngIf="orderErrorMessage" class="auth-alert error" style="margin-bottom: 16px;">
+              ⚠️ {{ orderErrorMessage }}
+            </div>
 
             <!-- Saved Delivery Address Selector Bar (When user has saved addresses) -->
             <div class="saved-address-selector-box" *ngIf="isLoggedIn && savedAddresses.length > 0">
@@ -171,8 +174,12 @@ declare var Razorpay: any;
                 </label>
               </div>
 
+              <div *ngIf="orderErrorMessage" class="auth-alert error" style="margin-bottom: 16px;">
+                ⚠️ {{ orderErrorMessage }}
+              </div>
+
               <button type="submit" class="submit-btn" [disabled]="isProcessing">
-                {{ isProcessing ? 'Initializing Gateway...' : 'Pay & Complete Order (₹' + (cart ? (cart.total | number) : '0') + ')' }}
+                {{ isProcessing ? 'Processing Order...' : 'Pay & Complete Order (₹' + (cart ? (cart.total | number) : '0') + ')' }}
               </button>
             </form>
           </div>
@@ -540,6 +547,18 @@ declare var Razorpay: any;
       font-size: 0.85rem;
       cursor: pointer;
     }
+    .auth-alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .auth-alert.error {
+      background: #FEF2F2;
+      border: 1px solid #F87171;
+      color: #991B1B;
+      font-weight: 500;
+    }
     .error-banner {
       background: #FFEBEE; color: #C62828; padding: 10px 14px;
       border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;
@@ -866,6 +885,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   selectedSavedAddressId: any = 'new';
   saveNewAddressToAccount: boolean = true;
   addressValidationError: string = '';
+  orderErrorMessage: string = '';
 
   private checkUserSession(): void {
     this.isLoggedIn = this.authService.isAuthenticated();
@@ -1036,6 +1056,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   async placeOrder(event: Event): Promise<void> {
     event.preventDefault();
     this.addressValidationError = '';
+    this.orderErrorMessage = '';
 
     // STRICT VALIDATION: Ensure street address, city, state, pincode, and 10-digit mobile phone are non-empty & valid!
     if (!this.shipping.firstName.trim() || !this.shipping.lastName.trim() || !this.shipping.email.trim() ||
@@ -1054,12 +1075,17 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       return;
     }
 
-
     const cleanPhone = (this.shipping.phone || '').replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
       this.addressValidationError = 'Please enter a valid 10-digit Indian mobile number (e.g. 9876543210).';
       this.isProcessing = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (!this.cart || !this.cart.items || this.cart.items.length === 0) {
+      this.orderErrorMessage = 'Your shopping bag is empty. Please add items before checking out.';
+      this.isProcessing = false;
       return;
     }
 
@@ -1079,82 +1105,128 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           })
         });
       } catch (err) {
-        // Non-blocking fallback
+        // Non-blocking fallback for guest registration
       }
     }
 
-    const totalAmount = this.cart?.total || 0;
-    
+    const totalAmount = this.cart.total || 0;
+    const orderItems = this.cart.items.map(item => ({
+      id: item.product.id,
+      productId: item.product.id,
+      title: item.product.name,
+      name: item.product.name,
+      price: item.product.price,
+      metalType: item.selectedMetal || '18K Warm Gold',
+      quantity: item.quantity
+    }));
+
+    const token = this.authService.getToken();
+    const reqHeaders: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (token) {
+      reqHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
     // 1. Create order on backend DB to obtain sequential order number (ART-000001 series)
-    let orderNumber = '';
-
+    let createRes: Response;
     try {
-      const orderItems = (this.cart?.items || []).map(item => ({
-        title: item.product.name,
-        name: item.product.name,
-        price: item.product.price,
-        metalType: item.selectedMetal || '18K Warm Gold',
-        quantity: item.quantity
-      }));
-
-      const createRes = await fetch(API_ENDPOINTS.ORDERS.CREATE, {
+      createRes = await fetch(API_ENDPOINTS.ORDERS.CREATE, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: reqHeaders,
         body: JSON.stringify({
           customerName: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
-          customerEmail: this.shipping.email,
-          customerPhone: this.shipping.phone,
-          shippingAddress: this.shipping.address,
-          city: this.shipping.city,
-          state: this.shipping.state,
-          pincode: this.shipping.pincode,
+          customerEmail: this.shipping.email.trim(),
+          customerPhone: cleanPhone,
+          shippingAddress: this.shipping.address.trim(),
+          city: this.shipping.city.trim(),
+          state: this.shipping.state.trim(),
+          pincode: cleanPin,
           items: orderItems,
           totalAmount: totalAmount,
           paymentMethod: this.selectedPayment.toUpperCase()
         })
       });
+    } catch (networkErr: any) {
+      console.error('Order creation failed due to network error:', networkErr);
+      this.orderErrorMessage = 'Unable to connect to the order service. Please check your internet connection and try again.';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.detectChanges();
+      return;
+    }
 
-      const resData = await createRes.json();
-      if (resData && resData.success && resData.data && resData.data.orderNumber) {
-        orderNumber = resData.data.orderNumber;
+    let resData: any = null;
+    try {
+      resData = await createRes.json();
+    } catch (jsonErr) {
+      console.error('Failed to parse response JSON from order endpoint:', jsonErr);
+    }
 
-        // Auto-save new shipping address to user's account if requested
-        if (this.isLoggedIn && (this.selectedSavedAddressId === 'new' || this.savedAddresses.length === 0) && this.saveNewAddressToAccount) {
-          try {
-            const token = this.authService.getToken();
-            await fetch(API_ENDPOINTS.ADDRESSES.CREATE, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: token ? `Bearer ${token}` : ''
-              },
-              body: JSON.stringify({
-                fullName: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
-                phone: this.shipping.phone,
-                addressLine: this.shipping.address,
-                city: this.shipping.city,
-                state: this.shipping.state,
-                pincode: this.shipping.pincode,
-                email: this.shipping.email,
-                isDefault: this.savedAddresses.length === 0
-              })
-            });
-          } catch (e) {
-            // Non-blocking
-          }
-        }
+    if (!createRes.ok || !resData || !resData.success) {
+      console.error(`Order creation rejected by server [HTTP ${createRes.status}]:`, resData);
+
+      let msg = 'Unable to complete your order at this time. Please try again.';
+      if (resData && resData.message) {
+        msg = resData.message;
+      } else if (createRes.status === 400) {
+        msg = 'Some items in your bag may be out of stock or order information is invalid. Please review your bag and details.';
+      } else if (createRes.status === 401) {
+        msg = 'Your session has expired. Please log in again to place your order.';
+      } else if (createRes.status === 500) {
+        msg = 'An internal server error occurred while processing your order. Please try again or contact customer concierge.';
+      } else if (createRes.status >= 502) {
+        msg = 'The order service is temporarily unavailable. Please try again in a few moments.';
       }
-    } catch (err) {
-      // API call failed
+
+      this.orderErrorMessage = msg;
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const orderNumber = resData.data?.orderNumber;
+    if (!orderNumber) {
+      console.error('Server returned success without orderNumber:', resData);
+      this.orderErrorMessage = 'Order creation could not be verified by the server. Please check your account orders or contact concierge.';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.detectChanges();
+      return;
     }
 
     this.generatedOrderNumber = orderNumber;
 
+    // Auto-save new shipping address to user's account if requested
+    if (this.isLoggedIn && (this.selectedSavedAddressId === 'new' || this.savedAddresses.length === 0) && this.saveNewAddressToAccount) {
+      try {
+        await fetch(API_ENDPOINTS.ADDRESSES.CREATE, {
+          method: 'POST',
+          headers: reqHeaders,
+          body: JSON.stringify({
+            fullName: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
+            phone: cleanPhone,
+            addressLine: this.shipping.address.trim(),
+            city: this.shipping.city.trim(),
+            state: this.shipping.state.trim(),
+            pincode: cleanPin,
+            email: this.shipping.email.trim(),
+            isDefault: this.savedAddresses.length === 0
+          })
+        });
+      } catch (e) {
+        // Non-blocking address save
+      }
+    }
+
+    // 2. Handle Payment Flow
     if (this.selectedPayment === 'razorpay') {
       await this.loadRazorpayScript();
       if (typeof Razorpay !== 'undefined') {
+        let rzpRes: Response;
         try {
-          const response = await fetch(API_ENDPOINTS.ORDERS.RAZORPAY_ORDER, {
+          rzpRes = await fetch(API_ENDPOINTS.ORDERS.RAZORPAY_ORDER, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1162,51 +1234,86 @@ export class CheckoutComponent implements OnInit, OnDestroy {
               receipt: this.generatedOrderNumber
             })
           });
-
-          const resData = await response.json();
-          if (resData && resData.success && resData.data) {
-            const options = {
-              key: resData.data.keyId || '',
-              amount: resData.data.amount,
-              currency: 'INR',
-              name: 'Arista Trinkets Jewellery',
-              description: `Order ${this.generatedOrderNumber}`,
-              image: '/assets/images/logo-icon.jpeg',
-              order_id: resData.data.id,
-              handler: async (payRes: any) => {
-                await this.verifyRazorpayPayment(payRes);
-              },
-              prefill: {
-                name: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
-                email: this.shipping.email,
-                contact: this.shipping.phone
-              },
-              theme: {
-                color: '#CFA874'
-              }
-            };
-
-            const rzp = new Razorpay(options);
-            rzp.open();
-            this.isProcessing = false;
-            return;
-          }
-        } catch (err) {
-          // Fallback to local order completion if backend server is offline
+        } catch (rzpNetErr: any) {
+          console.error('Failed to communicate with Razorpay endpoint:', rzpNetErr);
+          this.orderErrorMessage = `Order #${this.generatedOrderNumber} was created, but initializing payment failed. You can complete payment from your Account or choose COD.`;
+          this.isProcessing = false;
+          this.cdr.detectChanges();
+          return;
         }
+
+        let rzpData: any = null;
+        try {
+          rzpData = await rzpRes.json();
+        } catch (rzpParseErr) {
+          console.error('Failed to parse Razorpay response:', rzpParseErr);
+        }
+
+        if (!rzpRes.ok || !rzpData || !rzpData.success || !rzpData.data) {
+          console.error(`Razorpay initialization failed [HTTP ${rzpRes.status}]:`, rzpData);
+          this.orderErrorMessage = rzpData?.message || 'Payment gateway initialization failed. Please try again or select Cash on Delivery.';
+          this.isProcessing = false;
+          this.cdr.detectChanges();
+          return;
+        }
+
+        const options = {
+          key: rzpData.data.keyId || '',
+          amount: rzpData.data.amount,
+          currency: 'INR',
+          name: 'Arista Trinkets',
+          description: `Order ${this.generatedOrderNumber}`,
+          image: '/assets/images/logo-icon.jpeg',
+          order_id: rzpData.data.id,
+          handler: async (payRes: any) => {
+            await this.verifyRazorpayPayment(payRes);
+          },
+          modal: {
+            ondismiss: () => {
+              this.isProcessing = false;
+              this.orderErrorMessage = `Payment window was closed. Order #${this.generatedOrderNumber} remains pending until payment is completed.`;
+              this.cdr.detectChanges();
+            }
+          },
+          prefill: {
+            name: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
+            email: this.shipping.email,
+            contact: cleanPhone
+          },
+          theme: {
+            color: '#CFA874'
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+        this.isProcessing = false;
+        return;
+      } else {
+        console.error('Razorpay SDK failed to load');
+        this.orderErrorMessage = 'Payment gateway could not be loaded. Please refresh the page or select Cash on Delivery.';
+        this.isProcessing = false;
+        this.cdr.detectChanges();
+        return;
       }
     }
 
-    // Direct completion for COD or mock offline flow
-    this.paymentVerified = this.selectedPayment === 'razorpay';
+    // Cash on Delivery confirmed order flow
+    this.paymentVerified = false;
     this.orderPlaced = true;
     this.isProcessing = false;
     this.cartService.clearCart();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.cdr.detectChanges();
   }
 
   private async verifyRazorpayPayment(payRes: any): Promise<void> {
+    this.isProcessing = true;
+    this.orderErrorMessage = '';
+    this.cdr.detectChanges();
+
     try {
-      await fetch(API_ENDPOINTS.ORDERS.VERIFY_PAYMENT, {
+      const verifyRes = await fetch(API_ENDPOINTS.ORDERS.VERIFY_PAYMENT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1216,13 +1323,27 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           order_number: this.generatedOrderNumber
         })
       });
-    } catch (err) {
-      // Non-critical fallback
-    }
 
-    this.paymentVerified = true;
-    this.orderPlaced = true;
-    this.cartService.clearCart();
+      const verifyData = await verifyRes.json();
+      if (verifyRes.ok && verifyData && verifyData.success) {
+        this.paymentVerified = true;
+        this.orderPlaced = true;
+        this.isProcessing = false;
+        this.cartService.clearCart();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.cdr.detectChanges();
+      } else {
+        console.error('Payment verification failed on backend:', verifyData);
+        this.orderErrorMessage = verifyData?.message || `Payment verification could not be confirmed for order #${this.generatedOrderNumber}. If funds were debited, please contact info@aristatrinkets.com.`;
+        this.isProcessing = false;
+        this.cdr.detectChanges();
+      }
+    } catch (err: any) {
+      console.error('Payment verification network error:', err);
+      this.orderErrorMessage = `Network error during payment verification. Please contact concierge with order reference #${this.generatedOrderNumber}.`;
+      this.isProcessing = false;
+      this.cdr.detectChanges();
+    }
   }
 
   getDiscountPercentage(product: any): number {

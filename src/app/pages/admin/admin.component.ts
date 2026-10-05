@@ -2,7 +2,9 @@ import { Component, OnInit, inject, ChangeDetectorRef, HostListener } from '@ang
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MockDataService, getDefaultCategoryImage } from '../../core/mock/mock-data.service';
+import { MockDataService } from '../../core/mock/mock-data.service';
+import { ProductService } from '../../core/services/product.service';
+import { CategoryService, getDefaultCategoryImage } from '../../core/services/category.service';
 import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Category } from '../../core/models/category.model';
 import { AuthService } from '../../core/services/auth.service';
@@ -1542,8 +1544,11 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn-cancel" (click)="closeAddProductModal()">Cancel</button>
-            <button type="submit" class="btn-save" style="margin-top:0;">+ Publish Product to Storefront</button>
+            <button type="button" class="btn-cancel" (click)="closeAddProductModal()" [disabled]="isSavingProduct">Cancel</button>
+            <button type="submit" class="btn-save" style="margin-top:0;" [disabled]="isSavingProduct">
+              <span *ngIf="!isSavingProduct">+ Publish Product to Storefront</span>
+              <span *ngIf="isSavingProduct">Publishing to Database...</span>
+            </button>
           </div>
         </form>
       </div>
@@ -3399,6 +3404,7 @@ export class AdminComponent implements OnInit {
   isSavingHomepagePhoto: boolean = false;
 
   showAddProductModal: boolean = false;
+  isSavingProduct: boolean = false;
   showAddCategoryModal: boolean = false;
 
   adminUser: any = null;
@@ -3740,6 +3746,8 @@ export class AdminComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  private productService = inject(ProductService);
+  private categoryService = inject(CategoryService);
   private mockDataService = inject(MockDataService);
   private authService = inject(AuthService);
   private cartService = inject(CartService);
@@ -3783,33 +3791,48 @@ export class AdminComponent implements OnInit {
     this.loadAdminUsers();
     this.loadAdminOrders();
     this.loadStoreSettings();
-
-    this.mockDataService.getAdminProducts().subscribe(prods => {
-      const uniqueProdsMap = new Map<string, ProductCardData>();
-      prods.forEach(p => {
-        let img = p.image ? p.image.trim() : '';
-        if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
-          img = '/' + img;
-        }
-        const item: ProductCardData = {
-          ...p,
-          image: img || this.defaultImage
-        };
-        const key = String(item.id || item.slug);
-        if (!uniqueProdsMap.has(key)) {
-          uniqueProdsMap.set(key, item);
-        }
-      });
-      this.products = Array.from(uniqueProdsMap.values());
-      this.cdr.detectChanges();
-    });
-
-    this.mockDataService.getCategories().subscribe(cats => {
-      this.categories = cats;
-      this.cdr.detectChanges();
-    });
-
+    this.loadAdminProducts();
+    this.loadAdminCategories();
     this.loadHomepageConfig();
+  }
+
+  loadAdminProducts(): void {
+    this.productService.getAdminProducts().subscribe({
+      next: (prods) => {
+        const uniqueProdsMap = new Map<string, ProductCardData>();
+        prods.forEach(p => {
+          let img = p.image ? p.image.trim() : '';
+          if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
+            img = '/' + img;
+          }
+          const item: ProductCardData = {
+            ...p,
+            image: img || this.defaultImage
+          };
+          const key = String(item.id || item.slug);
+          if (!uniqueProdsMap.has(key)) {
+            uniqueProdsMap.set(key, item);
+          }
+        });
+        this.products = Array.from(uniqueProdsMap.values());
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load admin products from database:', err);
+      }
+    });
+  }
+
+  loadAdminCategories(): void {
+    this.categoryService.getCategories(true).subscribe({
+      next: (cats) => {
+        this.categories = cats;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load admin categories from database:', err);
+      }
+    });
   }
 
   getInvoicePdfUrl(order: any): string {
@@ -4408,6 +4431,8 @@ export class AdminComponent implements OnInit {
   async saveProduct(event: Event): Promise<void> {
     event.preventDefault();
 
+    if (this.isSavingProduct) return;
+
     if (!this.newProduct.name || !this.newProduct.name.trim()) {
       this.showToast('Product Name is mandatory.', 'error');
       return;
@@ -4472,48 +4497,35 @@ export class AdminComponent implements OnInit {
       specifications: validSpecs
     };
 
-    let createdProductId: any = null;
-    try {
-      const token = this.authService.getToken();
-      const res = await fetch(API_ENDPOINTS.ADMIN.PRODUCTS, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
-      if (this.checkAuthError(res, data)) return;
-      if (data && data.data && data.data.id) {
-        createdProductId = data.data.id;
-      }
-    } catch (err) {
-      // Offline fallback
-    }
-
-    const createdMockProduct = this.mockDataService.addProduct({
-      id: createdProductId || undefined,
-      name: this.newProduct.name.trim(),
-      category: this.newProduct.category,
-      price: Number(this.newProduct.price),
-      compareAtPrice: this.newProduct.compareAtPrice ? Number(this.newProduct.compareAtPrice) : undefined,
-      badge: (this.newProduct.badge as 'NEW' | 'SALE' | 'FEATURED' | 'BESTSELLER') || undefined,
-      image: finalImage,
-      images: imagesList,
-      stockQuantity: Number(this.newProduct.stockQuantity) || 0,
-      description: this.newProduct.description.trim(),
-      materials: materialsArray,
-      careGuide: this.newProduct.careGuide || '',
-      shippingInfo: this.newProduct.shippingInfo || '',
-      specifications: validSpecs
-    });
-
-    const createdName = this.newProduct.name;
+    this.isSavingProduct = true;
     this.cdr.detectChanges();
 
-    this.closeAddProductModal();
-    this.showToast(`Jewellery creation "${createdName}" published to catalog!`, 'success');
+    this.productService.createProduct(payload).subscribe({
+      next: (res) => {
+        this.isSavingProduct = false;
+        if (res && res.success && res.data && res.data.id) {
+          const createdName = payload.name;
+          this.closeAddProductModal();
+          this.showToast(`Jewellery creation "${createdName}" published to catalog!`, 'success');
+          this.loadAdminProducts();
+        } else {
+          this.showToast(res?.message || 'Failed to create product in database.', 'error');
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.isSavingProduct = false;
+        if (err.status === 401 || err.status === 403) {
+          this.showToast('Your session has expired. Please log in again.', 'error');
+          this.router.navigate(['/admin/login'], { queryParams: { reason: 'session_expired' } });
+          this.cdr.detectChanges();
+          return;
+        }
+        const errorMsg = err.error?.message || (err.status === 0 ? 'Network error: Cannot reach the backend server. Please verify your connection.' : 'Failed to publish product to database.');
+        this.showToast(errorMsg, 'error');
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   async onUpdateProfile(event: Event): Promise<void> {

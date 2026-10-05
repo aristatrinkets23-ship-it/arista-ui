@@ -39,6 +39,7 @@ export const API_ENDPOINTS = {
   },
   HOMEPAGE_CONFIG: `${BASE_URL}/homepage-config`,
   ENQUIRIES: `${BASE_URL}/enquiries`,
+  NEWSLETTER: `${BASE_URL}/newsletter`,
   CART: {
     GET: `${BASE_URL}/cart`,
     ADD: `${BASE_URL}/cart/items`,
