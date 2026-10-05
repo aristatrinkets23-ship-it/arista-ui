@@ -100,4 +100,6 @@ npm run dev       # Dev server on http://localhost:4200
 - **Catalog & Storefront**: Powered strictly by MySQL through `ProductService` and `CategoryService` using Angular `HttpClient`.
 - **Order Pipeline**: Atomic pre-check verification for stock availability and product active status with atomic transaction rollbacks (`ART-000001` sequential orders).
 - **Admin Product Creation**: Directly calls `POST /api/v1/admin/products` through `ProductService.createProduct()`. Zero mock/localStorage fallback. Handled inside atomic MySQL transactions with slug collision de-duplication, specification, image, and category count synchronization.
+- **Newsletter Subscription**: Powered by MySQL `newsletter_subscribers` via `NewsletterService` and `POST /api/v1/newsletter`. Strict server validation, normalization, rate limiting, and inline UI feedback states (zero browser `alert()` popups).
+
 

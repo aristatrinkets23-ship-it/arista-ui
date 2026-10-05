@@ -255,6 +255,17 @@ The **Arista Trinkets** MySQL database (`arista_trinkets_db`) stores all entity 
 
 ---
 
+### 3.15 `newsletter_subscribers`
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | INT | PK, Auto Increment | Subscriber primary key ID |
+| `email` | VARCHAR(150) | NOT NULL, UNIQUE, Indexed | Normalized subscriber email address |
+| `is_active` | TINYINT(1) | NOT NULL, Default `1`, Indexed | Subscription status (1 = Active, 0 = Unsubscribed) |
+| `subscribed_at` | TIMESTAMP | Default `CURRENT_TIMESTAMP` | Initial or reactivated subscription timestamp |
+| `unsubscribed_at` | TIMESTAMP | NULL, Default `NULL` | Unsubscription timestamp (if opt-out occurs) |
+
+---
+
 ## 4. Indexing Strategy
 
 | Table | Indexed Columns | Purpose |
@@ -269,4 +280,6 @@ The **Arista Trinkets** MySQL database (`arista_trinkets_db`) stores all entity 
 | `user_addresses` | `user_id`, `user_email` | Account address book lookups |
 | `store_settings` | `setting_key` | Fast store config lookups |
 | `password_resets` | `email`, `otp` | Fast OTP validation during password reset |
+| `newsletter_subscribers` | `email`, `is_active` | Fast subscriber uniqueness check, idempotent lookups, and active list filtering |
+
 

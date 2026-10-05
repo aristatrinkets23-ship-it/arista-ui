@@ -246,3 +246,67 @@
 - Automatically handles slug collision with progressive suffix increments (`-2`, `-3`), preventing raw SQL collision errors.
 - Guarantees zero partial records or orphaned images/specifications if any query step fails.
 
+---
+
+## 15. Newsletter Subscription Endpoints
+
+### 15.1 Subscribe (`POST /api/v1/newsletter`)
+- **Access**: Public (Protected by `newsletterLimiter` — max 10 requests per 15 min per IP)
+- **Request Body**:
+```json
+{
+  "email": "customer@example.com"
+}
+```
+
+- **Validation Rules**:
+  - `email` must be non-empty string, max 150 characters.
+  - Matches RFC-compliant email regex: `/^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/`.
+  - Normalized: trimmed and converted to lowercase prior to database query/insert.
+
+- **Responses**:
+  - **HTTP 201 Created** (New subscriber):
+  ```json
+  {
+    "success": true,
+    "statusCode": 201,
+    "message": "Thank you for joining The Arista Club. Private invitations and VIP previews will be sent to your inbox.",
+    "data": {
+      "id": 1,
+      "email": "customer@example.com"
+    }
+  }
+  ```
+  - **HTTP 200 OK** (Idempotent duplicate — already subscribed):
+  ```json
+  {
+    "success": true,
+    "statusCode": 200,
+    "message": "You are already subscribed to The Arista Club.",
+    "data": {
+      "email": "customer@example.com",
+      "alreadySubscribed": true
+    }
+  }
+  ```
+  - **HTTP 200 OK** (Reactivation — previously unsubscribed):
+  ```json
+  {
+    "success": true,
+    "statusCode": 200,
+    "message": "Welcome back! Your subscription to The Arista Club has been reactivated.",
+    "data": {
+      "email": "customer@example.com",
+      "reactivated": true
+    }
+  }
+  ```
+  - **HTTP 400 Bad Request**: Invalid format, missing email, or empty string.
+  - **HTTP 429 Too Many Requests**: Triggered if client exceeds rate limit.
+  - **HTTP 500 Internal Server Error**: Database connection or query error.
+
+### 15.2 List Subscribers (`GET /api/v1/admin/newsletter`)
+- **Access**: Admin (`Authorization: Bearer <token>` with role `ADMIN` or `SUPER_ADMIN`)
+- **Response**: **HTTP 200 OK** with array of subscriber objects (`id`, `email`, `is_active`, `subscribed_at`, `unsubscribed_at`).
+
+
