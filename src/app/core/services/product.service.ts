@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { map, catchError } from 'rxjs/operators';
+import { map, catchError, retry } from 'rxjs/operators';
 import { Product } from '../models/product.model';
 import { ProductCardData } from '../models/product-card-data.model';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
@@ -33,6 +33,7 @@ export class ProductService {
     }
 
     return this.http.get<ApiResponse<any[]>>(API_ENDPOINTS.PRODUCTS.LIST, { params }).pipe(
+      retry(1),
       map(res => {
         if (!res || !res.success || !Array.isArray(res.data)) {
           return [];
@@ -49,6 +50,7 @@ export class ProductService {
   getAdminProducts(): Observable<Product[]> {
     const params = new HttpParams().set('includeInactive', 'true');
     return this.http.get<ApiResponse<any[]>>(API_ENDPOINTS.PRODUCTS.LIST, { params }).pipe(
+      retry(1),
       map(res => {
         if (!res || !res.success || !Array.isArray(res.data)) {
           return [];
@@ -76,7 +78,8 @@ export class ProductService {
     return this.getProducts().pipe(
       map(prods => {
         const newOnly = prods.filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'NEW');
-        return [...newOnly]
+        const list = newOnly.length > 0 ? newOnly : prods;
+        return [...list]
           .sort((a, b) => Number(b.id) - Number(a.id))
           .slice(0, 4);
       })
@@ -87,7 +90,8 @@ export class ProductService {
     return this.getProducts().pipe(
       map(prods => {
         const bestsellers = prods.filter(p => p.badge && String(p.badge).trim().toUpperCase() === 'BESTSELLER');
-        return [...bestsellers]
+        const list = bestsellers.length > 0 ? bestsellers : prods;
+        return [...list]
           .sort((a, b) => Number(b.id) - Number(a.id))
           .slice(0, 6);
       })

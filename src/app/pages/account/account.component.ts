@@ -85,7 +85,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <form novalidate (submit)="onLoginSubmit($event)" class="auth-form">
               <div class="form-group">
                 <label class="form-label">Email Address *</label>
-                <input type="email" [(ngModel)]="loginEmail" name="email" placeholder="name@example.com" class="form-input" />
+                <input type="email" [(ngModel)]="loginEmail" name="email" placeholder="Your email address" class="form-input" />
               </div>
               <div class="form-group">
                 <div class="form-label-row">
@@ -143,7 +143,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <form *ngIf="forgotStep === 1" novalidate (submit)="onRequestOtpSubmit($event)" class="auth-form">
               <div class="form-group">
                 <label class="form-label">Registered Email Address *</label>
-                <input type="email" [(ngModel)]="forgotEmail" name="forgotEmail" placeholder="name@example.com" class="form-input" />
+                <input type="email" [(ngModel)]="forgotEmail" name="forgotEmail" placeholder="Your email address" class="form-input" />
               </div>
               <div class="auth-submit-wrap">
                 <button type="submit" class="btn-luxury-primary w-full" [disabled]="otpLoading">
@@ -162,7 +162,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <form *ngIf="forgotStep === 2" novalidate (submit)="onResetPasswordSubmit($event)" class="auth-form">
               <div class="form-group">
                 <label class="form-label">6-Digit Verification Code *</label>
-                <input type="text" [(ngModel)]="forgotOtp" name="forgotOtp" placeholder="684920" maxlength="6" class="form-input otp-input" />
+                <input type="text" [(ngModel)]="forgotOtp" name="forgotOtp" placeholder="6-digit code" maxlength="6" class="form-input otp-input" />
               </div>
 
               <div class="form-group">
@@ -217,11 +217,11 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <form novalidate (submit)="onRegisterSubmit($event)" class="auth-form">
               <div class="form-group">
                 <label class="form-label">Full Name *</label>
-                <input type="text" [(ngModel)]="regName" name="name" placeholder="e.g. Lata Mangeshkar" class="form-input" />
+                <input type="text" [(ngModel)]="regName" name="name" placeholder="Your full name" class="form-input" />
               </div>
               <div class="form-group">
                 <label class="form-label">Email Address *</label>
-                <input type="email" [(ngModel)]="regEmail" name="email" placeholder="name@example.com" class="form-input" />
+                <input type="email" [(ngModel)]="regEmail" name="email" placeholder="Your email address" class="form-input" />
               </div>
               <div class="form-group">
                 <label class="form-label">Password *</label>
@@ -825,7 +825,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                         [(ngModel)]="profileForm.phone"
                         (input)="onPhoneInput($event, 'profile')"
                         name="profPhone"
-                        placeholder="9876543210"
+                        placeholder="10-digit mobile number"
                         maxlength="10"
                         class="form-input"
                       />
@@ -992,11 +992,11 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
         <form (submit)="saveAddressSubmit($event)" class="luxury-form" style="margin-top: 18px;">
           <div class="form-group">
             <label class="form-label">Recipient Full Name *</label>
-            <input type="text" [(ngModel)]="addressForm.fullName" name="addrFullName" placeholder="e.g. Lata Mangeshkar" class="form-input" />
+            <input type="text" [(ngModel)]="addressForm.fullName" name="addrFullName" placeholder="Recipient's full name" class="form-input" />
           </div>
           <div class="form-group">
             <label class="form-label">Mobile Phone Number *</label>
-            <input type="tel" [(ngModel)]="addressForm.phone" (input)="onPhoneInput($event, 'address')" name="addrPhone" placeholder="9876543210" maxlength="10" class="form-input" />
+            <input type="tel" [(ngModel)]="addressForm.phone" (input)="onPhoneInput($event, 'address')" name="addrPhone" placeholder="10-digit mobile number" maxlength="10" class="form-input" />
           </div>
           <div class="form-group">
             <label class="form-label">Street Address / Flat, Wing &amp; Building *</label>
@@ -1005,16 +1005,16 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
           <div class="form-grid-two">
             <div class="form-group">
               <label class="form-label">City *</label>
-              <input type="text" [(ngModel)]="addressForm.city" name="addrCity" placeholder="Mumbai" class="form-input" />
+              <input type="text" [(ngModel)]="addressForm.city" name="addrCity" placeholder="City" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">State *</label>
-              <input type="text" [(ngModel)]="addressForm.state" name="addrState" placeholder="Maharashtra" class="form-input" />
+              <input type="text" [(ngModel)]="addressForm.state" name="addrState" placeholder="State" class="form-input" />
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">PIN Code *</label>
-            <input type="tel" [(ngModel)]="addressForm.pincode" (input)="onAddressPincodeInput($event)" name="addrPincode" placeholder="e.g. 400001" maxlength="6" inputmode="numeric" class="form-input" />
+            <input type="tel" [(ngModel)]="addressForm.pincode" (input)="onAddressPincodeInput($event)" name="addrPincode" placeholder="6-digit PIN code" maxlength="6" inputmode="numeric" class="form-input" />
           </div>
           <div class="form-checkbox-row">
             <input type="checkbox" id="chkDefault" [(ngModel)]="addressForm.isDefault" name="addrDefault" class="luxury-checkbox" />
@@ -4134,13 +4134,13 @@ export class AccountComponent implements OnInit, OnDestroy {
 
     const cleanPin = String(pincode).replace(/\D/g, '');
     if (!/^\d{6}$/.test(cleanPin)) {
-      this.showToast('PIN Code must be exactly 6 digits (e.g. 395003).', 'error');
+      this.showToast('PIN Code must be exactly 6 digits.', 'error');
       return;
     }
 
     const cleanPhone = (phone || '').replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
-      this.showToast('Please enter a valid 10-digit mobile number (e.g. 9876543210).', 'error');
+      this.showToast('Please enter a valid 10-digit mobile number.', 'error');
       return;
     }
 

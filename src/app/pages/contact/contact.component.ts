@@ -115,7 +115,7 @@ import { EnquiryService } from '../../core/services/enquiry.service';
                   name="name"
                   [(ngModel)]="formData.name"
                   (input)="errors.name = ''"
-                  placeholder="e.g. Lady Catherine"
+                  placeholder="Your full name"
                   class="form-input"
                   [class.is-invalid]="!!errors.name"
                 />
@@ -130,7 +130,7 @@ import { EnquiryService } from '../../core/services/enquiry.service';
                   name="email"
                   [(ngModel)]="formData.email"
                   (input)="errors.email = ''"
-                  placeholder="name@example.com"
+                  placeholder="Your email address"
                   class="form-input"
                   [class.is-invalid]="!!errors.email"
                 />
@@ -146,7 +146,7 @@ import { EnquiryService } from '../../core/services/enquiry.service';
                   [value]="formData.phone"
                   (input)="onPhoneInput($event)"
                   maxlength="10"
-                  placeholder="10-digit mobile number (e.g. 9876543210)"
+                  placeholder="10-digit mobile number"
                   class="form-input"
                   [class.is-invalid]="!!errors.phone"
                 />
@@ -653,7 +653,7 @@ export class ContactComponent implements AfterViewInit {
       this.errors.email = 'Email address is required.';
       isValid = false;
     } else if (!emailRegex.test(emailTrimmed)) {
-      this.errors.email = 'Please enter a valid email address (e.g. name@example.com).';
+      this.errors.email = 'Please enter a valid email address.';
       isValid = false;
     }
 

@@ -339,7 +339,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
           <div class="arrivals-title-underline"></div>
         </div>
 
-        <div *ngIf="newArrivals.length > 0" class="arrivals-grid scroll-reveal-stagger">
+        <div *ngIf="newArrivals.length > 0" class="arrivals-grid">
           <div *ngFor="let product of newArrivals" class="arrival-card-v2">
             <a [routerLink]="['/product', product.slug]" class="arrival-img-box">
               <span class="arrival-badge-pill">{{ product.badge || 'NEW' }}</span>
@@ -563,7 +563,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       <div class="container">
         <h2 class="insta-section-title">@aristatrinkets</h2>
 
-        <div *ngIf="bestsellerProducts.length > 0" class="insta-grid scroll-reveal-stagger">
+        <div *ngIf="bestsellerProducts.length > 0" class="insta-grid">
           <a
             *ngFor="let product of bestsellerProducts"
             [routerLink]="['/product', product.slug]"
@@ -583,10 +583,10 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
         </div>
 
         <div *ngIf="bestsellerProducts.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
-          <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">No Bestseller Products Tagged</h3>
-          <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Tag products with the BESTSELLER badge in the Admin Dashboard to feature them here.</p>
-          <a routerLink="/admin" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
-            ⚙ Go to Admin to Set BESTSELLER Badge
+          <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">Explore Our Curated Collection</h3>
+          <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Discover the most loved fine jewellery handcrafted for life's special moments.</p>
+          <a routerLink="/shop" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
+            Shop All Jewellery
           </a>
         </div>
       </div>
@@ -1628,8 +1628,8 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     }
 
     .scroll-reveal-stagger > * {
-      opacity: 0;
-      transform: translateY(35px);
+      opacity: 1;
+      transform: translateY(0);
       transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: opacity, transform;
     }
@@ -2740,6 +2740,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       next: (prods) => {
         this.newArrivals = prods;
         this.cdr.detectChanges();
+        setTimeout(() => this.initScrollReveal(), 100);
       },
       error: (err) => console.error('Failed to load new arrivals:', err)
     });
@@ -2748,6 +2749,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       next: (prods) => {
         this.bestsellerProducts = prods;
         this.cdr.detectChanges();
+        setTimeout(() => this.initScrollReveal(), 100);
       },
       error: (err) => console.error('Failed to load bestsellers:', err)
     });
@@ -2761,7 +2763,10 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     setTimeout(() => this.updateParallaxScrollEffect(), 100);
+    this.initScrollReveal();
+  }
 
+  private initScrollReveal(): void {
     if (typeof window !== 'undefined') {
       if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {

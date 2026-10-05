@@ -95,22 +95,22 @@ declare var Razorpay: any;
               <div class="form-row">
                 <div class="form-group">
                   <label>First Name *</label>
-                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" placeholder="e.g. Lata" required />
+                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" placeholder="First name" required />
                 </div>
                 <div class="form-group">
                   <label>Last Name *</label>
-                  <input type="text" [(ngModel)]="shipping.lastName" name="lastName" placeholder="e.g. Mangeshkar" required />
+                  <input type="text" [(ngModel)]="shipping.lastName" name="lastName" placeholder="Last name" required />
                 </div>
               </div>
 
               <div class="form-row">
                 <div class="form-group">
                   <label>Email Address *</label>
-                  <input type="email" [(ngModel)]="shipping.email" name="email" placeholder="name@example.com" required />
+                  <input type="email" [(ngModel)]="shipping.email" name="email" placeholder="Your email address" required />
                 </div>
                 <div class="form-group">
                   <label>Phone Number *</label>
-                  <input type="tel" [(ngModel)]="shipping.phone" (input)="onPhoneInput($event)" name="phone" placeholder="e.g. 9876543210" maxlength="10" required />
+                  <input type="tel" [(ngModel)]="shipping.phone" (input)="onPhoneInput($event)" name="phone" placeholder="10-digit mobile number" maxlength="10" required />
                 </div>
               </div>
 
@@ -122,15 +122,15 @@ declare var Razorpay: any;
               <div class="form-row">
                 <div class="form-group">
                   <label>City *</label>
-                  <input type="text" [(ngModel)]="shipping.city" name="city" placeholder="e.g. Mumbai" required />
+                  <input type="text" [(ngModel)]="shipping.city" name="city" placeholder="City" required />
                 </div>
                 <div class="form-group">
                   <label>State *</label>
-                  <input type="text" [(ngModel)]="shipping.state" name="state" placeholder="e.g. Maharashtra" required />
+                  <input type="text" [(ngModel)]="shipping.state" name="state" placeholder="State" required />
                 </div>
                 <div class="form-group">
                   <label>PIN Code *</label>
-                  <input type="tel" [(ngModel)]="shipping.pincode" (input)="onPincodeInput($event)" name="pincode" placeholder="e.g. 400020" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required />
+                  <input type="tel" [(ngModel)]="shipping.pincode" (input)="onPincodeInput($event)" name="pincode" placeholder="6-digit PIN code" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required />
                 </div>
               </div>
 
@@ -278,7 +278,7 @@ declare var Razorpay: any;
             <form (submit)="onInlineLogin($event)" class="checkout-form" style="margin-top: 16px;">
               <div class="form-group">
                 <label>Email Address *</label>
-                <input type="email" [(ngModel)]="authModalEmail" name="authEmail" placeholder="admin@aristatrinkets.com" required />
+                <input type="email" [(ngModel)]="authModalEmail" name="authEmail" placeholder="Your email address" required />
               </div>
 
               <div class="form-group">
@@ -1069,7 +1069,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     const cleanPin = this.shipping.pincode.replace(/\D/g, '');
     if (!/^\d{6}$/.test(cleanPin)) {
-      this.addressValidationError = 'PIN Code must be exactly 6 digits (e.g. 395003).';
+      this.addressValidationError = 'PIN Code must be exactly 6 digits.';
       this.isProcessing = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -1077,7 +1077,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     const cleanPhone = (this.shipping.phone || '').replace(/\D/g, '');
     if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
-      this.addressValidationError = 'Please enter a valid 10-digit Indian mobile number (e.g. 9876543210).';
+      this.addressValidationError = 'Please enter a valid 10-digit mobile number.';
       this.isProcessing = false;
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
