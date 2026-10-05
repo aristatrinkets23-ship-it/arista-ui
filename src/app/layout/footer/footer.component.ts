@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CategoryService } from '../../core/services/category.service';
 import { NewsletterService } from '../../core/services/newsletter.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { Category } from '../../core/models/category.model';
 
 @Component({
@@ -25,24 +26,24 @@ import { Category } from '../../core/models/category.model';
           </p>
           <!-- Social Links -->
           <div class="footer-socials" aria-label="Social media connections">
-            <a href="#" class="social-icon" aria-label="Instagram" (click)="$event.preventDefault()">
+            <a href="javascript:void(0)" class="social-icon" aria-label="Instagram" title="Instagram (Coming Soon)" (click)="$event.preventDefault()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
                 <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
               </svg>
             </a>
-            <a href="#" class="social-icon" aria-label="Facebook" (click)="$event.preventDefault()">
+            <a href="javascript:void(0)" class="social-icon" aria-label="Facebook" title="Facebook (Coming Soon)" (click)="$event.preventDefault()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
               </svg>
             </a>
-            <a href="#" class="social-icon" aria-label="Pinterest" (click)="$event.preventDefault()">
+            <a href="javascript:void(0)" class="social-icon" aria-label="Pinterest" title="Pinterest (Coming Soon)" (click)="$event.preventDefault()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2C6.48 2 2 6.48 2 12c0 4.25 2.67 7.9 6.42 9.34-.09-.78-.17-1.98.04-2.83.19-.77 1.23-5.22 1.23-5.22s-.31-.63-.31-1.56c0-1.46.85-2.55 1.9-2.55.9 0 1.33.67 1.33 1.48 0 .9-.57 2.25-.87 3.5-.25 1.05.53 1.9 1.56 1.9 1.88 0 3.32-1.98 3.32-4.84 0-2.53-1.82-4.3-4.41-4.3-3.01 0-4.78 2.26-4.78 4.59 0 .91.35 1.89.79 2.42.09.11.1.2.07.31-.08.33-.26 1.06-.3 1.2-.05.21-.18.26-.41.16-1.53-.71-2.48-2.94-2.48-4.73 0-3.85 2.8-7.39 8.07-7.39 4.24 0 7.53 3.02 7.53 7.06 0 4.21-2.65 7.6-6.34 7.6-1.24 0-2.41-.64-2.81-1.4l-.76 2.91c-.28 1.06-1.04 2.39-1.55 3.22C9.84 21.81 10.9 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"></path>
               </svg>
             </a>
-            <a href="#" class="social-icon" aria-label="WhatsApp" (click)="$event.preventDefault()">
+            <a href="javascript:void(0)" class="social-icon" aria-label="WhatsApp Concierge" title="Chat on WhatsApp" (click)="openWhatsApp()">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
               </svg>
@@ -428,7 +429,17 @@ export class FooterComponent implements OnInit {
 
   private categoryService = inject(CategoryService);
   private newsletterService = inject(NewsletterService);
+  private settingsService = inject(SettingsService);
   private cdr = inject(ChangeDetectorRef);
+
+  openWhatsApp(): void {
+    let phone = (this.settingsService.currentSettings.companyPhone || '9016134899').replace(/\D/g, '');
+    if (!phone.startsWith('91') && phone.length === 10) {
+      phone = '91' + phone;
+    }
+    const message = encodeURIComponent('Hello! I would like to inquire about Arista jewellery.');
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank', 'noopener');
+  }
 
   ngOnInit(): void {
     this.categoryService.getCategories().subscribe({

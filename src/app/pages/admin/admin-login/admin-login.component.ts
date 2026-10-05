@@ -272,8 +272,8 @@ import { AuthService } from '../../../core/services/auth.service';
   `]
 })
 export class AdminLoginComponent implements OnInit {
-  email: string = 'admin@aristatrinkets.com';
-  password: string = 'admin123';
+  email: string = '';
+  password: string = '';
   showPassword: boolean = false;
   loading: boolean = false;
   errorMessage: string = '';

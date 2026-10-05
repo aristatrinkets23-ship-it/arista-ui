@@ -12,6 +12,8 @@ import { AccountComponent } from './pages/account/account.component';
 import { WishlistComponent } from './pages/wishlist/wishlist.component';
 import { AdminComponent } from './pages/admin/admin.component';
 import { AdminLoginComponent } from './pages/admin/admin-login/admin-login.component';
+import { PrivacyComponent } from './pages/privacy/privacy.component';
+import { TermsComponent } from './pages/terms/terms.component';
 import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
@@ -24,6 +26,8 @@ export const routes: Routes = [
       { path: 'categories', component: CategoriesComponent },
       { path: 'about', component: AboutComponent },
       { path: 'contact', component: ContactComponent },
+      { path: 'privacy', component: PrivacyComponent },
+      { path: 'terms', component: TermsComponent },
       { path: 'product/:slug', component: ProductDetailComponent },
       { path: 'cart', component: CartComponent },
       { path: 'checkout', component: CheckoutComponent },
