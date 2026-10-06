@@ -25,7 +25,9 @@
   },
   "devDependencies": {
     "@angular/compiler-cli": "^22.1.7",
-    "@types/node": "^22.13.0",
+    "@types/gensync": "^1.0.5",
+    "@types/jsesc": "^3.0.3",
+    "@types/node": "^22.20.5",
     "jsdom": "^29.1.1",
     "typescript": "^5.4.5"
   }
