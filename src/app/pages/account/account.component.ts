@@ -211,7 +211,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <form novalidate (submit)="onRegisterSubmit($event)" class="auth-form">
               <div class="form-group">
                 <label class="form-label">Full Name *</label>
-                <input type="text" [(ngModel)]="regName" name="name" placeholder="e.g. Lata Mangeshkar" class="form-input" />
+                <input type="text" [(ngModel)]="regName" name="name" placeholder="e.g. Ananya Sharma" class="form-input" />
               </div>
               <div class="form-group">
                 <label class="form-label">Email Address *</label>

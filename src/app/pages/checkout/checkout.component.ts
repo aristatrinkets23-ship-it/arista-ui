@@ -96,11 +96,11 @@ declare var Razorpay: any;
               <div class="form-row">
                 <div class="form-group">
                   <label>First Name *</label>
-                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" placeholder="e.g. Lata" required />
+                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" placeholder="e.g. Ananya" required />
                 </div>
                 <div class="form-group">
                   <label>Last Name *</label>
-                  <input type="text" [(ngModel)]="shipping.lastName" name="lastName" placeholder="e.g. Mangeshkar" required />
+                  <input type="text" [(ngModel)]="shipping.lastName" name="lastName" placeholder="e.g. Sharma" required />
                 </div>
               </div>
 

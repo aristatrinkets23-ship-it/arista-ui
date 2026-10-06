@@ -890,7 +890,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   <input
                     type="text"
                     [(ngModel)]="storeSettingsForm.company_name"
-                    placeholder="Arista Trinkets Atelier"
+                    placeholder="Arista Trinkets"
                   />
                 </div>
 
