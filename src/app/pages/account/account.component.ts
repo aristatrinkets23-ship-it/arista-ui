@@ -1241,6 +1241,10 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
         <!-- Bag Summary Box -->
         <div class="reorder-summary-box">
+          <div class="summary-line" *ngIf="reorderSummary?.count">
+            <span class="summary-label">Reordered Package:</span>
+            <strong class="summary-val">{{ reorderSummary.count }} piece{{ reorderSummary.count === 1 ? '' : 's' }} (₹{{ reorderSummary.totalAmount | number }})</strong>
+          </div>
           <div class="summary-line">
             <span class="summary-label">Total in Shopping Bag:</span>
             <strong class="summary-val">{{ cartCount }} piece{{ cartCount === 1 ? '' : 's' }}</strong>
@@ -1330,12 +1334,12 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       padding: 32px 0 64px 0;
     }
 
-    /* 3. Toast Notification (Fixed Viewport Floating Pill) */
+    /* 3. Toast Notification (Top Right Corner Floating Pill) */
     .account-toast {
       position: fixed !important;
-      bottom: 28px !important;
+      top: 88px !important;
       right: 28px !important;
-      top: auto !important;
+      bottom: auto !important;
       z-index: 999999 !important;
       background: #15803D;
       color: #FFFFFF;
@@ -1347,7 +1351,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       display: flex;
       align-items: center;
       gap: 12px;
-      animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: toastSlideInTop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .account-toast.error {
       background: #DC2626;
@@ -1365,8 +1369,8 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       line-height: 1;
       padding: 0 0 0 6px;
     }
-    @keyframes toastSlideIn {
-      from { transform: translateY(20px); opacity: 0; }
+    @keyframes toastSlideInTop {
+      from { transform: translateY(-20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
     }
 
@@ -1440,13 +1444,20 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       margin: 3px 0 0 0;
     }
     .reorder-items-scroll {
-      max-height: 220px;
+      max-height: 300px;
       overflow-y: auto;
       margin-bottom: 18px;
       display: flex;
       flex-direction: column;
       gap: 10px;
       padding-right: 4px;
+    }
+    .reorder-items-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .reorder-items-scroll::-webkit-scrollbar-thumb {
+      background: #CFA874;
+      border-radius: 4px;
     }
     .reorder-item-row {
       display: flex;
@@ -4783,18 +4794,26 @@ export class AccountComponent implements OnInit, OnDestroy {
       let totalAddedPrice = 0;
 
       for (const item of order.items) {
+        const prodId = item.product_id || (item.product && item.product.id ? item.product.id : null);
+        const prodSlug = item.product_slug || item.slug || (item.product ? item.product.slug : '');
+        
         const product: ProductCardData = {
-          id: item.product_id || item.id,
+          id: prodId || item.id,
           name: item.product_name || item.name,
           price: Number(item.unit_price || item.price) || 0,
-          slug: item.product_slug || item.slug || '',
+          slug: prodSlug,
           image: item.product_image || item.image || this.defaultImage,
           category: 'Jewellery',
           inStock: true,
           available: true
         };
         const qty = item.quantity || 1;
-        await this.cartService.addToCart(product, qty, item.metal_type || '18K Warm Gold');
+
+        // Check if item is already in shopping bag
+        const isAlreadyInBag = this.isItemInBag({ product_id: product.id, product_slug: product.slug, product_name: product.name });
+        if (!isAlreadyInBag) {
+          await this.cartService.addToCart(product, qty, item.metal_type || '18K Warm Gold');
+        }
 
         addedItems.push({
           product_id: product.id,
@@ -4802,7 +4821,8 @@ export class AccountComponent implements OnInit, OnDestroy {
           unit_price: product.price,
           product_image: product.image,
           metal_type: item.metal_type || '18K Warm Gold',
-          quantity: qty
+          quantity: qty,
+          alreadyInBag: isAlreadyInBag
         });
         totalAddedPrice += product.price * qty;
       }
