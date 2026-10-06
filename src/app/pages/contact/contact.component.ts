@@ -71,7 +71,7 @@ import { SettingsService, StoreSettings } from '../../core/services/settings.ser
               </div>
               <div class="info-details">
                 <h4 class="card-heading">Telephone & WhatsApp</h4>
-                <p class="card-text">{{ settings.companyPhone }}<br>Mon &ndash; Sat: 10:00 AM &ndash; 7:00 PM IST</p>
+                <p class="card-text">{{ settings.companyPhone }}<br *ngIf="settings.companyTiming">{{ settings.companyTiming }}</p>
               </div>
             </div>
           </div>
@@ -737,9 +737,13 @@ export class ContactComponent implements AfterViewInit {
   }
 
   openWhatsApp(): void {
-    const phone = (this.settings?.companyPhone || '9016134899').replace(/\D/g, '');
+    const rawPhone = this.settings?.companyPhone || this.settingsService.currentSettings?.companyPhone || '';
+    let phone = rawPhone.replace(/\D/g, '');
+    if (!phone.startsWith('91') && phone.length === 10) {
+      phone = '91' + phone;
+    }
     const message = encodeURIComponent('Hello! I would like to speak with an Arista jewellery advisor.');
-    window.open(`https://wa.me/91${phone}?text=${message}`, '_blank', 'noopener');
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank', 'noopener');
   }
 }
 

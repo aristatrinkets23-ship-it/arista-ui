@@ -11,6 +11,7 @@ export interface StoreSettings {
   companyAddress: string;
   companyPhone: string;
   companyEmail: string;
+  companyTiming: string;
   invoicePrefix: string;
 }
 
@@ -19,10 +20,11 @@ const DEFAULT_SETTINGS: StoreSettings = {
   gstPercentage: 3.0,
   deliveryCharge: 50.0,
   freeDeliveryThreshold: 600.0,
-  companyName: 'Arista Trinkets Atelier',
-  companyAddress: 'Atelier Suite 402, Heritage Diamond District, Surat, Gujarat 395003',
-  companyPhone: '+91 90161 34899',
-  companyEmail: 'concierge@aristatrinkets.com',
+  companyName: 'Arista Trinkets',
+  companyAddress: 'Studio 101, Jewel Arcade, Near City Centre, Surat, Gujarat - 395001',
+  companyPhone: '9016134899',
+  companyEmail: 'info@aristatrinkets.com',
+  companyTiming: 'Mon – Sat: 10:00 AM – 7:00 PM IST',
   invoicePrefix: 'INV-'
 };
 
@@ -60,6 +62,7 @@ export class SettingsService {
             companyAddress: json.data.companyAddress || DEFAULT_SETTINGS.companyAddress,
             companyPhone: json.data.companyPhone || DEFAULT_SETTINGS.companyPhone,
             companyEmail: json.data.companyEmail || DEFAULT_SETTINGS.companyEmail,
+            companyTiming: json.data.companyTiming || DEFAULT_SETTINGS.companyTiming,
             invoicePrefix: json.data.invoicePrefix || DEFAULT_SETTINGS.invoicePrefix
           };
           this.settingsSubject.next(loaded);

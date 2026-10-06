@@ -8,6 +8,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { CartSummary } from '../../core/models/cart.model';
 import { CartService } from '../../core/services/cart.service';
 import { AuthService } from '../../core/services/auth.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
 declare var Razorpay: any;
@@ -869,6 +870,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   private cartService = inject(CartService);
   private authService = inject(AuthService);
+  private settingsService = inject(SettingsService);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
 
@@ -1334,7 +1336,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       } else {
         console.error('Payment verification failed on backend:', verifyData);
-        this.orderErrorMessage = verifyData?.message || `Payment verification could not be confirmed for order #${this.generatedOrderNumber}. If funds were debited, please contact info@aristatrinkets.com.`;
+        const contactEmail = this.settingsService.currentSettings?.companyEmail || 'info@aristatrinkets.com';
+        this.orderErrorMessage = verifyData?.message || `Payment verification could not be confirmed for order #${this.generatedOrderNumber}. If funds were debited, please contact ${contactEmail}.`;
         this.isProcessing = false;
         this.cdr.detectChanges();
       }

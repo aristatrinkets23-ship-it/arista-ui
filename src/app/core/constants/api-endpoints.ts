@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
     MY_ORDERS: `${BASE_URL}/orders/my-orders`,
     TRACK: (trackingCode: string) => `${BASE_URL}/orders/track/${trackingCode}`,
     BY_NUMBER: (orderNumber: string) => `${BASE_URL}/orders/${orderNumber}`,
+    CANCEL: (idOrNumber: string | number) => `${BASE_URL}/orders/${idOrNumber}/cancel`,
     INVOICE_PDF: (orderNumber: string) => `${BASE_URL}/orders/${orderNumber}/invoice-pdf`
   },
   SETTINGS: {

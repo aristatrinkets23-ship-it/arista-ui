@@ -10,6 +10,7 @@ import { Category } from '../../core/models/category.model';
 import { AuthService } from '../../core/services/auth.service';
 import { CartService } from '../../core/services/cart.service';
 import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
+import { SettingsService } from '../../core/services/settings.service';
 
 const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
@@ -551,6 +552,18 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                       <span *ngIf="(order.order_status || order.status) === 'CANCELLED'">✕ {{ order.cancelled_at || order.ordered_at }}</span>
                       <span *ngIf="(order.order_status || order.status) === 'PENDING'">📅 {{ order.ordered_at || order.created_at }}</span>
                     </div>
+
+                    <!-- Customer Cancellation Reason Tag -->
+                    <div *ngIf="(order.order_status || order.status) === 'CANCELLED' && (order.cancellation_reason || order.cancellationReason)"
+                         style="margin-top: 6px; padding: 4px 8px; background: #FFF5F5; border: 1px solid #FEB2B2; border-left: 3px solid #E53E3E; border-radius: 4px; font-size: 0.7rem; color: #9B2C2C; line-height: 1.35; max-width: 190px; word-break: break-word;">
+                      <div style="font-weight: 700; color: #C53030; display: flex; align-items: center; gap: 3px;">
+                        <span>⚠️</span> Reason:
+                      </div>
+                      <div style="font-style: italic; margin-top: 2px;">"{{ order.cancellation_reason || order.cancellationReason }}"</div>
+                      <div *ngIf="order.cancelled_by || order.cancelledBy" style="font-size: 0.64rem; color: #718096; margin-top: 2px; font-weight: 600;">
+                        By: {{ (order.cancelled_by || order.cancelledBy) === 'CUSTOMER' ? 'Customer' : 'Atelier Admin' }}
+                      </div>
+                    </div>
                   </td>
                   <td>
                     <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start;">
@@ -602,93 +615,6 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               <button type="button" class="btn-page" [disabled]="orderCurrentPage === 1" (click)="setOrderPage(orderCurrentPage - 1)">&larr; Prev</button>
               <button *ngFor="let p of orderPageNumbers" type="button" class="btn-page-num" [class.active]="p === orderCurrentPage" (click)="setOrderPage(p)">{{ p }}</button>
               <button type="button" class="btn-page" [disabled]="orderCurrentPage === orderTotalPages || orderTotalPages === 0" (click)="setOrderPage(orderCurrentPage + 1)">Next &rarr;</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ORDER ITEMS DETAILS MODAL OVERLAY POPUP -->
-        <div *ngIf="selectedOrderForDetails" class="modal-backdrop" (click)="selectedOrderForDetails = null">
-          <div class="modal-card" style="max-width: 600px;" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h2 class="form-title" style="margin:0;">Order Items Details (#{{ selectedOrderForDetails.order_number || selectedOrderForDetails.number }})</h2>
-              <button type="button" class="btn-close" (click)="selectedOrderForDetails = null">&times;</button>
-            </div>
-
-            <div style="margin-top: 16px;">
-              <div style="background: var(--brand-pearl-beige); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 4px;">
-                <div><strong>Customer:</strong> {{ selectedOrderForDetails.customer_name || selectedOrderForDetails.customer }} ({{ selectedOrderForDetails.customer_email || selectedOrderForDetails.email }})</div>
-                <div *ngIf="selectedOrderForDetails.customer_phone"><strong>Phone:</strong> {{ selectedOrderForDetails.customer_phone }}</div>
-                <div><strong>Shipping Address:</strong> {{ selectedOrderForDetails.shipping_address }}, {{ selectedOrderForDetails.city }}, {{ selectedOrderForDetails.state }} - {{ selectedOrderForDetails.pincode }}</div>
-                <div *ngIf="selectedOrderForDetails.tracking_code"><strong>Tracking Code:</strong> <code style="color: var(--brand-warm-gold); font-weight: bold;">{{ selectedOrderForDetails.tracking_code }}</code></div>
-              </div>
-
-              <!-- Status Progress Timeline with Timestamps -->
-              <h4 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 16px 0 10px 0;">Fulfillment Status Timeline:</h4>
-              <div style="background: #FFFFFF; border: 1px solid var(--color-border); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 16px;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); gap: 10px;">
-                  <div style="padding: 8px; border-radius: 6px; background: #FAF7F2; border-left: 3px solid #CFA874;">
-                    <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">1. Placed Date</span>
-                    <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.ordered_at || selectedOrderForDetails.created_at }}</strong>
-                  </div>
-                  <div style="padding: 8px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.processing_at ? '3px solid #9C27B0' : '3px solid #E0E0E0'">
-                    <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">2. In Progress</span>
-                    <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.processing_at || 'Pending' }}</strong>
-                  </div>
-                  <div style="padding: 8px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.shipped_at ? '3px solid #0288D1' : '3px solid #E0E0E0'">
-                    <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">3. Shipped Date</span>
-                    <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.shipped_at || 'Pending' }}</strong>
-                  </div>
-                  <div style="padding: 8px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.delivered_at ? '3px solid #2E7D32' : '3px solid #E0E0E0'">
-                    <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">4. Delivered Date</span>
-                    <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.delivered_at || 'Pending' }}</strong>
-                  </div>
-                </div>
-              </div>
-
-              <h4 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin-bottom: 10px;">Itemized Products:</h4>
-              <div class="table-responsive">
-                <table class="admin-table" style="font-size: 0.85rem;">
-                  <thead>
-                    <tr>
-                      <th>Product Name</th>
-                      <th>Metal Type</th>
-                      <th>Qty</th>
-                      <th>Unit Price</th>
-                      <th>Subtotal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngIf="!selectedOrderForDetails.items || selectedOrderForDetails.items.length === 0">
-                      <td colspan="5" style="text-align: center; color: #888;">No itemized details attached to order.</td>
-                    </tr>
-                    <tr *ngFor="let item of selectedOrderForDetails.items">
-                      <td><strong>{{ item.product_name }}</strong></td>
-                      <td>{{ item.metal_type || '18K Warm Gold' }}</td>
-                      <td>{{ item.quantity }}</td>
-                      <td>₹{{ item.unit_price | number }}</td>
-                      <td><strong style="color: var(--brand-warm-gold);">₹{{ item.total_price | number }}</strong></td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border);">
-                <span>Total Amount Paid:</span>
-                <strong style="font-size: 1.2rem; color: var(--brand-warm-gold);">₹{{ (selectedOrderForDetails.total_amount || selectedOrderForDetails.total) | number }}</strong>
-              </div>
-            </div>
-
-            <div class="modal-footer" style="margin-top: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-              <a
-                *ngIf="selectedOrderForDetails"
-                [href]="getInvoicePdfUrl(selectedOrderForDetails)"
-                target="_blank"
-                class="btn-save"
-                style="margin: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; font-size: 0.85rem;"
-              >
-                📄 Download Official Tax Invoice (PDF)
-              </a>
-              <button type="button" class="btn-cancel" (click)="selectedOrderForDetails = null">Close Details</button>
             </div>
           </div>
         </div>
@@ -973,7 +899,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   <textarea
                     [(ngModel)]="storeSettingsForm.company_address"
                     rows="3"
-                    placeholder="Suite 402, Heritage Diamond District, Surat, Gujarat 395003"
+                    placeholder="Studio 101, Jewel Arcade, Near City Centre, Surat, Gujarat - 395001"
                     style="width: 100%; padding: 10px; border: 1.5px solid #D1C7BD; border-radius: 8px; font-size: 0.88rem;"
                   ></textarea>
                 </div>
@@ -992,9 +918,22 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                     <input
                       type="email"
                       [(ngModel)]="storeSettingsForm.company_email"
-                      placeholder="concierge@aristatrinkets.com"
+                      placeholder="info@aristatrinkets.com"
                     />
                   </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 14px;">
+                  <label style="font-weight: 700; color: #3A2E26;">Atelier Operating Hours / Timing</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="storeSettingsForm.company_timing"
+                    placeholder="Mon – Sat: 10:00 AM – 7:00 PM IST"
+                    style="width: 100%; padding: 10px; border: 1.5px solid #D1C7BD; border-radius: 8px; font-size: 0.88rem;"
+                  />
+                  <small style="color: #777; font-size: 0.74rem; margin-top: 4px; display: block;">
+                    Displayed in the storefront footer, contact page, and concierge assistance.
+                  </small>
                 </div>
               </div>
             </div>
@@ -1840,6 +1779,131 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
           <button type="button" class="modal-btn-confirm" (click)="confirmOrderStatusChange()">
             Confirm &amp; Update Status
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDER ITEMS DETAILS MODAL OVERLAY POPUP (ROOT LEVEL) -->
+    <div *ngIf="selectedOrderForDetails" class="modal-backdrop" (click)="selectedOrderForDetails = null">
+      <div class="modal-card" style="max-width: 680px;" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <div>
+            <h2 class="form-title" style="margin:0; font-size: 1.25rem;">
+              Order Details (#{{ selectedOrderForDetails.order_number || selectedOrderForDetails.number }})
+            </h2>
+            <div style="font-size: 0.78rem; color: #888; margin-top: 3px;">
+              Placed on {{ selectedOrderForDetails.ordered_at || selectedOrderForDetails.created_at }}
+            </div>
+          </div>
+          <button type="button" class="btn-close" (click)="selectedOrderForDetails = null" title="Close Popup">&times;</button>
+        </div>
+
+        <div style="margin-top: 16px;">
+          <!-- Prominent Order Cancellation Box if CANCELLED -->
+          <div *ngIf="(selectedOrderForDetails.order_status || selectedOrderForDetails.status) === 'CANCELLED'" 
+               style="background: #FFF5F5; border: 1px solid #FEB2B2; border-left: 4px solid #E53E3E; border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+              <span style="font-weight: 700; color: #C53030; font-size: 0.92rem; display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 1.15rem;">🚫</span> ORDER CANCELLED
+              </span>
+              <span *ngIf="selectedOrderForDetails.cancelled_at" style="font-size: 0.78rem; color: #742A2A; font-weight: 600; background: #FED7D7; padding: 2px 8px; border-radius: 4px;">
+                Cancelled: {{ selectedOrderForDetails.cancelled_at }}
+              </span>
+            </div>
+            <div style="font-size: 0.85rem; color: #2D3748; line-height: 1.5;">
+              <div>
+                <strong style="color: #4A5568;">Reason Provided by Customer:</strong>
+                <div style="margin-top: 5px; padding: 10px 14px; background: #FFFFFF; border: 1px dashed #FEB2B2; border-radius: 6px; color: #9B2C2C; font-weight: 600; font-size: 0.9rem;">
+                  "{{ selectedOrderForDetails.cancellation_reason || selectedOrderForDetails.cancellationReason || 'No specific cancellation reason provided.' }}"
+                </div>
+              </div>
+              <div style="margin-top: 8px; font-size: 0.78rem; color: #718096; display: flex; align-items: center; gap: 8px;">
+                <span><strong>Cancelled by:</strong> {{ (selectedOrderForDetails.cancelled_by || selectedOrderForDetails.cancelledBy) === 'CUSTOMER' ? 'Customer (Self-service via Account Portal)' : ((selectedOrderForDetails.cancelled_by || selectedOrderForDetails.cancelledBy) || 'Customer') }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer & Shipping Summary Card -->
+          <div style="background: var(--brand-pearl-beige); padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; display: flex; flex-direction: column; gap: 6px;">
+            <div><strong>Customer:</strong> {{ selectedOrderForDetails.customer_name || selectedOrderForDetails.customer }} ({{ selectedOrderForDetails.customer_email || selectedOrderForDetails.email }})</div>
+            <div *ngIf="selectedOrderForDetails.customer_phone"><strong>Phone:</strong> {{ selectedOrderForDetails.customer_phone }}</div>
+            <div><strong>Shipping Address:</strong> {{ selectedOrderForDetails.shipping_address }}, {{ selectedOrderForDetails.city }}, {{ selectedOrderForDetails.state }} - {{ selectedOrderForDetails.pincode }}</div>
+            <div *ngIf="selectedOrderForDetails.tracking_code"><strong>Tracking Code:</strong> <code style="color: var(--brand-warm-gold); font-weight: bold; background: #FFF; padding: 2px 6px; border-radius: 3px;">{{ selectedOrderForDetails.tracking_code }}</code></div>
+            <div><strong>Payment Method:</strong> {{ selectedOrderForDetails.payment_method || selectedOrderForDetails.paymentMethod }} ({{ selectedOrderForDetails.payment_status || selectedOrderForDetails.paymentStatus }})</div>
+          </div>
+
+          <!-- Status Progress Timeline with Timestamps -->
+          <h4 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin: 16px 0 10px 0; font-size: 1rem;">Fulfillment Status Timeline:</h4>
+          <div style="background: #FFFFFF; border: 1px solid var(--color-border); padding: 14px; border-radius: var(--radius-sm); margin-bottom: 16px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
+              <div style="padding: 8px 10px; border-radius: 6px; background: #FAF7F2; border-left: 3px solid #CFA874;">
+                <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">1. Placed</span>
+                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.ordered_at || selectedOrderForDetails.created_at }}</strong>
+              </div>
+              <div style="padding: 8px 10px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.processing_at ? '3px solid #9C27B0' : '3px solid #E0E0E0'">
+                <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">2. In Progress</span>
+                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.processing_at || 'Pending' }}</strong>
+              </div>
+              <div style="padding: 8px 10px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.shipped_at ? '3px solid #0288D1' : '3px solid #E0E0E0'">
+                <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">3. Shipped</span>
+                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.shipped_at || 'Pending' }}</strong>
+              </div>
+              <div style="padding: 8px 10px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.delivered_at ? '3px solid #2E7D32' : '3px solid #E0E0E0'">
+                <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">4. Delivered</span>
+                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.delivered_at || 'Pending' }}</strong>
+              </div>
+              <div *ngIf="(selectedOrderForDetails.order_status || selectedOrderForDetails.status) === 'CANCELLED'"
+                   style="padding: 8px 10px; border-radius: 6px; background: #FFF5F5; border-left: 3px solid #E53E3E;">
+                <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #E53E3E; display: block;">5. Cancelled</span>
+                <strong style="font-size: 0.78rem; color: #C53030; display: block;">{{ selectedOrderForDetails.cancelled_at || 'Cancelled' }}</strong>
+              </div>
+            </div>
+          </div>
+
+          <h4 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); margin-bottom: 10px; font-size: 1rem;">Itemized Products:</h4>
+          <div class="table-responsive">
+            <table class="admin-table" style="font-size: 0.85rem;">
+              <thead>
+                <tr>
+                  <th>Product Name</th>
+                  <th>Metal Type</th>
+                  <th>Qty</th>
+                  <th>Unit Price</th>
+                  <th>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="!selectedOrderForDetails.items || selectedOrderForDetails.items.length === 0">
+                  <td colspan="5" style="text-align: center; color: #888; padding: 16px;">No itemized details attached to order.</td>
+                </tr>
+                <tr *ngFor="let item of selectedOrderForDetails.items">
+                  <td><strong>{{ item.product_name }}</strong></td>
+                  <td>{{ item.metal_type || '18K Warm Gold' }}</td>
+                  <td>{{ item.quantity }}</td>
+                  <td>₹{{ item.unit_price | number }}</td>
+                  <td><strong style="color: var(--brand-warm-gold);">₹{{ item.total_price | number }}</strong></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border);">
+            <span style="font-weight: 600;">Total Order Amount:</span>
+            <strong style="font-size: 1.25rem; color: var(--brand-warm-gold);">₹{{ (selectedOrderForDetails.total_amount || selectedOrderForDetails.total) | number }}</strong>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <a
+            *ngIf="selectedOrderForDetails"
+            [href]="getInvoicePdfUrl(selectedOrderForDetails)"
+            target="_blank"
+            class="btn-save"
+            style="margin: 0; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; font-size: 0.85rem;"
+          >
+            📄 Download Official Tax Invoice (PDF)
+          </a>
+          <button type="button" class="btn-cancel" (click)="selectedOrderForDetails = null">Close Details</button>
         </div>
       </div>
     </div>
@@ -3263,10 +3327,11 @@ export class AdminComponent implements OnInit {
     gst_percentage: 3.0,
     delivery_charge: 50.0,
     free_delivery_threshold: 600.0,
-    company_name: 'Arista Trinkets Atelier',
-    company_address: 'Atelier Suite 402, Heritage Diamond District, Surat, Gujarat 395003',
-    company_phone: '+91 90161 34899',
-    company_email: 'concierge@aristatrinkets.com',
+    company_name: 'Arista Trinkets',
+    company_address: 'Studio 101, Jewel Arcade, Near City Centre, Surat, Gujarat - 395001',
+    company_phone: '9016134899',
+    company_email: 'info@aristatrinkets.com',
+    company_timing: 'Mon – Sat: 10:00 AM – 7:00 PM IST',
     invoice_prefix: 'INV-'
   };
   isLoadingSettings: boolean = false;
@@ -3753,6 +3818,7 @@ export class AdminComponent implements OnInit {
   private cartService = inject(CartService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private settingsService = inject(SettingsService);
 
   showToast(message: string, type: 'success' | 'error' = 'success', title?: string): void {
     this.toastMessage = message;
@@ -3873,11 +3939,12 @@ export class AdminComponent implements OnInit {
           gst_percentage: Number(data.data.gst_percentage) !== undefined ? Number(data.data.gst_percentage) : 3.0,
           delivery_charge: Number(data.data.delivery_charge) !== undefined ? Number(data.data.delivery_charge) : 50.0,
           free_delivery_threshold: Number(data.data.free_delivery_threshold) !== undefined ? Number(data.data.free_delivery_threshold) : 600.0,
-          company_name: data.data.company_name || 'Arista Trinkets Atelier',
-          company_address: data.data.company_address || 'Atelier Suite 402, Heritage Diamond District, Surat, Gujarat 395003',
-          company_phone: data.data.company_phone || '+91 90161 34899',
-          company_email: data.data.company_email || 'concierge@aristatrinkets.com',
-          invoice_prefix: data.data.invoice_prefix || 'INV-'
+          company_name: data.data.company_name || data.data.companyName || 'Arista Trinkets',
+          company_address: data.data.company_address || data.data.companyAddress || 'Studio 101, Jewel Arcade, Near City Centre, Surat, Gujarat - 395001',
+          company_phone: data.data.company_phone || data.data.companyPhone || '9016134899',
+          company_email: data.data.company_email || data.data.companyEmail || 'info@aristatrinkets.com',
+          company_timing: data.data.company_timing || data.data.companyTiming || 'Mon – Sat: 10:00 AM – 7:00 PM IST',
+          invoice_prefix: data.data.invoice_prefix || data.data.invoicePrefix || 'INV-'
         };
         this.validateGstinInput();
       }
@@ -3921,6 +3988,7 @@ export class AdminComponent implements OnInit {
       if (this.checkAuthError(res, data)) return;
       if (data && data.success) {
         this.showToast('Settings saved successfully! Changes are now live.', 'success');
+        this.settingsService.fetchSettings();
       } else {
         this.showToast(data?.message || 'Failed to save settings.', 'error');
       }

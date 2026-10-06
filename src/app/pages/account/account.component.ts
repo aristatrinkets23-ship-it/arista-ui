@@ -35,13 +35,6 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     <section class="account-page-wrapper">
       <div class="container">
 
-        <!-- Toast Alert Notification Banner -->
-        <div class="account-toast" *ngIf="toastMessage" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
-          <span class="toast-icon">{{ toastType === 'success' ? '✓' : '✕' }}</span>
-          <span class="toast-text">{{ toastMessage }}</span>
-          <button type="button" class="btn-close-toast" (click)="toastMessage = ''" aria-label="Close notification">&times;</button>
-        </div>
-
         <!-- AUTH VIEW (Sign In / Register / Forgot Password) -->
         <div *ngIf="activeTab !== 'dashboard'" class="auth-viewport">
           <div class="auth-header-block">
@@ -548,6 +541,15 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                     </div>
                   </header>
 
+                  <!-- Cancellation Details Strip (When CANCELLED) -->
+                  <div *ngIf="(order.order_status || order.status) === 'CANCELLED'" class="order-cancellation-banner">
+                    <div class="cancellation-badge-wrap">
+                      <span class="cancelled-tag">ORDER CANCELLED</span>
+                      <span class="cancelled-meta" *ngIf="order.cancelled_at">on {{ order.cancelled_at | date:'MMMM d, y, h:mm a' }}</span>
+                    </div>
+                    <span class="cancelled-reason" *ngIf="order.cancellation_reason">Reason: {{ order.cancellation_reason }}</span>
+                  </div>
+
                   <!-- 2. COURIER AWB BANNER (Renders when tracking code is set) -->
                   <div *ngIf="order.tracking_code && order.tracking_code.trim()" class="courier-tracking-strip">
                     <div class="courier-info">
@@ -630,10 +632,14 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                           <button
                             type="button"
                             class="btn-buy-again-sm"
-                            (click)="buyAgain(item)"
-                            title="Add piece back to shopping bag"
+                            [class.in-cart]="isItemInBag(item)"
+                            [disabled]="isAddingItem[item.id || item.product_id]"
+                            (click)="handleBuyAgainClick(item, order)"
+                            [title]="isItemInBag(item) ? 'Piece already in bag. Click to view Shopping Bag.' : 'Add piece back to shopping bag'"
                           >
-                            + Buy Again
+                            <span *ngIf="isAddingItem[item.id || item.product_id]">Adding...</span>
+                            <span *ngIf="!isAddingItem[item.id || item.product_id] && isItemInBag(item)">✓ In Bag</span>
+                            <span *ngIf="!isAddingItem[item.id || item.product_id] && !isItemInBag(item)">+ Buy Again</span>
                           </button>
                         </div>
                       </div>
@@ -677,17 +683,65 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                         <span>Download Tax Invoice (PDF)</span>
                       </a>
 
+                      <!-- Customer Cancel Order Button (Available only before shipping: PENDING / PROCESSING) -->
+                      <button
+                        *ngIf="canCancelOrder(order)"
+                        type="button"
+                        class="btn-footer-action cancel-order-btn"
+                        (click)="openCancelModal(order)"
+                        title="Cancel this order before dispatch"
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <line x1="15" y1="9" x2="9" y2="15"></line>
+                          <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                        <span>Cancel Order</span>
+                      </button>
+
+                      <!-- Shipped or Delivered Indicator (Cannot Cancel) -->
+                      <span *ngIf="isOrderShippedOrDelivered(order)" class="order-locked-notice" [title]="(order.order_status || order.status) === 'DELIVERED' ? 'Order delivered' : 'This parcel is already in transit and cannot be cancelled online.'">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <span>{{ (order.order_status || order.status) === 'DELIVERED' ? 'Delivered' : 'Dispatched • In Transit' }}</span>
+                      </span>
+
                       <button
                         type="button"
                         class="btn-footer-action primary"
-                        (click)="reorderAll(order)"
+                        [class.in-bag]="isOrderInBag(order)"
+                        [disabled]="isReorderingOrder[order.id || order.order_number]"
+                        (click)="handleReorderClick(order)"
+                        [title]="isOrderInBag(order) ? 'All pieces are already in your bag. Click to view Shopping Bag.' : 'Reorder all pieces from this package'"
                       >
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                          <line x1="3" y1="6" x2="21" y2="6"></line>
-                          <path d="M16 10a4 4 0 0 1-8 0"></path>
-                        </svg>
-                        <span>Reorder All Pieces</span>
+                        <!-- Loading spinner state -->
+                        <span *ngIf="isReorderingOrder[order.id || order.order_number]" style="display: inline-flex; align-items: center; gap: 6px;">
+                          <svg class="spin-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"></path>
+                          </svg>
+                          <span>Adding pieces...</span>
+                        </span>
+
+                        <!-- Already in bag state -->
+                        <span *ngIf="!isReorderingOrder[order.id || order.order_number] && isOrderInBag(order)" style="display: inline-flex; align-items: center; gap: 6px;">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.5">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                          <span>✓ In Bag • View Bag &rarr;</span>
+                        </span>
+
+                        <!-- Default ready to reorder state -->
+                        <span *ngIf="!isReorderingOrder[order.id || order.order_number] && !isOrderInBag(order)" style="display: inline-flex; align-items: center; gap: 6px;">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <path d="M16 10a4 4 0 0 1-8 0"></path>
+                          </svg>
+                          <span>Reorder All Pieces</span>
+                        </span>
                       </button>
                     </div>
                   </footer>
@@ -992,7 +1046,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
         <form (submit)="saveAddressSubmit($event)" class="luxury-form" style="margin-top: 18px;">
           <div class="form-group">
             <label class="form-label">Recipient Full Name *</label>
-            <input type="text" [(ngModel)]="addressForm.fullName" name="addrFullName" placeholder="e.g. Lata Mangeshkar" class="form-input" />
+            <input type="text" [(ngModel)]="addressForm.fullName" name="addrFullName" placeholder="e.g. Priya Sharma" class="form-input" />
           </div>
           <div class="form-group">
             <label class="form-label">Mobile Phone Number *</label>
@@ -1049,6 +1103,177 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
         </div>
       </div>
     </div>
+
+    <!-- Customer Cancel Order Confirmation Modal Overlay -->
+    <div class="modal-backdrop" *ngIf="showCancelModal" (click)="closeCancelModal()">
+      <div class="modal-card-box cancel-dialog" (click)="$event.stopPropagation()">
+        <div class="cancel-icon-wrap">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </div>
+
+        <h3 class="cancel-title">Cancel Order #{{ orderToCancel?.order_number || orderToCancel?.number }}?</h3>
+        
+        <p class="cancel-desc">
+          Are you sure you wish to cancel this order? Once confirmed, this order will be cancelled immediately and will not be prepared for shipping.
+        </p>
+
+        <!-- Order Snapshot Details -->
+        <div class="cancel-order-summary" *ngIf="orderToCancel">
+          <div class="summary-line">
+            <span>Order Reference:</span>
+            <strong>#{{ orderToCancel.order_number || orderToCancel.number }}</strong>
+          </div>
+          <div class="summary-line">
+            <span>Total Value:</span>
+            <strong>₹{{ (orderToCancel.total_amount || orderToCancel.total) | number }}</strong>
+          </div>
+          <div class="summary-line">
+            <span>Payment Mode:</span>
+            <span>{{ orderToCancel.payment_method || 'Online' }}</span>
+          </div>
+          <div class="summary-line" *ngIf="(orderToCancel.payment_status || orderToCancel.paymentStatus) === 'PAID'">
+            <span>Refund Policy:</span>
+            <span class="refund-note">Prepaid amount will be credited back to your original payment method within 5–7 banking days.</span>
+          </div>
+        </div>
+
+        <!-- Cancellation Reason Selection -->
+        <div class="cancel-reason-group">
+          <label class="reason-label" for="cancelReasonSelect">Reason for cancellation *</label>
+          <select id="cancelReasonSelect" [(ngModel)]="cancelReason" class="reason-select">
+            <option value="Changed my mind">Changed my mind</option>
+            <option value="Ordered incorrect piece or size">Ordered incorrect piece or size</option>
+            <option value="Delivery address needs to be changed">Delivery address needs to be changed</option>
+            <option value="Found an alternative Arista design">Found an alternative Arista design</option>
+            <option value="Placed by mistake">Placed by mistake</option>
+            <option value="Other reason">Other reason</option>
+          </select>
+
+          <div *ngIf="cancelReason === 'Other reason'" class="other-reason-box">
+            <input
+              type="text"
+              [(ngModel)]="customCancelReason"
+              placeholder="Please describe why you are cancelling..."
+              class="form-input"
+              maxlength="200"
+            />
+          </div>
+        </div>
+
+        <!-- Error Feedback Banner -->
+        <div *ngIf="cancelErrorMessage" class="cancel-error-alert" role="alert">
+          {{ cancelErrorMessage }}
+        </div>
+
+        <!-- Modal Action Buttons -->
+        <div class="cancel-actions-row">
+          <button
+            type="button"
+            class="btn-outline-cancel"
+            [disabled]="isCancellingOrder"
+            (click)="closeCancelModal()"
+          >
+            Keep Order
+          </button>
+          <button
+            type="button"
+            class="btn-danger-confirm"
+            [disabled]="isCancellingOrder"
+            (click)="confirmCancelOrder()"
+          >
+            <span *ngIf="!isCancellingOrder">Confirm Cancellation &rarr;</span>
+            <span *ngIf="isCancellingOrder">Processing Cancellation...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LUXURY REORDER / ADDED TO BAG POPUP MODAL (ROOT LEVEL) -->
+    <div class="modal-backdrop" *ngIf="showReorderModal" (click)="closeReorderModal()">
+      <div class="modal-card-box reorder-dialog" (click)="$event.stopPropagation()">
+        <!-- Header -->
+        <div class="reorder-modal-header">
+          <div class="reorder-header-left">
+            <div class="reorder-icon-badge">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <path d="M16 10a4 4 0 0 1-8 0"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="reorder-modal-title">Pieces Added to Shopping Bag!</h3>
+              <p class="reorder-modal-subtitle" *ngIf="reorderedOrder">
+                From Order #{{ reorderedOrder.order_number || reorderedOrder.number }}
+              </p>
+              <p class="reorder-modal-subtitle" *ngIf="!reorderedOrder">
+                Selected piece is ready in your Shopping Bag.
+              </p>
+            </div>
+          </div>
+          <button type="button" class="btn-modal-close" (click)="closeReorderModal()" aria-label="Close modal">&times;</button>
+        </div>
+
+        <!-- Added Items List -->
+        <div class="reorder-items-scroll">
+          <div class="reorder-item-row" *ngFor="let item of reorderSummary?.items">
+            <div class="reorder-thumb-wrap">
+              <img [src]="item.product_image || item.image || defaultImage" [alt]="item.product_name || item.name" (error)="onImageError($event)" class="reorder-thumb-img" />
+            </div>
+            <div class="reorder-item-info">
+              <h4 class="reorder-item-name">{{ item.product_name || item.name }}</h4>
+              <div class="reorder-item-meta">
+                <span>{{ item.metal_type || '18K Warm Gold' }}</span>
+                <span class="meta-dot">•</span>
+                <span>Qty: {{ item.quantity || 1 }}</span>
+              </div>
+            </div>
+            <div class="reorder-item-price">
+              ₹{{ ((item.unit_price || item.price || 0) * (item.quantity || 1)) | number }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Bag Summary Box -->
+        <div class="reorder-summary-box">
+          <div class="summary-line">
+            <span class="summary-label">Total in Shopping Bag:</span>
+            <strong class="summary-val">{{ cartCount }} piece{{ cartCount === 1 ? '' : 's' }}</strong>
+          </div>
+          <div class="summary-line highlight">
+            <span class="summary-label">Bag Subtotal:</span>
+            <strong class="summary-val gold">₹{{ cartSubtotal | number }}</strong>
+          </div>
+          <div class="free-shipping-tag">
+            <span>✨ Insured Express Courier &amp; Bespoke Velvet Pouch Included</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="reorder-modal-actions">
+          <button type="button" class="btn-continue-shopping" (click)="closeReorderModal()">
+            Continue Browsing
+          </button>
+          <button type="button" class="btn-checkout-primary" (click)="goToCart()">
+            <span>View Bag &amp; Checkout</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEWPORT TOAST ALERT NOTIFICATION (ROOT LEVEL) -->
+    <div class="account-toast" *ngIf="toastMessage" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
+      <span class="toast-icon">{{ toastType === 'success' ? '✓' : '✕' }}</span>
+      <span class="toast-text">{{ toastMessage }}</span>
+      <button type="button" class="btn-close-toast" (click)="toastMessage = ''" aria-label="Close notification">&times;</button>
+    </div>
   `,
   styles: [`
     /* ==========================================================================
@@ -1104,19 +1329,20 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       padding: 32px 0 64px 0;
     }
 
-    /* 3. Toast Notification */
+    /* 3. Toast Notification (Fixed Viewport Floating Pill) */
     .account-toast {
-      position: fixed;
-      top: 24px;
-      right: 24px;
-      z-index: 99999;
+      position: fixed !important;
+      bottom: 28px !important;
+      right: 28px !important;
+      top: auto !important;
+      z-index: 999999 !important;
       background: #15803D;
       color: #FFFFFF;
       padding: 12px 22px;
       border-radius: 50px;
       font-size: 0.9rem;
       font-weight: 600;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
       display: flex;
       align-items: center;
       gap: 12px;
@@ -1139,8 +1365,218 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       padding: 0 0 0 6px;
     }
     @keyframes toastSlideIn {
-      from { transform: translateY(-20px); opacity: 0; }
+      from { transform: translateY(20px); opacity: 0; }
       to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* In-Bag Button States */
+    .btn-footer-action.primary.in-bag {
+      background: #1B4D3E !important;
+      color: #FFFFFF !important;
+      border-color: #1B4D3E !important;
+      font-weight: 700 !important;
+    }
+    .btn-footer-action.primary.in-bag:hover {
+      background: #143A2F !important;
+      box-shadow: 0 4px 14px rgba(27, 77, 62, 0.3) !important;
+    }
+    .btn-buy-again-sm.in-cart {
+      background: #ECFDF5 !important;
+      color: #065F46 !important;
+      border-color: #A7F3D0 !important;
+      font-weight: 700 !important;
+    }
+    .btn-buy-again-sm.in-cart:hover {
+      background: #D1FAE5 !important;
+    }
+
+    /* Luxury Reorder Added to Bag Modal Popup */
+    .reorder-dialog {
+      max-width: 520px !important;
+      width: 92% !important;
+      background: #FFFFFF !important;
+      border-radius: 18px !important;
+      padding: 26px !important;
+      box-shadow: 0 24px 60px rgba(44, 34, 30, 0.25) !important;
+      border: 1px solid var(--brand-warm-gold, #CFA874) !important;
+      animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    .reorder-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #EFEAE4;
+    }
+    .reorder-header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .reorder-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #FEF3C7;
+      color: #D97706;
+      border: 1px solid #FCD34D;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .reorder-modal-title {
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: 1.25rem;
+      color: var(--brand-mocha-brown, #2C221E);
+      margin: 0;
+      font-weight: 700;
+    }
+    .reorder-modal-subtitle {
+      font-size: 0.82rem;
+      color: #718096;
+      margin: 3px 0 0 0;
+    }
+    .reorder-items-scroll {
+      max-height: 220px;
+      overflow-y: auto;
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-right: 4px;
+    }
+    .reorder-item-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      background: #FAF7F2;
+      border-radius: 10px;
+      border: 1px solid #EAE3DC;
+    }
+    .reorder-thumb-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #FFFFFF;
+      border: 1px solid #E2D9D0;
+      flex-shrink: 0;
+    }
+    .reorder-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .reorder-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .reorder-item-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #2C221E;
+      margin: 0 0 3px 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .reorder-item-meta {
+      font-size: 0.74rem;
+      color: #6B5B51;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .meta-dot {
+      color: #CBD5E0;
+    }
+    .reorder-item-price {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--brand-warm-gold, #CFA874);
+      flex-shrink: 0;
+    }
+    .reorder-summary-box {
+      background: #FFFFFF;
+      border: 1px solid #EAE3DC;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+    .summary-line.highlight {
+      font-size: 0.96rem;
+      padding-top: 8px;
+      border-top: 1px dashed #E2D9D0;
+      margin-top: 8px;
+      margin-bottom: 10px;
+    }
+    .summary-val.gold {
+      color: var(--brand-warm-gold, #CFA874);
+      font-size: 1.15rem;
+    }
+    .free-shipping-tag {
+      font-size: 0.76rem;
+      color: #065F46;
+      background: #ECFDF5;
+      padding: 5px 10px;
+      border-radius: 6px;
+      text-align: center;
+      font-weight: 600;
+    }
+    .reorder-modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+    .btn-continue-shopping {
+      padding: 11px 18px;
+      background: #FFFFFF;
+      border: 1.5px solid #D6CBC1;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #4A3E38;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-continue-shopping:hover {
+      background: #FAF7F2;
+      border-color: #B5A496;
+    }
+    .btn-checkout-primary {
+      padding: 11px 22px;
+      background: var(--brand-mocha-brown, #2C221E);
+      color: #FFFFFF;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-checkout-primary:hover {
+      background: var(--brand-warm-gold, #CFA874);
+      box-shadow: 0 6px 18px rgba(207, 168, 116, 0.35);
+    }
+    @keyframes spinAnimation {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .spin-icon {
+      animation: spinAnimation 0.8s linear infinite;
     }
 
     /* 4. Auth View (Sign In / Register / Reset) */
@@ -2861,6 +3297,168 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       justify-content: center;
     }
 
+    /* Order Cancellation Styles */
+    .btn-footer-action.cancel-order-btn {
+      color: #DC2626;
+      border-color: #FECACA;
+      background: #FEF2F2;
+      transition: all 0.2s ease;
+    }
+    .btn-footer-action.cancel-order-btn:hover {
+      background: #DC2626;
+      color: #FFFFFF;
+      border-color: #DC2626;
+    }
+    .order-locked-notice {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #6B7280;
+      background: #F3F4F6;
+      border: 1px solid #E5E7EB;
+      padding: 9px 14px;
+      border-radius: 6px;
+      letter-spacing: 0.2px;
+    }
+    .order-cancellation-banner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: #FEF2F2;
+      border-left: 3px solid #DC2626;
+      padding: 10px 14px;
+      border-radius: 4px;
+      margin: 12px 0 6px 0;
+      font-size: 0.84rem;
+    }
+    .cancellation-badge-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cancelled-tag {
+      font-weight: 700;
+      color: #991B1B;
+      letter-spacing: 0.04em;
+    }
+    .cancelled-meta {
+      color: #7F1D1D;
+      font-size: 0.8rem;
+    }
+    .cancelled-reason {
+      color: #991B1B;
+      font-style: italic;
+      background: #FEE2E2;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    /* Cancel Dialog */
+    .cancel-dialog {
+      max-width: 480px;
+      text-align: center;
+      padding: 32px 28px 26px 28px;
+    }
+    .cancel-icon-wrap {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FEE2E2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px auto;
+    }
+    .cancel-title {
+      font-family: var(--font-serif, Georgia, serif);
+      font-size: 1.35rem;
+      color: #2C221E;
+      margin: 0 0 8px 0;
+      font-weight: 700;
+    }
+    .cancel-desc {
+      font-size: 0.88rem;
+      color: #6B5B51;
+      margin: 0 0 18px 0;
+      line-height: 1.5;
+    }
+    .cancel-order-summary {
+      background: #F9FAFB;
+      border: 1px solid #E5E7EB;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+    .cancel-order-summary .summary-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.84rem;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+    .cancel-order-summary .summary-line:last-child {
+      margin-bottom: 0;
+    }
+    .refund-note {
+      color: #059669;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-align: right;
+      max-width: 260px;
+    }
+    .cancel-reason-group {
+      text-align: left;
+      margin-bottom: 18px;
+    }
+    .reason-label {
+      display: block;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+    .reason-select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      background: #FFFFFF;
+      color: #1F2937;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .reason-select:focus {
+      border-color: var(--brand-warm-gold, #CFA874);
+    }
+    .other-reason-box {
+      margin-top: 8px;
+    }
+    .cancel-error-alert {
+      background: #FEF2F2;
+      color: #991B1B;
+      border: 1px solid #FCA5A5;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.84rem;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .cancel-actions-row {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
     @keyframes modalFadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -3762,6 +4360,29 @@ export class AccountComponent implements OnInit, OnDestroy {
   currentUser: any = null;
   showLogoutModal: boolean = false;
 
+  // Cancel Order Modal State
+  showCancelModal: boolean = false;
+  orderToCancel: any = null;
+  cancelReason: string = 'Changed my mind';
+  customCancelReason: string = '';
+  isCancellingOrder: boolean = false;
+  cancelErrorMessage: string = '';
+
+  // Luxury Reorder Modal State
+  showReorderModal: boolean = false;
+  reorderedOrder: any = null;
+  reorderSummary: { items: any[]; totalAmount: number; count: number } | null = null;
+  isReorderingOrder: { [key: string]: boolean } = {};
+  isAddingItem: { [key: string]: boolean } = {};
+
+  get cartCount(): number {
+    return this.cartService.currentCart?.itemCount || 0;
+  }
+
+  get cartSubtotal(): number {
+    return this.cartService.currentCart?.subtotal || 0;
+  }
+
   // Toast State
   toastMessage: string = '';
   toastType: 'success' | 'error' = 'success';
@@ -3987,39 +4608,231 @@ export class AccountComponent implements OnInit, OnDestroy {
     return API_ENDPOINTS.ORDERS.INVOICE_PDF(num);
   }
 
-  // ── Buy Piece Again ──
-  async buyAgain(item: any): Promise<void> {
-    const product: ProductCardData = {
-      id: item.product_id,
-      name: item.product_name,
-      price: Number(item.unit_price) || 0,
-      slug: item.product_slug || '',
-      image: item.product_image || this.defaultImage,
-      category: 'Jewellery',
-      inStock: true,
-      available: true
-    };
-    await this.cartService.addToCart(product, 1, item.metal_type || '18K Warm Gold');
-    this.showToast(`"${item.product_name}" added to your Shopping Bag!`, 'success');
+  // ── Order Cancellation Controls ──
+  canCancelOrder(order: any): boolean {
+    if (!order) return false;
+    const status = (order.order_status || order.status || '').toUpperCase();
+    return status === 'PENDING' || status === 'PROCESSING';
+  }
+
+  isOrderShippedOrDelivered(order: any): boolean {
+    if (!order) return false;
+    const status = (order.order_status || order.status || '').toUpperCase();
+    return status === 'SHIPPED' || status === 'DELIVERED';
+  }
+
+  openCancelModal(order: any): void {
+    if (!this.canCancelOrder(order)) {
+      if (this.isOrderShippedOrDelivered(order)) {
+        this.showToast('This order has already been shipped and cannot be cancelled online.', 'error');
+      }
+      return;
+    }
+    this.orderToCancel = order;
+    this.cancelReason = 'Changed my mind';
+    this.customCancelReason = '';
+    this.cancelErrorMessage = '';
+    this.isCancellingOrder = false;
+    this.showCancelModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeCancelModal(force: boolean = false): void {
+    if (this.isCancellingOrder && !force) return;
+    this.showCancelModal = false;
+    this.orderToCancel = null;
+    this.cancelErrorMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  async confirmCancelOrder(): Promise<void> {
+    if (!this.orderToCancel) return;
+
+    const finalReason = this.cancelReason === 'Other reason'
+      ? (this.customCancelReason.trim() || 'Other reason')
+      : this.cancelReason;
+
+    this.isCancellingOrder = true;
+    this.cancelErrorMessage = '';
+    this.cdr.detectChanges();
+
+    try {
+      const orderIdOrNum = this.orderToCancel.order_number || this.orderToCancel.id;
+      const token = this.authService.getToken();
+      const email = this.currentUser?.email || this.orderToCancel.customer_email;
+
+      const res = await fetch(API_ENDPOINTS.ORDERS.CANCEL(orderIdOrNum), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          reason: finalReason,
+          email: email
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to cancel order. Please try again.');
+      }
+
+      const orderNum = this.orderToCancel.order_number || this.orderToCancel.number || `#${this.orderToCancel.id}`;
+      this.showToast(`Order #${orderNum} has been cancelled successfully.`, 'success');
+      this.closeCancelModal(true);
+
+      // Refresh orders list directly from MySQL database
+      await this.loadMyOrders();
+
+    } catch (err: any) {
+      this.cancelErrorMessage = err.message || 'Unable to cancel order at this time. Please try again or reach out to our concierge.';
+    } finally {
+      this.isCancellingOrder = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  // ── Cart & Reorder Helpers ──
+  isItemInBag(item: any): boolean {
+    if (!item) return false;
+    return this.cartService.isInCart(item.product_id || item.product_slug || item.id || item.product_name);
+  }
+
+  isOrderInBag(order: any): boolean {
+    if (!order || !order.items || order.items.length === 0) return false;
+    return order.items.every((it: any) => this.isItemInBag(it));
+  }
+
+  handleReorderClick(order: any): void {
+    if (this.isOrderInBag(order)) {
+      this.router.navigate(['/cart']);
+      return;
+    }
+    this.reorderAll(order);
+  }
+
+  handleBuyAgainClick(item: any, order?: any): void {
+    if (this.isItemInBag(item)) {
+      this.router.navigate(['/cart']);
+      return;
+    }
+    this.buyAgain(item, order);
+  }
+
+  // ── Buy Single Piece Again ──
+  async buyAgain(item: any, order?: any): Promise<void> {
+    const itemKey = String(item.id || item.product_id || item.product_name);
+    if (this.isAddingItem[itemKey]) return;
+
+    this.isAddingItem[itemKey] = true;
+    this.cdr.detectChanges();
+
+    try {
+      const product: ProductCardData = {
+        id: item.product_id || item.id,
+        name: item.product_name || item.name,
+        price: Number(item.unit_price || item.price) || 0,
+        slug: item.product_slug || item.slug || '',
+        image: item.product_image || item.image || this.defaultImage,
+        category: 'Jewellery',
+        inStock: true,
+        available: true
+      };
+
+      await this.cartService.addToCart(product, 1, item.metal_type || '18K Warm Gold');
+
+      this.reorderedOrder = order || null;
+      this.reorderSummary = {
+        items: [{
+          product_id: product.id,
+          product_name: product.name,
+          unit_price: product.price,
+          product_image: product.image,
+          metal_type: item.metal_type || '18K Warm Gold',
+          quantity: 1
+        }],
+        totalAmount: product.price,
+        count: 1
+      };
+
+      this.showReorderModal = true;
+      this.showToast(`"${product.name}" added to your Shopping Bag!`, 'success');
+    } catch (err: any) {
+      this.showToast('Unable to add piece to bag. Please try again.', 'error');
+    } finally {
+      this.isAddingItem[itemKey] = false;
+      this.cdr.detectChanges();
+    }
   }
 
   // ── Reorder Entire Order ──
   async reorderAll(order: any): Promise<void> {
     if (!order.items || order.items.length === 0) return;
-    for (const item of order.items) {
-      const product: ProductCardData = {
-        id: item.product_id,
-        name: item.product_name,
-        price: Number(item.unit_price) || 0,
-        slug: item.product_slug || '',
-        image: item.product_image || this.defaultImage,
-        category: 'Jewellery',
-        inStock: true,
-        available: true
+
+    const orderKey = String(order.id || order.order_number);
+    if (this.isReorderingOrder[orderKey]) return;
+
+    this.isReorderingOrder[orderKey] = true;
+    this.cdr.detectChanges();
+
+    try {
+      const addedItems: any[] = [];
+      let totalAddedPrice = 0;
+
+      for (const item of order.items) {
+        const product: ProductCardData = {
+          id: item.product_id || item.id,
+          name: item.product_name || item.name,
+          price: Number(item.unit_price || item.price) || 0,
+          slug: item.product_slug || item.slug || '',
+          image: item.product_image || item.image || this.defaultImage,
+          category: 'Jewellery',
+          inStock: true,
+          available: true
+        };
+        const qty = item.quantity || 1;
+        await this.cartService.addToCart(product, qty, item.metal_type || '18K Warm Gold');
+
+        addedItems.push({
+          product_id: product.id,
+          product_name: product.name,
+          unit_price: product.price,
+          product_image: product.image,
+          metal_type: item.metal_type || '18K Warm Gold',
+          quantity: qty
+        });
+        totalAddedPrice += product.price * qty;
+      }
+
+      this.reorderedOrder = order;
+      this.reorderSummary = {
+        items: addedItems,
+        totalAmount: totalAddedPrice,
+        count: addedItems.length
       };
-      await this.cartService.addToCart(product, item.quantity || 1, item.metal_type || '18K Warm Gold');
+
+      this.showReorderModal = true;
+      this.showToast(`All pieces from Order #${order.order_number || order.number} added to your Bag!`, 'success');
+    } catch (err: any) {
+      this.showToast('Unable to reorder pieces at this time. Please try again.', 'error');
+    } finally {
+      this.isReorderingOrder[orderKey] = false;
+      this.cdr.detectChanges();
     }
-    this.showToast(`All pieces from Order #${order.order_number || order.number} added to your Bag!`, 'success');
+  }
+
+  closeReorderModal(): void {
+    this.showReorderModal = false;
+    this.reorderedOrder = null;
+    this.reorderSummary = null;
+    this.cdr.detectChanges();
+  }
+
+  goToCart(): void {
+    this.closeReorderModal();
+    this.router.navigate(['/cart']);
   }
 
   // ── Load Saved Addresses ──

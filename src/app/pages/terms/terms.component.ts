@@ -90,6 +90,7 @@ import { SettingsService } from '../../core/services/settings.service';
                 <p><strong>Concierge:</strong> {{ settings.companyEmail }}</p>
                 <p><strong>Telephone / WhatsApp:</strong> {{ settings.companyPhone }}</p>
                 <p><strong>Atelier:</strong> {{ settings.companyAddress }}</p>
+                <p *ngIf="settings.companyTiming"><strong>Hours / Timing:</strong> {{ settings.companyTiming }}</p>
               </div>
             </div>
           </div>
