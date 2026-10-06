@@ -1,5 +1,30 @@
 # Arista Jewellery E-commerce - Change Log
 
+## [2026-10-06] Top-Right Notification Toasts, Dynamic Store Details & Reorder Enhancements
+
+### Tasks & Enhancements Completed
+- **Top-Right Corner Notification Toast Standardization**:
+  - Positioned floating notification toasts consistently in the **top-right corner** (`top: 88px; right: 28px;`) across account and storefront components.
+  - Smooth top slide-down animation (`toastSlideInTop`) preventing header occlusion.
+- **Dynamic Store Contact & Atelier Timing**:
+  - Bound Registered Business Name, Address, Support Phone, Concierge Email, and Atelier Operating Hours / Timing dynamically to MySQL `store_settings` across Footer, Contact Page, Privacy Policy, Terms of Service, and Checkout failure alerts.
+  - Formatted active phone number dynamically into `https://wa.me/91...` WhatsApp links.
+- **Reorder Modal Scroll & Duplicate Item Resolution**:
+  - Expanded `.reorder-items-scroll` max-height to `300px` with a custom warm gold scrollbar so all reordered package items render clearly without list cropping.
+  - Added `isItemInBag` duplicate check in `reorderAll()` to avoid doubling item quantities for pieces already in the shopping bag.
+  - Enhanced reorder summary card to display itemized package totals alongside overall shopping bag totals.
+- **Customer Authentication Accessibility**:
+  - Added `autocomplete="one-time-code"` to 6-digit OTP verification input fields and `autocomplete="new-password"` to password update inputs.
+
+### Files Modified
+- `arista-ui/src/app/pages/account/account.component.ts` — Updated notification toast positioning, reorder modal container height, and smart item duplicate handling
+- `arista-ui/src/app/pages/checkout/checkout.component.ts` — Injected `SettingsService` for dynamic support email error alerts
+- `arista-ui/src/app/layout/footer/footer.component.ts` — Bound contact details, email links, phone links, operating hours, and WhatsApp link to `SettingsService`
+- `arista-ui/src/app/pages/privacy/privacy.component.ts` & `terms.component.ts` — Bound policy contact boxes to `SettingsService`
+- `arista-ui/src/app/pages/contact/contact.component.ts` — Bound cards and WhatsApp concierge button to `SettingsService`
+
+---
+
 ## [2026-09-20] Multi-Image Admin Product Upload & Storefront Slideshow Gallery
 
 ### Tasks & Enhancements Completed
