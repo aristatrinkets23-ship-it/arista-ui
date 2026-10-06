@@ -155,7 +155,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <form *ngIf="forgotStep === 2" novalidate (submit)="onResetPasswordSubmit($event)" class="auth-form">
               <div class="form-group">
                 <label class="form-label">6-Digit Verification Code *</label>
-                <input type="text" [(ngModel)]="forgotOtp" name="forgotOtp" placeholder="684920" maxlength="6" class="form-input otp-input" />
+                <input type="text" [(ngModel)]="forgotOtp" name="forgotOtp" placeholder="Enter 6-digit code" maxlength="6" autocomplete="one-time-code" class="form-input otp-input" />
               </div>
 
               <div class="form-group">
@@ -166,6 +166,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                     [(ngModel)]="newPassword"
                     name="newPassword"
                     placeholder="Enter your new password"
+                    autocomplete="new-password"
                     class="form-input"
                   />
                   <button

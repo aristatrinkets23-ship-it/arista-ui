@@ -77,13 +77,6 @@ import { SettingsService, StoreSettings } from '../../core/services/settings.ser
           </div>
 
           <!-- WhatsApp Concierge Banner -->
-          <div class="whatsapp-box animate-stagger-card" style="--stagger-index: 4">
-            <h4 class="wa-title">Need Instant Guidance?</h4>
-            <p class="wa-text">Speak directly with a certified diamond specialist on WhatsApp.</p>
-            <button type="button" class="btn-whatsapp" (click)="openWhatsApp()">
-              Chat on WhatsApp Concierge &rarr;
-            </button>
-          </div>
         </div>
 
         <!-- Contact Form -->
