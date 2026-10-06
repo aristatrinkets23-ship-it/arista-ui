@@ -1,6 +1,6 @@
-import { Component, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
@@ -8,6 +8,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { CartSummary } from '../../core/models/cart.model';
 import { CartService } from '../../core/services/cart.service';
 import { AuthService } from '../../core/services/auth.service';
+import { SettingsService } from '../../core/services/settings.service';
 import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
 declare var Razorpay: any;
@@ -56,11 +57,46 @@ declare var Razorpay: any;
             </div>
 
             <h2 class="section-title">Shipping Address</h2>
+
+            <div *ngIf="addressValidationError" class="auth-alert error" style="margin-bottom: 16px;">
+              ⚠️ {{ addressValidationError }}
+            </div>
+            <div *ngIf="orderErrorMessage" class="auth-alert error" style="margin-bottom: 16px;">
+              ⚠️ {{ orderErrorMessage }}
+            </div>
+
+            <!-- Saved Delivery Address Selector Bar (When user has saved addresses) -->
+            <div class="saved-address-selector-box" *ngIf="isLoggedIn && savedAddresses.length > 0">
+              <div class="saved-addr-top-bar">
+                <div class="saved-addr-header-info">
+                  <span class="saved-addr-icon">📍</span>
+                  <span class="saved-addr-title">Saved Delivery Addresses ({{ savedAddresses.length }})</span>
+                  <span class="badge-prefilled" *ngIf="selectedSavedAddressId !== 'new'">✓ Auto-filled in Form Below</span>
+                </div>
+                <a routerLink="/account" [queryParams]="{ tab: 'addresses' }" class="link-manage-addresses">
+                  Manage in Account &rarr;
+                </a>
+              </div>
+
+              <div class="saved-addr-select-row">
+                <select
+                  [ngModel]="selectedSavedAddressId"
+                  (ngModelChange)="onSavedAddressSelectChange($event)"
+                  class="saved-addr-dropdown-input"
+                >
+                  <option *ngFor="let addr of savedAddresses" [value]="addr.id">
+                    {{ addr.full_name || addr.fullName }} — {{ addr.address_line || addr.addressLine }}, {{ addr.city }}, {{ addr.state }} - {{ addr.pincode }} {{ (addr.is_default || addr.isDefault) ? '★ [Default Address]' : '' }}
+                  </option>
+                  <option value="new">+ Enter a New / Different Shipping Address</option>
+                </select>
+              </div>
+            </div>
+
             <form (submit)="placeOrder($event)" class="checkout-form">
               <div class="form-row">
                 <div class="form-group">
                   <label>First Name *</label>
-                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" placeholder="e.g. Priya" required />
+                  <input type="text" [(ngModel)]="shipping.firstName" name="firstName" placeholder="e.g. Ananya" required />
                 </div>
                 <div class="form-group">
                   <label>Last Name *</label>
@@ -68,9 +104,15 @@ declare var Razorpay: any;
                 </div>
               </div>
 
-              <div class="form-group">
-                <label>Email Address *</label>
-                <input type="email" [(ngModel)]="shipping.email" name="email" placeholder="name@example.com" required />
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Email Address *</label>
+                  <input type="email" [(ngModel)]="shipping.email" name="email" placeholder="name@example.com" required />
+                </div>
+                <div class="form-group">
+                  <label>Phone Number *</label>
+                  <input type="tel" [(ngModel)]="shipping.phone" (input)="onPhoneInput($event)" name="phone" placeholder="e.g. 9876543210" maxlength="10" required />
+                </div>
               </div>
 
               <div class="form-group">
@@ -89,8 +131,16 @@ declare var Razorpay: any;
                 </div>
                 <div class="form-group">
                   <label>PIN Code *</label>
-                  <input type="text" [(ngModel)]="shipping.pincode" name="pincode" placeholder="e.g. 400020" required />
+                  <input type="tel" [(ngModel)]="shipping.pincode" (input)="onPincodeInput($event)" name="pincode" placeholder="e.g. 400020" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" required />
                 </div>
+              </div>
+
+              <!-- Auto-save to account checkbox for logged-in users when entering a new address -->
+              <div *ngIf="isLoggedIn && (selectedSavedAddressId === 'new' || savedAddresses.length === 0)" style="margin-bottom: 18px; background: #FAF7F2; border: 1px solid #E8E0D7; border-radius: 8px; padding: 12px 16px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.88rem; font-weight: 600; color: #2C221E; margin: 0;">
+                  <input type="checkbox" [(ngModel)]="saveNewAddressToAccount" name="saveNewAddr" />
+                  <span>Save this shipping address to my Arista Account for faster future checkouts</span>
+                </label>
               </div>
 
               <!-- Guest Option to Create Account -->
@@ -125,8 +175,12 @@ declare var Razorpay: any;
                 </label>
               </div>
 
+              <div *ngIf="orderErrorMessage" class="auth-alert error" style="margin-bottom: 16px;">
+                ⚠️ {{ orderErrorMessage }}
+              </div>
+
               <button type="submit" class="submit-btn" [disabled]="isProcessing">
-                {{ isProcessing ? 'Initializing Gateway...' : 'Pay & Complete Order (₹' + (cart ? (cart.total | number) : '0') + ')' }}
+                {{ isProcessing ? 'Processing Order...' : 'Pay & Complete Order (₹' + (cart ? (cart.total | number) : '0') + ')' }}
               </button>
             </form>
           </div>
@@ -186,7 +240,21 @@ declare var Razorpay: any;
               <span class="badge-status">{{ paymentVerified ? 'RAZORPAY VERIFIED (PAID)' : 'ORDER RECEIVED' }}</span>
             </div>
             <div class="success-actions">
-              <a routerLink="/shop" class="btn-gold">Continue Shopping</a>
+              <a
+                *ngIf="generatedOrderNumber"
+                [href]="getInvoicePdfUrl(generatedOrderNumber)"
+                target="_blank"
+                class="btn-gold"
+                style="display: inline-flex; align-items: center; gap: 8px;"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Tax Invoice (PDF)
+              </a>
+              <a routerLink="/shop" class="btn-mocha">Continue Shopping</a>
               <a routerLink="/account" class="btn-mocha">View Account Orders</a>
             </div>
           </div>
@@ -350,6 +418,81 @@ declare var Razorpay: any;
       cursor: pointer;
     }
 
+    /* Saved Address Quick Selector Bar */
+    .saved-address-selector-box {
+      background: #FAF7F2;
+      border: 1.5px solid #D1C7BD;
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin-bottom: 22px;
+      box-shadow: 0 2px 8px rgba(44, 34, 30, 0.04);
+    }
+    .saved-addr-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .saved-addr-header-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .saved-addr-icon {
+      font-size: 1.1rem;
+    }
+    .saved-addr-title {
+      font-weight: 700;
+      color: #2C221E;
+      font-size: 0.95rem;
+      letter-spacing: 0.2px;
+    }
+    .badge-prefilled {
+      background: #E8F5E9;
+      color: #2E7D32;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid #C8E6C9;
+      letter-spacing: 0.3px;
+    }
+    .link-manage-addresses {
+      font-size: 0.82rem;
+      color: var(--brand-warm-gold, #B8860B);
+      font-weight: 600;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+    .link-manage-addresses:hover {
+      color: #8C6608;
+    }
+    .saved-addr-select-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .saved-addr-dropdown-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #D1C7BD;
+      border-radius: 8px;
+      background: #FFFFFF;
+      color: #2C221E;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .saved-addr-dropdown-input:focus {
+      border-color: var(--brand-warm-gold, #B8860B);
+      box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.12);
+    }
+
     .create-account-box {
       background: var(--brand-pearl-beige);
       border: 1px dashed var(--color-border);
@@ -404,6 +547,18 @@ declare var Razorpay: any;
       font-weight: 600;
       font-size: 0.85rem;
       cursor: pointer;
+    }
+    .auth-alert {
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .auth-alert.error {
+      background: #FEF2F2;
+      border: 1px solid #F87171;
+      color: #991B1B;
+      font-weight: 500;
     }
     .error-banner {
       background: #FFEBEE; color: #C62828; padding: 10px 14px;
@@ -645,6 +800,42 @@ declare var Razorpay: any;
       justify-content: center;
       flex-wrap: wrap;
     }
+
+    .btn-gold {
+      background: var(--brand-warm-gold) !important;
+      color: var(--brand-mocha-brown) !important;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 12px 28px;
+      border-radius: 50px;
+      text-decoration: none !important;
+      display: inline-block;
+      transition: all var(--transition-fast);
+      box-shadow: 0 4px 12px rgba(207, 168, 116, 0.25);
+    }
+    .btn-gold:hover {
+      background: #E2B882 !important;
+      color: #382A1F !important;
+      transform: translateY(-1px);
+    }
+
+    .btn-mocha {
+      background: var(--brand-mocha-brown) !important;
+      color: #FFFFFF !important;
+      font-weight: 700;
+      font-size: 0.88rem;
+      padding: 12px 28px;
+      border-radius: 50px;
+      text-decoration: none !important;
+      display: inline-block;
+      transition: all var(--transition-fast);
+      box-shadow: 0 4px 12px rgba(91, 70, 54, 0.25);
+    }
+    .btn-mocha:hover {
+      background: #443427 !important;
+      color: #FFFFFF !important;
+      transform: translateY(-1px);
+    }
   `]
 })
 export class CheckoutComponent implements OnInit, OnDestroy {
@@ -670,6 +861,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     address: '',
     city: '',
     state: '',
@@ -678,14 +870,24 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   private cartService = inject(CartService);
   private authService = inject(AuthService);
+  private settingsService = inject(SettingsService);
+  private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
     this.cartSub = this.cartService.cart$.subscribe(summary => {
       this.cart = summary;
+      this.cdr.detectChanges();
     });
 
     this.checkUserSession();
   }
+
+  savedAddresses: any[] = [];
+  selectedSavedAddressId: any = 'new';
+  saveNewAddressToAccount: boolean = true;
+  addressValidationError: string = '';
+  orderErrorMessage: string = '';
 
   private checkUserSession(): void {
     this.isLoggedIn = this.authService.isAuthenticated();
@@ -696,8 +898,93 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         this.shipping.firstName = this.shipping.firstName || names[0] || '';
         this.shipping.lastName = this.shipping.lastName || names.slice(1).join(' ') || '';
         this.shipping.email = this.shipping.email || this.currentUser.email || '';
+        this.shipping.phone = this.shipping.phone || this.currentUser.phone || '';
+        this.loadSavedAddresses();
       }
     }
+  }
+
+  async loadSavedAddresses(): Promise<void> {
+    if (!this.isLoggedIn || !this.currentUser?.email) return;
+    try {
+      const token = this.authService.getToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const res = await fetch(`${API_ENDPOINTS.ADDRESSES.LIST}?email=${encodeURIComponent(this.currentUser.email)}`, {
+        headers
+      });
+      const data = await res.json();
+      if (res.ok && data.success && Array.isArray(data.data) && data.data.length > 0) {
+        this.savedAddresses = data.data;
+
+        // Check if query param addressId was passed
+        const targetId = this.route.snapshot.queryParams['addressId'];
+        let matchedAddr = null;
+        if (targetId) {
+          matchedAddr = this.savedAddresses.find(a => String(a.id) === String(targetId));
+        }
+        if (!matchedAddr) {
+          matchedAddr = this.savedAddresses.find(a => a.is_default || a.isDefault) || this.savedAddresses[0];
+        }
+
+        if (matchedAddr) {
+          this.selectedSavedAddressId = matchedAddr.id;
+          this.applySavedAddress(matchedAddr);
+        }
+      }
+      this.cdr.detectChanges();
+    } catch (err) {
+      console.error('Failed to load saved addresses:', err);
+    }
+  }
+
+  getSelectedAddress(): any {
+    return this.savedAddresses.find(a => String(a.id) === String(this.selectedSavedAddressId));
+  }
+
+  selectSavedAddress(addr: any): void {
+    this.selectedSavedAddressId = addr.id;
+    this.applySavedAddress(addr);
+    this.cdr.detectChanges();
+  }
+
+  switchToNewAddressMode(): void {
+    this.selectedSavedAddressId = 'new';
+    this.shipping.address = '';
+    this.shipping.city = '';
+    this.shipping.state = '';
+    this.shipping.pincode = '';
+    this.saveNewAddressToAccount = true;
+    this.cdr.detectChanges();
+  }
+
+  applySavedAddress(addr: any): void {
+    if (!addr) return;
+    const names = (addr.full_name || addr.fullName || this.currentUser?.name || '').trim().split(' ');
+    this.shipping.firstName = names[0] || this.shipping.firstName || '';
+    this.shipping.lastName = names.slice(1).join(' ') || this.shipping.lastName || '';
+    this.shipping.phone = addr.phone || this.shipping.phone || this.currentUser?.phone || '';
+    this.shipping.email = this.shipping.email || this.currentUser?.email || '';
+    this.shipping.address = addr.address_line || addr.addressLine || '';
+    this.shipping.city = addr.city || '';
+    this.shipping.state = addr.state || '';
+    this.shipping.pincode = addr.pincode || '';
+    this.cdr.detectChanges();
+  }
+
+  onSavedAddressSelectChange(val: any): void {
+    this.selectedSavedAddressId = val;
+    if (val === 'new') {
+      this.switchToNewAddressMode();
+    } else {
+      const addr = this.savedAddresses.find(a => String(a.id) === String(val));
+      if (addr) {
+        this.applySavedAddress(addr);
+      }
+    }
+    this.cdr.detectChanges();
   }
 
   async onInlineLogin(event: Event): Promise<void> {
@@ -719,6 +1006,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       this.showAuthModal = false;
       this.authModalEmail = '';
       this.authModalPassword = '';
+
+      this.loadSavedAddresses();
     } else {
       this.authErrorMessage = res.message || 'Invalid email or password.';
     }
@@ -728,7 +1017,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.authService.logout();
     this.isLoggedIn = false;
     this.currentUser = null;
-    // NOTE: All typed address details (shipping.address, city, pincode, etc.) and cart items remain 100% intact!
+    this.savedAddresses = [];
+    this.selectedSavedAddressId = 'new';
   }
 
   ngOnDestroy(): void {
@@ -751,8 +1041,56 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     });
   }
 
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digitsOnly = input.value.replace(/\D/g, '').slice(0, 10);
+    this.shipping.phone = digitsOnly;
+    input.value = digitsOnly;
+  }
+
+  onPincodeInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digitsOnly = input.value.replace(/\D/g, '').slice(0, 6);
+    this.shipping.pincode = digitsOnly;
+    input.value = digitsOnly;
+  }
+
   async placeOrder(event: Event): Promise<void> {
     event.preventDefault();
+    this.addressValidationError = '';
+    this.orderErrorMessage = '';
+
+    // STRICT VALIDATION: Ensure street address, city, state, pincode, and 10-digit mobile phone are non-empty & valid!
+    if (!this.shipping.firstName.trim() || !this.shipping.lastName.trim() || !this.shipping.email.trim() ||
+      !this.shipping.address.trim() || !this.shipping.city.trim() || !this.shipping.state.trim() || !this.shipping.pincode.trim()) {
+      this.addressValidationError = 'Please fill in all required fields — First Name, Last Name, Email, Street Address, City, State, and PIN Code.';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const cleanPin = this.shipping.pincode.replace(/\D/g, '');
+    if (!/^\d{6}$/.test(cleanPin)) {
+      this.addressValidationError = 'PIN Code must be exactly 6 digits (e.g. 395003).';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    const cleanPhone = (this.shipping.phone || '').replace(/\D/g, '');
+    if (!cleanPhone || cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+      this.addressValidationError = 'Please enter a valid 10-digit Indian mobile number (e.g. 9876543210).';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (!this.cart || !this.cart.items || this.cart.items.length === 0) {
+      this.orderErrorMessage = 'Your shopping bag is empty. Please add items before checking out.';
+      this.isProcessing = false;
+      return;
+    }
+
     this.isProcessing = true;
 
     // If guest checked "Create an account", register them seamlessly in background
@@ -769,18 +1107,128 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           })
         });
       } catch (err) {
-        // Non-blocking fallback
+        // Non-blocking fallback for guest registration
       }
     }
 
-    const totalAmount = this.cart ? this.cart.total : 45000;
-    this.generatedOrderNumber = `ART-${Math.floor(100000 + Math.random() * 900000)}`;
+    const totalAmount = this.cart.total || 0;
+    const orderItems = this.cart.items.map(item => ({
+      id: item.product.id,
+      productId: item.product.id,
+      title: item.product.name,
+      name: item.product.name,
+      price: item.product.price,
+      metalType: item.selectedMetal || '18K Warm Gold',
+      quantity: item.quantity
+    }));
 
+    const token = this.authService.getToken();
+    const reqHeaders: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (token) {
+      reqHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
+    // 1. Create order on backend DB to obtain sequential order number (ART-000001 series)
+    let createRes: Response;
+    try {
+      createRes = await fetch(API_ENDPOINTS.ORDERS.CREATE, {
+        method: 'POST',
+        headers: reqHeaders,
+        body: JSON.stringify({
+          customerName: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
+          customerEmail: this.shipping.email.trim(),
+          customerPhone: cleanPhone,
+          shippingAddress: this.shipping.address.trim(),
+          city: this.shipping.city.trim(),
+          state: this.shipping.state.trim(),
+          pincode: cleanPin,
+          items: orderItems,
+          totalAmount: totalAmount,
+          paymentMethod: this.selectedPayment.toUpperCase()
+        })
+      });
+    } catch (networkErr: any) {
+      console.error('Order creation failed due to network error:', networkErr);
+      this.orderErrorMessage = 'Unable to connect to the order service. Please check your internet connection and try again.';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.detectChanges();
+      return;
+    }
+
+    let resData: any = null;
+    try {
+      resData = await createRes.json();
+    } catch (jsonErr) {
+      console.error('Failed to parse response JSON from order endpoint:', jsonErr);
+    }
+
+    if (!createRes.ok || !resData || !resData.success) {
+      console.error(`Order creation rejected by server [HTTP ${createRes.status}]:`, resData);
+
+      let msg = 'Unable to complete your order at this time. Please try again.';
+      if (resData && resData.message) {
+        msg = resData.message;
+      } else if (createRes.status === 400) {
+        msg = 'Some items in your bag may be out of stock or order information is invalid. Please review your bag and details.';
+      } else if (createRes.status === 401) {
+        msg = 'Your session has expired. Please log in again to place your order.';
+      } else if (createRes.status === 500) {
+        msg = 'An internal server error occurred while processing your order. Please try again or contact customer concierge.';
+      } else if (createRes.status >= 502) {
+        msg = 'The order service is temporarily unavailable. Please try again in a few moments.';
+      }
+
+      this.orderErrorMessage = msg;
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const orderNumber = resData.data?.orderNumber;
+    if (!orderNumber) {
+      console.error('Server returned success without orderNumber:', resData);
+      this.orderErrorMessage = 'Order creation could not be verified by the server. Please check your account orders or contact concierge.';
+      this.isProcessing = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.generatedOrderNumber = orderNumber;
+
+    // Auto-save new shipping address to user's account if requested
+    if (this.isLoggedIn && (this.selectedSavedAddressId === 'new' || this.savedAddresses.length === 0) && this.saveNewAddressToAccount) {
+      try {
+        await fetch(API_ENDPOINTS.ADDRESSES.CREATE, {
+          method: 'POST',
+          headers: reqHeaders,
+          body: JSON.stringify({
+            fullName: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
+            phone: cleanPhone,
+            addressLine: this.shipping.address.trim(),
+            city: this.shipping.city.trim(),
+            state: this.shipping.state.trim(),
+            pincode: cleanPin,
+            email: this.shipping.email.trim(),
+            isDefault: this.savedAddresses.length === 0
+          })
+        });
+      } catch (e) {
+        // Non-blocking address save
+      }
+    }
+
+    // 2. Handle Payment Flow
     if (this.selectedPayment === 'razorpay') {
       await this.loadRazorpayScript();
       if (typeof Razorpay !== 'undefined') {
+        let rzpRes: Response;
         try {
-          const response = await fetch(API_ENDPOINTS.ORDERS.RAZORPAY_ORDER, {
+          rzpRes = await fetch(API_ENDPOINTS.ORDERS.RAZORPAY_ORDER, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -788,51 +1236,86 @@ export class CheckoutComponent implements OnInit, OnDestroy {
               receipt: this.generatedOrderNumber
             })
           });
-
-          const resData = await response.json();
-          if (resData && resData.success && resData.data) {
-            const options = {
-              key: resData.data.keyId || 'rzp_test_AristaTrinkets2026',
-              amount: resData.data.amount,
-              currency: 'INR',
-              name: 'Arista Trinkets Jewellery',
-              description: `Order ${this.generatedOrderNumber}`,
-              image: '/assets/images/logo-icon.jpeg',
-              order_id: resData.data.id,
-              handler: async (payRes: any) => {
-                await this.verifyRazorpayPayment(payRes);
-              },
-              prefill: {
-                name: `${this.shipping.firstName} ${this.shipping.lastName}`,
-                email: this.shipping.email,
-                contact: '9999999999'
-              },
-              theme: {
-                color: '#CFA874'
-              }
-            };
-
-            const rzp = new Razorpay(options);
-            rzp.open();
-            this.isProcessing = false;
-            return;
-          }
-        } catch (err) {
-          // Fallback to local order completion if backend server is offline
+        } catch (rzpNetErr: any) {
+          console.error('Failed to communicate with Razorpay endpoint:', rzpNetErr);
+          this.orderErrorMessage = `Order #${this.generatedOrderNumber} was created, but initializing payment failed. You can complete payment from your Account or choose COD.`;
+          this.isProcessing = false;
+          this.cdr.detectChanges();
+          return;
         }
+
+        let rzpData: any = null;
+        try {
+          rzpData = await rzpRes.json();
+        } catch (rzpParseErr) {
+          console.error('Failed to parse Razorpay response:', rzpParseErr);
+        }
+
+        if (!rzpRes.ok || !rzpData || !rzpData.success || !rzpData.data) {
+          console.error(`Razorpay initialization failed [HTTP ${rzpRes.status}]:`, rzpData);
+          this.orderErrorMessage = rzpData?.message || 'Payment gateway initialization failed. Please try again or select Cash on Delivery.';
+          this.isProcessing = false;
+          this.cdr.detectChanges();
+          return;
+        }
+
+        const options = {
+          key: rzpData.data.keyId || '',
+          amount: rzpData.data.amount,
+          currency: 'INR',
+          name: 'Arista Trinkets',
+          description: `Order ${this.generatedOrderNumber}`,
+          image: '/assets/images/logo-icon.jpeg',
+          order_id: rzpData.data.id,
+          handler: async (payRes: any) => {
+            await this.verifyRazorpayPayment(payRes);
+          },
+          modal: {
+            ondismiss: () => {
+              this.isProcessing = false;
+              this.orderErrorMessage = `Payment window was closed. Order #${this.generatedOrderNumber} remains pending until payment is completed.`;
+              this.cdr.detectChanges();
+            }
+          },
+          prefill: {
+            name: `${this.shipping.firstName} ${this.shipping.lastName}`.trim(),
+            email: this.shipping.email,
+            contact: cleanPhone
+          },
+          theme: {
+            color: '#CFA874'
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+        this.isProcessing = false;
+        return;
+      } else {
+        console.error('Razorpay SDK failed to load');
+        this.orderErrorMessage = 'Payment gateway could not be loaded. Please refresh the page or select Cash on Delivery.';
+        this.isProcessing = false;
+        this.cdr.detectChanges();
+        return;
       }
     }
 
-    // Direct fallback completion for COD or mock offline flow
-    this.paymentVerified = this.selectedPayment === 'razorpay';
+    // Cash on Delivery confirmed order flow
+    this.paymentVerified = false;
     this.orderPlaced = true;
     this.isProcessing = false;
     this.cartService.clearCart();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.cdr.detectChanges();
   }
 
   private async verifyRazorpayPayment(payRes: any): Promise<void> {
+    this.isProcessing = true;
+    this.orderErrorMessage = '';
+    this.cdr.detectChanges();
+
     try {
-      await fetch(API_ENDPOINTS.ORDERS.VERIFY_PAYMENT, {
+      const verifyRes = await fetch(API_ENDPOINTS.ORDERS.VERIFY_PAYMENT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -842,13 +1325,28 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           order_number: this.generatedOrderNumber
         })
       });
-    } catch (err) {
-      // Non-critical fallback
-    }
 
-    this.paymentVerified = true;
-    this.orderPlaced = true;
-    this.cartService.clearCart();
+      const verifyData = await verifyRes.json();
+      if (verifyRes.ok && verifyData && verifyData.success) {
+        this.paymentVerified = true;
+        this.orderPlaced = true;
+        this.isProcessing = false;
+        this.cartService.clearCart();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.cdr.detectChanges();
+      } else {
+        console.error('Payment verification failed on backend:', verifyData);
+        const contactEmail = this.settingsService.currentSettings?.companyEmail || 'info@aristatrinkets.com';
+        this.orderErrorMessage = verifyData?.message || `Payment verification could not be confirmed for order #${this.generatedOrderNumber}. If funds were debited, please contact ${contactEmail}.`;
+        this.isProcessing = false;
+        this.cdr.detectChanges();
+      }
+    } catch (err: any) {
+      console.error('Payment verification network error:', err);
+      this.orderErrorMessage = `Network error during payment verification. Please contact concierge with order reference #${this.generatedOrderNumber}.`;
+      this.isProcessing = false;
+      this.cdr.detectChanges();
+    }
   }
 
   getDiscountPercentage(product: any): number {
@@ -865,5 +1363,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       return Math.round((savings / compareAtPrice) * 100);
     }
     return 0;
+  }
+
+  getInvoicePdfUrl(orderNumber: string): string {
+    return API_ENDPOINTS.ORDERS.INVOICE_PDF(orderNumber);
   }
 }

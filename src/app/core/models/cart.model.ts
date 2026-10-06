@@ -14,4 +14,8 @@ export interface CartSummary {
   estimatedShipping: number;
   estimatedTax: number;
   total: number;
+  freeDeliveryThreshold?: number;
+  deliveryCharge?: number;
+  remainingForFreeDelivery?: number;
+  isFreeDeliveryUnlocked?: boolean;
 }

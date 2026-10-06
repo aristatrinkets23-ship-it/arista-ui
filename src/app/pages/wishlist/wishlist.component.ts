@@ -35,7 +35,7 @@ import { CartService } from '../../core/services/cart.service';
             <button type="button" class="btn-add-all" (click)="addAllToBag()">
               🛍️ Add All Items to Shopping Bag
             </button>
-            <button type="button" class="btn-clear-all" (click)="clearWishlist()">
+            <button type="button" class="btn-clear-all" (click)="openClearModal()">
               Clear Wishlist
             </button>
           </div>
@@ -54,12 +54,33 @@ import { CartService } from '../../core/services/cart.service';
           <div class="empty-icon">💎</div>
           <h2 class="empty-title">Your Wishlist is Empty</h2>
           <p class="empty-desc">
-            You haven't saved any fine jewellery pieces yet. Explore our handcrafted collections and click the heart icon on any product card to curate your private favorites vault!
+            You haven't saved any pieces yet. Explore our demi fine, anti tarnish jewellery collections and click the heart icon on any product card to curate your private favorites vault!
           </p>
           <div class="empty-actions">
             <a routerLink="/shop" class="btn-shop-now">
               Explore Shop Catalog &rarr;
             </a>
+          </div>
+        </div>
+
+        <!-- Clear Wishlist Confirmation Modal Popup -->
+        <div *ngIf="showClearModal" class="wishlist-modal-backdrop" (click)="closeClearModal()">
+          <div class="wishlist-modal-card" (click)="$event.stopPropagation()">
+            <div class="modal-icon-wrap">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+            </div>
+            <h3 class="modal-title">Clear Saved Favorites?</h3>
+            <p class="modal-desc">
+              Are you sure you want to clear all <strong>{{ wishlistItems.length }} item{{ wishlistItems.length > 1 ? 's' : '' }}</strong> from your saved wishlist?
+            </p>
+            <div class="modal-actions">
+              <button type="button" class="modal-btn-cancel" (click)="closeClearModal()">Keep Wishlist</button>
+              <button type="button" class="modal-btn-confirm" (click)="confirmClearWishlist()">
+                Yes, Clear Wishlist
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -236,10 +257,125 @@ import { CartService } from '../../core/services/cart.service';
       background: #E2B882;
       transform: translateY(-1px);
     }
+    /* Wishlist Confirmation Modal Overlay */
+    .wishlist-modal-backdrop {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      background: rgba(26, 18, 11, 0.75) !important;
+      backdrop-filter: blur(5px) !important;
+      -webkit-backdrop-filter: blur(5px) !important;
+      z-index: 999999 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 20px !important;
+      margin: 0 !important;
+      box-sizing: border-box !important;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .wishlist-modal-card {
+      background: #FFFFFF !important;
+      border: 1px solid var(--color-border) !important;
+      border-radius: var(--radius-md, 16px) !important;
+      padding: 32px 28px !important;
+      max-width: 420px !important;
+      width: 100% !important;
+      text-align: center !important;
+      margin: auto !important;
+      position: relative !important;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25) !important;
+      animation: popIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.9) translateY(10px); opacity: 0; }
+      to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .modal-icon-wrap {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #FFEBEE;
+      color: #C62828;
+      border: 1px solid #FFCDD2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px auto;
+    }
+
+    .modal-title {
+      font-family: var(--font-serif);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--brand-mocha-brown);
+      margin-bottom: 8px;
+    }
+
+    .modal-desc {
+      font-size: 0.9rem;
+      color: #666666;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .modal-btn-cancel {
+      flex: 1;
+      background: #F4EFEA;
+      border: 1px solid var(--color-border);
+      color: var(--brand-mocha-brown);
+      padding: 10px 18px;
+      border-radius: 50px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .modal-btn-cancel:hover {
+      background: #EAE3DA;
+    }
+
+    .modal-btn-confirm {
+      flex: 1;
+      background: #DC2626;
+      color: #FFFFFF;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 50px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+    }
+
+    .modal-btn-confirm:hover {
+      background: #B91C1C;
+    }
   `]
 })
 export class WishlistComponent implements OnInit, OnDestroy {
   wishlistItems: ProductCardData[] = [];
+  showClearModal: boolean = false;
   private wishlistSub!: Subscription;
 
   private wishlistService = inject(WishlistService);
@@ -267,9 +403,19 @@ export class WishlistComponent implements OnInit, OnDestroy {
     this.router.navigate(['/cart']);
   }
 
-  clearWishlist(): void {
-    if (confirm('Are you sure you want to clear your wishlist?')) {
-      this.wishlistService.clearWishlist();
-    }
+  openClearModal(): void {
+    this.showClearModal = true;
+    this.cdr.detectChanges();
+  }
+
+  closeClearModal(): void {
+    this.showClearModal = false;
+    this.cdr.detectChanges();
+  }
+
+  confirmClearWishlist(): void {
+    this.wishlistService.clearWishlist();
+    this.showClearModal = false;
+    this.cdr.detectChanges();
   }
 }

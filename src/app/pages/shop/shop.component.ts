@@ -6,7 +6,8 @@ import { ProductCardComponent } from '../../shared/components/product-card/produ
 import { EmptyStateComponent } from '../../shared/components/empty-state/empty-state.component';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { ProductCardData } from '../../core/models/product-card-data.model';
-import { MockDataService } from '../../core/mock/mock-data.service';
+import { ProductService } from '../../core/services/product.service';
+import { CategoryService } from '../../core/services/category.service';
 
 @Component({
   selector: 'app-shop',
@@ -28,7 +29,7 @@ import { MockDataService } from '../../core/mock/mock-data.service';
           <span class="hero-eyebrow animate-child">The Complete Collection</span>
           <h1 class="hero-title animate-child">Fine & Fashion Jewellery</h1>
           <p class="hero-desc animate-child">
-            Explore handcrafted gold rings, layered necklaces, pearl drop earrings, and diamond cuff bracelets.
+            Explore demi fine, anti tarnish jewellery: rings, layered necklaces, pearl drop earrings, and cuff bracelets.
           </p>
         </div>
       </div>
@@ -299,17 +300,24 @@ export class ShopComponent implements OnInit, AfterViewInit {
     { label: 'All Jewels', slug: 'all' }
   ];
 
-  private mockDataService = inject(MockDataService);
+  private productService = inject(ProductService);
+  private categoryService = inject(CategoryService);
   private route = inject(ActivatedRoute);
   private cdr = inject(ChangeDetectorRef);
+  errorMessage: string = '';
 
   ngOnInit(): void {
-    this.mockDataService.getCategories().subscribe(cats => {
-      this.filterTabs = [
-        { label: 'All Jewels', slug: 'all' },
-        ...cats.map(c => ({ label: c.name, slug: c.slug }))
-      ];
-      this.cdr.detectChanges();
+    this.categoryService.getCategories().subscribe({
+      next: (cats) => {
+        this.filterTabs = [
+          { label: 'All Jewels', slug: 'all' },
+          ...cats.map(c => ({ label: c.name, slug: c.slug }))
+        ];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Failed to load categories:', err);
+      }
     });
 
     this.route.queryParams.subscribe(params => {
@@ -352,11 +360,21 @@ export class ShopComponent implements OnInit, AfterViewInit {
 
   loadProducts(): void {
     this.isLoading = true;
-    this.mockDataService.getProducts(this.selectedCategory, this.selectedSort).subscribe(prods => {
-      this.products = prods;
-      this.isLoading = false;
-      this.cdr.detectChanges();
-      setTimeout(() => this.initScrollObserver(), 50);
+    this.errorMessage = '';
+    this.productService.getProducts(this.selectedCategory, this.selectedSort).subscribe({
+      next: (prods) => {
+        this.products = prods;
+        this.isLoading = false;
+        this.cdr.detectChanges();
+        setTimeout(() => this.initScrollObserver(), 50);
+      },
+      error: (err) => {
+        console.error('Failed to load products from database:', err);
+        this.products = [];
+        this.isLoading = false;
+        this.errorMessage = 'Unable to load products from the catalog. Please try again.';
+        this.cdr.detectChanges();
+      }
     });
   }
 

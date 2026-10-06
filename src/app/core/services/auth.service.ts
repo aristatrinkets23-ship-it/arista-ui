@@ -5,6 +5,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  phone?: string;
   role: 'CUSTOMER' | 'ADMIN' | 'SUPER_ADMIN';
 }
 
@@ -46,6 +47,21 @@ export class AuthService {
     }
   }
 
+  updateCurrentUser(user: Partial<User>): void {
+    const current = this.userSignal();
+    if (current) {
+      const updated: User = {
+        id: user.id !== undefined ? user.id : current.id,
+        name: user.name !== undefined ? user.name : current.name,
+        email: user.email !== undefined ? user.email : current.email,
+        phone: user.phone !== undefined ? user.phone : (current.phone || ''),
+        role: user.role !== undefined ? user.role : current.role
+      };
+      this.userSignal.set(updated);
+      localStorage.setItem(USER_KEY, JSON.stringify(updated));
+    }
+  }
+
   private setSession(user: User, token: string): void {
     this.userSignal.set(user);
     this.tokenSignal.set(token);
@@ -58,6 +74,28 @@ export class AuthService {
     this.tokenSignal.set(null);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(TOKEN_KEY);
+  }
+
+  async register(name: string, email: string, password: string, phone?: string): Promise<{ success: boolean; message: string; user?: User }> {
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, phone })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const user = data.data.user;
+        const token = data.data.token;
+        this.setSession(user, token);
+        return { success: true, message: data.message || 'Account created successfully', user };
+      } else {
+        return { success: false, message: data.message || 'Registration failed.' };
+      }
+    } catch (err) {
+      return { success: false, message: 'Server is offline. Unable to process registration.' };
+    }
   }
 
   async login(email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> {
@@ -78,28 +116,58 @@ export class AuthService {
         return { success: false, message: data.message || 'Invalid email or password.' };
       }
     } catch (err) {
-      // Offline fallback for demo / standalone operation with STRICT password validation
-      const cleanEmail = email.trim().toLowerCase();
-      const cleanPassword = password.trim();
-      const isAdminEmail = cleanEmail.includes('admin') || cleanEmail === 'admin@aristatrinkets.com';
+      return { success: false, message: 'Unable to connect to authentication server.' };
+    }
+  }
 
-      if (isAdminEmail) {
-        if (cleanPassword !== 'admin123') {
-          return { success: false, message: 'Invalid admin password. Access denied.' };
-        }
-        const mockUser: User = { id: 99, name: 'Arista Store Administrator', email: cleanEmail, role: 'ADMIN' };
-        const mockToken = 'mock_jwt_token_' + Date.now();
-        this.setSession(mockUser, mockToken);
-        return { success: true, message: 'Signed in successfully (Offline Mode).', user: mockUser };
-      } else {
-        if (cleanPassword !== 'customer123' && cleanPassword !== 'password123') {
-          return { success: false, message: 'Invalid email or password.' };
-        }
-        const mockUser: User = { id: 1, name: 'Valued Collector', email: cleanEmail, role: 'CUSTOMER' };
-        const mockToken = 'mock_jwt_token_' + Date.now();
-        this.setSession(mockUser, mockToken);
-        return { success: true, message: 'Signed in successfully (Offline Mode).', user: mockUser };
+  async requestPasswordResetOtp(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        return { success: true, message: data.message };
       }
+      return { success: false, message: data.message || 'Failed to send OTP code.' };
+    } catch (err) {
+      return { success: false, message: 'Server connection error. Please try again.' };
+    }
+  }
+
+  async verifyPasswordResetOtp(email: string, otp: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.VERIFY_OTP, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data.message || 'Invalid or expired OTP code.' };
+    } catch (err) {
+      return { success: false, message: 'Server connection error. Please try again.' };
+    }
+  }
+
+  async resetPasswordWithOtp(email: string, otp: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await fetch(API_ENDPOINTS.AUTH.RESET_PASSWORD_OTP, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, newPassword })
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        return { success: true, message: data.message };
+      }
+      return { success: false, message: data.message || 'Password reset failed.' };
+    } catch (err) {
+      return { success: false, message: 'Server connection error. Please try again.' };
     }
   }
 
@@ -128,13 +196,17 @@ export class AuthService {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
-      if (response.ok && data.success) {
+      if (response.ok && data.success && data.data) {
         const currentUser = this.userSignal();
-        if (currentUser) {
-          const updatedUser = { ...currentUser, role: data.data.role || currentUser.role };
-          this.userSignal.set(updatedUser);
-          localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-        }
+        const updatedUser: User = {
+          id: data.data.id || currentUser?.id || 0,
+          name: data.data.name || currentUser?.name || '',
+          email: data.data.email || currentUser?.email || '',
+          phone: data.data.phone !== undefined ? data.data.phone : (currentUser?.phone || ''),
+          role: data.data.role || currentUser?.role || 'CUSTOMER'
+        };
+        this.userSignal.set(updatedUser);
+        localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
         return true;
       }
       if (this.checkUnauthorized(response, data)) {

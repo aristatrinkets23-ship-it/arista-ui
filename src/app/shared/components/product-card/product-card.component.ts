@@ -15,9 +15,12 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
   standalone: true,
   imports: [CommonModule, RouterLink, BadgeComponent],
   template: `
-    <div class="product-card" *ngIf="product">
+    <div class="product-card" *ngIf="product" [class.is-out-of-stock]="isOutOfStock">
       <div class="image-wrapper">
-        <span *ngIf="product.badge" class="badge-overlay">
+        <span *ngIf="isOutOfStock" class="out-of-stock-pill-overlay">
+          Out of Stock
+        </span>
+        <span *ngIf="product.badge && !isOutOfStock" class="badge-overlay">
           <app-badge [variant]="getBadgeVariant(product.badge)">{{ product.badge }}</app-badge>
         </span>
         <a [routerLink]="['/product', product.slug]" class="image-link">
@@ -81,6 +84,7 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
         </div>
         <div class="add-btn-wrapper">
           <button
+            *ngIf="!isOutOfStock"
             type="button"
             class="quick-add-btn"
             [class.added]="isAdded || justAdded || itemQtyInCart > 0"
@@ -93,6 +97,15 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
             <ng-container *ngIf="!justAdded && !isAdded && itemQtyInCart === 0">
               + Add to Cart
             </ng-container>
+          </button>
+
+          <button
+            *ngIf="isOutOfStock"
+            type="button"
+            class="quick-add-btn disabled-stock-btn"
+            disabled
+          >
+            Out of Stock
           </button>
         </div>
       </div>
@@ -378,6 +391,36 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       transform: none;
     }
 
+    .out-of-stock-pill-overlay {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      z-index: 2;
+      background: #DC2626;
+      color: #FFFFFF;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
+      text-transform: uppercase;
+    }
+
+    .product-card.is-out-of-stock .product-image {
+      filter: grayscale(35%) opacity(0.85);
+    }
+
+    .disabled-stock-btn {
+      background-color: #E2D9CF !important;
+      color: #776B5D !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      transform: none !important;
+      border: 1px solid #D5C9BD !important;
+    }
+
     @media (max-width: 480px) {
       .card-details { padding: 8px 10px; gap: 4px; }
       .product-title { font-size: 0.88rem; }
@@ -401,6 +444,13 @@ export class ProductCardComponent implements OnInit, OnDestroy {
   private wishlistService = inject(WishlistService);
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+
+  get isOutOfStock(): boolean {
+    if (!this.product) return false;
+    if (this.product.inStock === false) return true;
+    if (this.product.stockQuantity !== undefined && this.product.stockQuantity !== null && Number(this.product.stockQuantity) <= 0) return true;
+    return false;
+  }
 
   get discountPercentage(): number {
     if (

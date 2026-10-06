@@ -8,9 +8,10 @@ import { ButtonComponent } from '../../shared/components/button/button.component
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
 import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Product } from '../../core/models/product.model';
-import { MockDataService } from '../../core/mock/mock-data.service';
+import { ProductService } from '../../core/services/product.service';
 import { CartService } from '../../core/services/cart.service';
 import { WishlistService } from '../../core/services/wishlist.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-product-detail',
@@ -97,6 +98,16 @@ import { WishlistService } from '../../core/services/wishlist.service';
               </span>
             </div>
 
+            <!-- Stock Availability Badge -->
+            <div class="stock-status-wrapper">
+              <span *ngIf="!isOutOfStock" class="stock-badge in-stock">
+                <span class="pulse-dot"></span> In Stock & Ready for Delivery
+              </span>
+              <span *ngIf="isOutOfStock" class="stock-badge out-of-stock">
+                ✕ Currently Out of Stock
+              </span>
+            </div>
+
             <p class="product-description">{{ product.description }}</p>
 
             <!-- Metal Type Selection -->
@@ -117,17 +128,20 @@ import { WishlistService } from '../../core/services/wishlist.service';
 
             <!-- Quantity & Actions -->
             <div class="purchase-box">
-              <div class="quantity-control">
-                <button type="button" class="qty-btn" (click)="decreaseQty()" [disabled]="quantity <= 1">-</button>
+              <div class="quantity-control" [class.qty-disabled]="isOutOfStock">
+                <button type="button" class="qty-btn" (click)="decreaseQty()" [disabled]="quantity <= 1 || isOutOfStock">-</button>
                 <span class="qty-val">{{ quantity }}</span>
-                <button type="button" class="qty-btn" (click)="increaseQty()">+</button>
+                <button type="button" class="qty-btn" (click)="increaseQty()" [disabled]="isOutOfStock">+</button>
               </div>
 
-              <button type="button" class="btn-add-bag" [class.in-cart]="isInCart" (click)="addToBag()">
-                <ng-container *ngIf="isInCart">
+              <button type="button" class="btn-add-bag" [class.in-cart]="isInCart && !isOutOfStock" [class.out-of-stock-btn]="isOutOfStock" [disabled]="isOutOfStock" (click)="addToBag()">
+                <ng-container *ngIf="isOutOfStock">
+                  CURRENTLY OUT OF STOCK
+                </ng-container>
+                <ng-container *ngIf="!isOutOfStock && isInCart">
                   Go to Cart &rarr;
                 </ng-container>
-                <ng-container *ngIf="!isInCart">
+                <ng-container *ngIf="!isOutOfStock && !isInCart">
                   Add to Shopping Bag &bull; ₹{{ (product.price * quantity) | number:'1.2-2' }}
                 </ng-container>
               </button>
@@ -441,6 +455,58 @@ import { WishlistService } from '../../core/services/wishlist.service';
       border-radius: var(--radius-full);
     }
 
+    .stock-status-wrapper {
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
+    .stock-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .stock-badge.in-stock {
+      background-color: #ECFDF5;
+      color: #047857;
+      border: 1px solid #A7F3D0;
+    }
+    .stock-badge.out-of-stock {
+      background-color: #FEF2F2;
+      color: #DC2626;
+      border: 1px solid #FCA5A5;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10B981;
+      display: inline-block;
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse-green 2s infinite;
+    }
+    @keyframes pulse-green {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    }
+    .quantity-control.qty-disabled {
+      opacity: 0.5;
+      background-color: #F9FAFB;
+      pointer-events: none;
+    }
+    .btn-add-bag.out-of-stock-btn {
+      background-color: #E5E7EB !important;
+      color: #9CA3AF !important;
+      border-color: #D1D5DB !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      transform: none !important;
+    }
+
     .product-description {
       font-size: 0.98rem;
       color: #555555;
@@ -710,10 +776,19 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private mockDataService = inject(MockDataService);
+  private productService = inject(ProductService);
   private cartService = inject(CartService);
   private wishlistService = inject(WishlistService);
+  private cdr = inject(ChangeDetectorRef);
   private wishlistSub!: Subscription;
+  isLoading: boolean = false;
+
+  get isOutOfStock(): boolean {
+    if (!this.product) return false;
+    return this.product.inStock === false ||
+      (this.product.stockQuantity !== undefined && this.product.stockQuantity !== null && Number(this.product.stockQuantity) <= 0) ||
+      (this.product as any).available === false;
+  }
 
   get discountPercentage(): number {
     if (
@@ -769,30 +844,49 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   loadProduct(slug: string): void {
-    this.mockDataService.getProductBySlug(slug).subscribe(p => {
-      if (p) {
-        this.product = p;
-        this.currentImageIndex = 0;
-        const imgs = this.productImages;
-        this.selectedImage = imgs[0] || p.image || '/assets/images/placeholder-jewellery.svg';
+    this.isLoading = true;
+    this.productService.getProductBySlug(slug).subscribe({
+      next: (p) => {
+        this.isLoading = false;
+        if (p) {
+          this.product = p;
+          this.currentImageIndex = 0;
+          const imgs = this.productImages;
+          this.selectedImage = imgs[0] || p.image || '/assets/images/placeholder-jewellery.svg';
 
-        if (p.materials && Array.isArray(p.materials) && p.materials.length > 0) {
-          this.metalOptions = p.materials;
-        } else if (typeof (p as any).materials === 'string' && (p as any).materials) {
-          this.metalOptions = ((p as any).materials as string).split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
+          if (p.materials && Array.isArray(p.materials) && p.materials.length > 0) {
+            this.metalOptions = p.materials;
+          } else if (typeof (p as any).materials === 'string' && (p as any).materials) {
+            this.metalOptions = ((p as any).materials as string).split(',').map((s: string) => s.trim()).filter((s: string) => s !== '');
+          } else {
+            this.metalOptions = ['18K Warm Gold', 'Sterling Silver', 'Rose Gold'];
+          }
+
+          this.selectedMetal = p.metalType || (this.metalOptions.length > 0 ? this.metalOptions[0] : '18K Warm Gold');
+          this.quantity = 1;
+          this.addedToBagNotice = false;
+
+          this.checkWishlistStatus();
+
+          this.productService.getRelatedProducts(p.slug, p.category).subscribe({
+            next: (rel) => {
+              this.relatedProducts = rel;
+              this.cdr.detectChanges();
+            },
+            error: () => {
+              this.relatedProducts = [];
+            }
+          });
         } else {
-          this.metalOptions = ['18K Warm Gold', 'Sterling Silver', 'Rose Gold'];
+          this.product = undefined;
         }
-
-        this.selectedMetal = p.metalType || (this.metalOptions.length > 0 ? this.metalOptions[0] : '18K Warm Gold');
-        this.quantity = 1;
-        this.addedToBagNotice = false;
-
-        this.checkWishlistStatus();
-
-        this.mockDataService.getRelatedProducts(p.slug).subscribe(rel => {
-          this.relatedProducts = rel;
-        });
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error(`Failed to load product ${slug}:`, err);
+        this.isLoading = false;
+        this.product = undefined;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -848,11 +942,13 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   }
 
   increaseQty(): void {
-    this.quantity++;
+    if (!this.isOutOfStock) {
+      this.quantity++;
+    }
   }
 
   decreaseQty(): void {
-    if (this.quantity > 1) {
+    if (this.quantity > 1 && !this.isOutOfStock) {
       this.quantity--;
     }
   }
@@ -863,6 +959,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
   addToBag(): void {
     if (this.product) {
+      if (this.isOutOfStock) return;
       const targetId = this.product.id || this.product.slug;
       if (targetId && this.cartService.isInCart(targetId)) {
         this.router.navigate(['/cart']);

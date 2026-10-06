@@ -9,6 +9,9 @@ export interface ProductCardData {
   category?: string;
   images?: string[];
   available: boolean;
+  isActive?: boolean;
+  inStock?: boolean;
+  stockQuantity?: number;
   ratingAverage?: number;
   reviewCount?: number;
 }

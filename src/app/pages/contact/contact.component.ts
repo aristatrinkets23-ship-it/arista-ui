@@ -1,9 +1,11 @@
-import { Component, AfterViewInit } from '@angular/core';
+import { Component, AfterViewInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ContactForm } from '../../core/models/contact.model';
+import { EnquiryService } from '../../core/services/enquiry.service';
+import { SettingsService, StoreSettings } from '../../core/services/settings.service';
 
 @Component({
   selector: 'app-contact',
@@ -44,7 +46,7 @@ import { ContactForm } from '../../core/models/contact.model';
               </div>
               <div class="info-details">
                 <h4 class="card-heading">Flagship Atelier</h4>
-                <p class="card-text">Arista Luxury Quarter, Suite 402<br>Bespoke Boulevard, Mumbai 400001</p>
+                <p class="card-text">{{ settings.companyAddress }}</p>
               </div>
             </div>
 
@@ -57,7 +59,7 @@ import { ContactForm } from '../../core/models/contact.model';
               </div>
               <div class="info-details">
                 <h4 class="card-heading">Concierge Email</h4>
-                <p class="card-text">concierge&#64;aristatrinkets.com<br>care&#64;aristatrinkets.com</p>
+                <p class="card-text">{{ settings.companyEmail }}</p>
               </div>
             </div>
 
@@ -69,19 +71,12 @@ import { ContactForm } from '../../core/models/contact.model';
               </div>
               <div class="info-details">
                 <h4 class="card-heading">Telephone & WhatsApp</h4>
-                <p class="card-text">+91 (0) 800-ARISTA (274782)<br>Mon - Sat: 10:00 AM - 7:00 PM IST</p>
+                <p class="card-text">{{ settings.companyPhone }}<br *ngIf="settings.companyTiming">{{ settings.companyTiming }}</p>
               </div>
             </div>
           </div>
 
           <!-- WhatsApp Concierge Banner -->
-          <div class="whatsapp-box animate-stagger-card" style="--stagger-index: 4">
-            <h4 class="wa-title">Need Instant Guidance?</h4>
-            <p class="wa-text">Speak directly with a certified diamond specialist on WhatsApp.</p>
-            <button type="button" class="btn-whatsapp" (click)="openWhatsApp()">
-              Chat on WhatsApp Concierge &rarr;
-            </button>
-          </div>
         </div>
 
         <!-- Contact Form -->
@@ -95,7 +90,16 @@ import { ContactForm } from '../../core/models/contact.model';
               <button type="button" class="btn-reset" (click)="resetForm()">Send Another Message</button>
             </div>
 
-            <form *ngIf="!isSubmitted" (ngSubmit)="onSubmit($event)" class="contact-form">
+            <div *ngIf="submitError" class="error-banner">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{{ submitError }}</span>
+            </div>
+
+            <form *ngIf="!isSubmitted" (ngSubmit)="onSubmit($event)" class="contact-form" novalidate>
               <div class="form-group">
                 <label for="name" class="form-label">Full Name *</label>
                 <input
@@ -103,10 +107,12 @@ import { ContactForm } from '../../core/models/contact.model';
                   id="name"
                   name="name"
                   [(ngModel)]="formData.name"
-                  required
-                  placeholder="e.g. Lady Catherine"
+                  (input)="errors.name = ''"
+                  placeholder="Your full name"
                   class="form-input"
+                  [class.is-invalid]="!!errors.name"
                 />
+                <span *ngIf="errors.name" class="field-error">{{ errors.name }}</span>
               </div>
 
               <div class="form-group">
@@ -116,10 +122,12 @@ import { ContactForm } from '../../core/models/contact.model';
                   id="email"
                   name="email"
                   [(ngModel)]="formData.email"
-                  required
-                  placeholder="name&#64;example.com"
+                  (input)="errors.email = ''"
+                  placeholder="Your email address"
                   class="form-input"
+                  [class.is-invalid]="!!errors.email"
                 />
+                <span *ngIf="errors.email" class="field-error">{{ errors.email }}</span>
               </div>
 
               <div class="form-group">
@@ -128,10 +136,14 @@ import { ContactForm } from '../../core/models/contact.model';
                   type="tel"
                   id="phone"
                   name="phone"
-                  [(ngModel)]="formData.phone"
-                  placeholder="+91 98765 43210"
+                  [value]="formData.phone"
+                  (input)="onPhoneInput($event)"
+                  maxlength="10"
+                  placeholder="10-digit mobile number"
                   class="form-input"
+                  [class.is-invalid]="!!errors.phone"
                 />
+                <span *ngIf="errors.phone" class="field-error">{{ errors.phone }}</span>
               </div>
 
               <div class="form-group">
@@ -158,13 +170,17 @@ import { ContactForm } from '../../core/models/contact.model';
                   name="message"
                   rows="5"
                   [(ngModel)]="formData.message"
-                  required
+                  (input)="errors.message = ''"
                   placeholder="How may our concierge assist you today?"
                   class="form-textarea"
+                  [class.is-invalid]="!!errors.message"
                 ></textarea>
+                <span *ngIf="errors.message" class="field-error">{{ errors.message }}</span>
               </div>
 
-              <app-button type="submit" variant="primary" size="lg">Send Message &rarr;</app-button>
+              <app-button type="submit" variant="primary" size="lg" [disabled]="isSubmitting" [loading]="isSubmitting">
+                {{ isSubmitting ? 'Sending Message...' : 'Send Message &rarr;' }}
+              </app-button>
             </form>
           </div>
         </div>
@@ -502,6 +518,40 @@ import { ContactForm } from '../../core/models/contact.model';
       margin-bottom: 20px;
     }
 
+    .form-input.is-invalid, .form-textarea.is-invalid {
+      border-color: #d32f2f !important;
+      box-shadow: 0 0 0 3px rgba(211, 47, 47, 0.15) !important;
+    }
+
+    .field-error {
+      font-size: 0.82rem;
+      color: #d32f2f;
+      font-weight: 500;
+      margin-top: 4px;
+      display: block;
+      animation: alertPopIn 0.3s ease;
+    }
+
+    .error-banner {
+      background-color: #FDF2F2;
+      border: 1px solid #F87171;
+      color: #991B1B;
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.92rem;
+      font-weight: 500;
+      animation: alertPopIn 0.35s ease;
+    }
+
+    .error-banner svg {
+      flex-shrink: 0;
+      color: #DC2626;
+    }
+
     .btn-reset {
       background-color: var(--brand-warm-gold);
       color: var(--brand-mocha-brown);
@@ -527,7 +577,28 @@ export class ContactComponent implements AfterViewInit {
     message: ''
   };
 
+  errors: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    message?: string;
+  } = {};
+
+  settings: StoreSettings;
+  submitError: string = '';
   isSubmitted: boolean = false;
+  isSubmitting: boolean = false;
+  private enquiryService = inject(EnquiryService);
+  private settingsService = inject(SettingsService);
+  private cdr = inject(ChangeDetectorRef);
+
+  constructor() {
+    this.settings = this.settingsService.currentSettings;
+    this.settingsService.settings$.subscribe(s => {
+      this.settings = s;
+      this.cdr.detectChanges();
+    });
+  }
 
   ngAfterViewInit(): void {
     setTimeout(() => this.initScrollObserver(), 100);
@@ -558,11 +629,89 @@ export class ContactComponent implements AfterViewInit {
     }
   }
 
+  onPhoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    // Strip everything except numeric digits
+    const digitsOnly = input.value.replace(/\D/g, '').slice(0, 10);
+    this.formData.phone = digitsOnly;
+    input.value = digitsOnly;
+    this.errors.phone = '';
+    this.cdr.detectChanges();
+  }
+
+  validate(): boolean {
+    this.errors = {};
+    let isValid = true;
+
+    // 1. Name validation
+    if (!this.formData.name || !this.formData.name.trim()) {
+      this.errors.name = 'Full name is required.';
+      isValid = false;
+    }
+
+    // 2. Email strict regex validation
+    const emailTrimmed = (this.formData.email || '').trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+    if (!emailTrimmed) {
+      this.errors.email = 'Email address is required.';
+      isValid = false;
+    } else if (!emailRegex.test(emailTrimmed)) {
+      this.errors.email = 'Please enter a valid email address.';
+      isValid = false;
+    }
+
+    // 3. Phone strict 10 digits validation (optional field, but if provided must be exactly 10 digits)
+    const phoneTrimmed = (this.formData.phone || '').trim();
+    if (phoneTrimmed) {
+      const phoneRegex = /^\d{10}$/;
+      if (!phoneRegex.test(phoneTrimmed)) {
+        this.errors.phone = 'Phone number must be exactly 10 digits.';
+        isValid = false;
+      }
+    }
+
+    // 4. Message validation
+    if (!this.formData.message || !this.formData.message.trim()) {
+      this.errors.message = 'Please enter your message.';
+      isValid = false;
+    }
+
+    this.cdr.detectChanges();
+    return isValid;
+  }
+
   onSubmit(event: Event): void {
     event.preventDefault();
-    if (this.formData.name && this.formData.email && this.formData.message) {
-      this.isSubmitted = true;
+    if (this.isSubmitting) return;
+
+    if (!this.validate()) {
+      return; // Block API call if validation fails
     }
+
+    this.submitError = '';
+    this.isSubmitting = true;
+    this.cdr.detectChanges();
+
+    this.enquiryService.submitEnquiry(this.formData).subscribe({
+      next: (res: any) => {
+        this.isSubmitting = false;
+        if (res && res.data && res.data.emailSent === false) {
+          this.submitError = 'Email could not be sent. Please check email configuration or try again.';
+          this.isSubmitted = false;
+        } else {
+          this.submitError = '';
+          this.isSubmitted = true;
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.isSubmitting = false;
+        this.isSubmitted = false;
+        const msg = err?.error?.message || 'Email could not be sent. Please try again later or reach out on WhatsApp.';
+        this.submitError = msg;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   resetForm(): void {
@@ -573,11 +722,21 @@ export class ContactComponent implements AfterViewInit {
       subject: 'Bespoke Design Inquiry',
       message: ''
     };
+    this.errors = {};
+    this.submitError = '';
     this.isSubmitted = false;
+    this.isSubmitting = false;
+    this.cdr.detectChanges();
   }
 
   openWhatsApp(): void {
-    alert('Direct WhatsApp Concierge link: Opening chat with Arista Jewellery advisor...');
+    const rawPhone = this.settings?.companyPhone || this.settingsService.currentSettings?.companyPhone || '';
+    let phone = rawPhone.replace(/\D/g, '');
+    if (!phone.startsWith('91') && phone.length === 10) {
+      phone = '91' + phone;
+    }
+    const message = encodeURIComponent('Hello! I would like to speak with an Arista jewellery advisor.');
+    window.open(`https://wa.me/${phone}?text=${message}`, '_blank', 'noopener');
   }
 }
 

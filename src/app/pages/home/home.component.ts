@@ -1,12 +1,13 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef, inject, ElementRef, ViewChild, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Category } from '../../core/models/category.model';
-import { MockDataService } from '../../core/mock/mock-data.service';
+import { ProductService } from '../../core/services/product.service';
+import { CategoryService } from '../../core/services/category.service';
 import { CartService } from '../../core/services/cart.service';
 import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
@@ -26,11 +27,11 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       <div class="hero-bg-overlay"></div>
       <div class="container hero-container">
         <div class="hero-content">
-          <!-- Handcrafted Elegance Eyebrow -->
+          <!-- Demi Fine, Anti Tarnish Jewellery Eyebrow -->
           <div class="hero-eyebrow-wrapper">
             <span class="hero-eyebrow-line"></span>
             <span class="hero-eyebrow-text">
-              <span class="hero-diamond-dot">◆</span> Handcrafted Elegance <span class="hero-diamond-dot">◆</span>
+              <span class="hero-diamond-dot">◆</span> Demi Fine, Anti Tarnish Jewellery <span class="hero-diamond-dot">◆</span>
             </span>
             <span class="hero-eyebrow-line"></span>
           </div>
@@ -64,7 +65,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                 </svg>
               </div>
-              <span class="hero-feature-title">HANDCRAFTED</span>
+              <span class="hero-feature-title">DEMI FINE & ANTI TARNISH</span>
               <span class="hero-feature-sub">Small-Batch Made</span>
             </div>
 
@@ -153,7 +154,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 3h12l4 6-10 12L2 9z"></path>
             </svg>
-            HANDCRAFTED QUALITY
+            DEMI FINE & ANTI TARNISH
           </span>
           <span class="marquee-sep">|</span>
           <span class="marquee-item">
@@ -186,7 +187,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M6 3h12l4 6-10 12L2 9z"></path>
             </svg>
-            HANDCRAFTED QUALITY
+            DEMI FINE & ANTI TARNISH
           </span>
           <span class="marquee-sep">|</span>
           <span class="marquee-item">
@@ -338,7 +339,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
           <div class="arrivals-title-underline"></div>
         </div>
 
-        <div *ngIf="newArrivals.length > 0" class="arrivals-grid scroll-reveal-stagger">
+        <div *ngIf="newArrivals.length > 0" class="arrivals-grid">
           <div *ngFor="let product of newArrivals" class="arrival-card-v2">
             <a [routerLink]="['/product', product.slug]" class="arrival-img-box">
               <span class="arrival-badge-pill">{{ product.badge || 'NEW' }}</span>
@@ -362,13 +363,23 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                 </span>
               </div>
 
-              <button class="arrival-add-bag-btn" (click)="addToBag(product, $event)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                  <line x1="3" y1="6" x2="21" y2="6"></line>
-                  <path d="M16 10a4 4 0 0 1-8 0"></path>
-                </svg>
-                <span>ADD TO BAG</span>
+              <button
+                class="arrival-add-bag-btn"
+                [class.added]="isItemInCart(product)"
+                (click)="addToBag(product, $event)"
+                [title]="isItemInCart(product) ? 'Go to Cart' : 'Add to Bag'"
+              >
+                <ng-container *ngIf="isItemInCart(product)">
+                  <span>GO TO CART &rarr;</span>
+                </ng-container>
+                <ng-container *ngIf="!isItemInCart(product)">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                  </svg>
+                  <span>ADD TO BAG</span>
+                </ng-container>
               </button>
             </div>
           </div>
@@ -512,7 +523,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
         <div class="faq-header text-center">
           <span class="faq-eyebrow">HELP & INFORMATION</span>
           <h2 class="faq-title">Frequently Asked <em>Questions</em></h2>
-          <p class="faq-subtitle">Everything you need to know about our handcrafted jewellery, certification, and services.</p>
+          <p class="faq-subtitle">Everything you need to know about our demi fine, anti tarnish jewellery, certification, and services.</p>
         </div>
 
         <div class="faq-accordion-wrapper">
@@ -552,7 +563,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       <div class="container">
         <h2 class="insta-section-title">@aristatrinkets</h2>
 
-        <div *ngIf="bestsellerProducts.length > 0" class="insta-grid scroll-reveal-stagger">
+        <div *ngIf="bestsellerProducts.length > 0" class="insta-grid">
           <a
             *ngFor="let product of bestsellerProducts"
             [routerLink]="['/product', product.slug]"
@@ -572,10 +583,10 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
         </div>
 
         <div *ngIf="bestsellerProducts.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
-          <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">No Bestseller Products Tagged</h3>
-          <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Tag products with the BESTSELLER badge in the Admin Dashboard to feature them here.</p>
-          <a routerLink="/admin" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
-            ⚙ Go to Admin to Set BESTSELLER Badge
+          <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">Explore Our Curated Collection</h3>
+          <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Discover the most loved fine jewellery handcrafted for life's special moments.</p>
+          <a routerLink="/shop" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
+            Shop All Jewellery
           </a>
         </div>
       </div>
@@ -1617,8 +1628,8 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     }
 
     .scroll-reveal-stagger > * {
-      opacity: 0;
-      transform: translateY(35px);
+      opacity: 1;
+      transform: translateY(0);
       transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
       will-change: opacity, transform;
     }
@@ -2044,6 +2055,20 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       color: #1A120B;
       border-color: var(--brand-warm-gold, #CFA874);
       box-shadow: 0 4px 14px rgba(207, 168, 116, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .arrival-add-bag-btn.added {
+      background: var(--brand-mocha-brown, #3A2E28);
+      color: var(--brand-pearl-beige, #FAF7F2);
+      border-color: var(--brand-mocha-brown, #3A2E28);
+      box-shadow: 0 2px 8px rgba(58, 46, 40, 0.25);
+    }
+
+    .arrival-add-bag-btn.added:hover {
+      background: #231914;
+      color: #FFFFFF;
+      border-color: #231914;
       transform: translateY(-2px);
     }
 
@@ -2536,7 +2561,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       isOpen: false
     },
     {
-      question: 'How should I care for and clean my handcrafted jewellery?',
+      question: 'How should I care for and clean my demi fine, anti tarnish jewellery?',
       answer: 'Store your pieces individually in soft velvet pouches away from direct moisture. We provide a complimentary luxury polishing cloth and care guide with every order.',
       isOpen: false
     }
@@ -2560,7 +2585,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       id: 'bow-pearl-flatlay',
       type: 'Curated Suite',
       icon: '✨',
-      title: 'Handcrafted Bow & Pearl Suite',
+      title: 'Demi Fine, Anti Tarnish Bow & Pearl Suite',
       subtitle: '18K Gold & South Sea Pearl',
       description: '18K gold ribbon bow pendant necklace with South Sea pearl drop, bow earrings, and matching ring set.',
       image: '/assets/images/slideshow-1.jpg',
@@ -2644,9 +2669,12 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private isTicking = false;
 
-  private mockDataService = inject(MockDataService);
+  private productService = inject(ProductService);
+  private categoryService = inject(CategoryService);
   private cartService = inject(CartService);
+  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  private cartSub?: any;
 
   @HostListener('window:scroll', [])
   onWindowScroll(): void {
@@ -2692,28 +2720,42 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       })
       .catch(err => console.error('Failed to load homepage config:', err));
 
-    this.mockDataService.getCategories().subscribe(cats => {
-      this.categories = cats;
+    this.categoryService.getCategories().subscribe({
+      next: (cats) => {
+        this.categories = cats;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load categories for home:', err)
     });
 
-    this.mockDataService.getFeaturedProducts().subscribe(prods => {
-      this.featuredProducts = prods;
+    this.productService.getFeaturedProducts().subscribe({
+      next: (prods) => {
+        this.featuredProducts = prods;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Failed to load featured products:', err)
     });
 
-    this.mockDataService.getNewArrivals().subscribe(prods => {
-      this.newArrivals = [...prods].sort((a, b) => {
-        const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
-        const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
-        return idB - idA;
-      }).slice(0, 4);
+    this.productService.getNewArrivals().subscribe({
+      next: (prods) => {
+        this.newArrivals = prods;
+        this.cdr.detectChanges();
+        setTimeout(() => this.initScrollReveal(), 100);
+      },
+      error: (err) => console.error('Failed to load new arrivals:', err)
     });
 
-    this.mockDataService.getBestsellers().subscribe(prods => {
-      this.bestsellerProducts = [...prods].sort((a, b) => {
-        const idA = typeof a.id === 'number' ? a.id : (parseInt(String(a.id), 10) || 0);
-        const idB = typeof b.id === 'number' ? b.id : (parseInt(String(b.id), 10) || 0);
-        return idB - idA;
-      });
+    this.productService.getBestsellers().subscribe({
+      next: (prods) => {
+        this.bestsellerProducts = prods;
+        this.cdr.detectChanges();
+        setTimeout(() => this.initScrollReveal(), 100);
+      },
+      error: (err) => console.error('Failed to load bestsellers:', err)
+    });
+
+    this.cartSub = this.cartService.cart$.subscribe(() => {
+      this.cdr.detectChanges();
     });
 
     this.startSlideshowTimer();
@@ -2721,7 +2763,10 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngAfterViewInit(): void {
     setTimeout(() => this.updateParallaxScrollEffect(), 100);
+    this.initScrollReveal();
+  }
 
+  private initScrollReveal(): void {
     if (typeof window !== 'undefined') {
       if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver((entries) => {
@@ -2762,9 +2807,19 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     return 0;
   }
 
+  isItemInCart(product: ProductCardData): boolean {
+    if (!product) return false;
+    const targetId = (product.id !== undefined && product.id !== null) ? product.id : product.slug;
+    return this.cartService.isInCart(targetId);
+  }
+
   addToBag(product: ProductCardData, event: Event): void {
     event.preventDefault();
     event.stopPropagation();
+    if (this.isItemInCart(product)) {
+      this.router.navigate(['/cart']);
+      return;
+    }
     this.cartService.addToCart({
       id: product.id,
       name: product.name,
@@ -2773,9 +2828,13 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       category: product.category,
       slug: product.slug
     } as any, 1);
+    this.cdr.detectChanges();
   }
 
   ngOnDestroy(): void {
+    if (this.cartSub) {
+      this.cartSub.unsubscribe();
+    }
     if (this.progressInterval) {
       clearInterval(this.progressInterval);
     }

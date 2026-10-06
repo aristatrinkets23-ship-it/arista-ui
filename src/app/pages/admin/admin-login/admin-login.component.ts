@@ -25,16 +25,23 @@ import { AuthService } from '../../../core/services/auth.service';
           {{ reasonMessage }}
         </div>
 
-        <form (submit)="onSubmit($event)" class="login-form">
+        <form (submit)="onSubmit($event)" class="login-form" autocomplete="off">
+          <!-- Hidden dummy fields to prevent browser autofill -->
+          <input type="text" style="display:none; position:absolute; left:-9999px;" tabindex="-1" aria-hidden="true" />
+          <input type="password" style="display:none; position:absolute; left:-9999px;" tabindex="-1" aria-hidden="true" />
+
           <div class="form-group">
             <label>Admin Email Address *</label>
             <input
               type="email"
               [(ngModel)]="email"
-              name="email"
-              placeholder="admin@aristatrinkets.com"
+              name="admin_login_email_no_autofill"
+              placeholder="Enter Your Email"
               required
-              autocomplete="username"
+              [readonly]="isEmailReadonly"
+              (focus)="isEmailReadonly = false"
+              (click)="isEmailReadonly = false"
+              autocomplete="new-password"
               class="form-control"
             />
           </div>
@@ -45,10 +52,13 @@ import { AuthService } from '../../../core/services/auth.service';
               <input
                 [type]="showPassword ? 'text' : 'password'"
                 [(ngModel)]="password"
-                name="password"
-                placeholder="••••••••••••"
+                name="admin_login_password_no_autofill"
+                placeholder="Enter Your Password"
                 required
-                autocomplete="current-password"
+                [readonly]="isPasswordReadonly"
+                (focus)="isPasswordReadonly = false"
+                (click)="isPasswordReadonly = false"
+                autocomplete="new-password"
                 class="form-control"
               />
               <button
@@ -272,8 +282,10 @@ import { AuthService } from '../../../core/services/auth.service';
   `]
 })
 export class AdminLoginComponent implements OnInit {
-  email: string = 'admin@aristatrinkets.com';
-  password: string = 'admin123';
+  email: string = '';
+  password: string = '';
+  isEmailReadonly: boolean = true;
+  isPasswordReadonly: boolean = true;
   showPassword: boolean = false;
   loading: boolean = false;
   errorMessage: string = '';
@@ -285,6 +297,10 @@ export class AdminLoginComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
+    this.email = '';
+    this.password = '';
+    this.isEmailReadonly = true;
+    this.isPasswordReadonly = true;
     // If already logged in as admin, navigate directly to admin dashboard
     if (this.authService.isAuthenticated() && this.authService.isAdmin()) {
       this.router.navigate(['/admin']);
