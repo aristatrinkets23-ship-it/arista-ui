@@ -1092,7 +1092,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 
     @media (max-width: 576px) {
       .category-static-grid {
-        gap: 16px 14px;
+        gap: 16px 10px;
       }
     }
 
@@ -1130,15 +1130,15 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       align-items: center;
       text-decoration: none;
       cursor: pointer;
-      width: 130px;
+      width: 120px;
       flex-shrink: 0;
       transition: transform 0.3s ease;
     }
 
     .cat-thumb-box {
-      width: 125px;
-      height: 125px;
-      border-radius: 24px;
+      width: 115px;
+      height: 115px;
+      border-radius: 20px;
       overflow: hidden;
       background-color: #FFFFFF;
       position: relative;
@@ -1166,14 +1166,32 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     }
 
     .cat-thumb-name {
-      margin-top: 12px;
+      margin-top: 10px;
       font-family: var(--font-sans, system-ui, sans-serif);
-      font-size: 0.9rem;
-      font-weight: 500;
+      font-size: 0.88rem;
+      font-weight: 600;
       color: var(--brand-mocha-brown, #3A2E28);
       text-align: center;
-      white-space: nowrap;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.25;
+      max-width: 100%;
       transition: color 0.25s ease;
+    }
+
+    @media (max-width: 576px) {
+      .cat-strip-item {
+        width: 95px;
+      }
+      .cat-thumb-box {
+        width: 90px;
+        height: 90px;
+        border-radius: 16px;
+      }
+      .cat-thumb-name {
+        font-size: 0.78rem;
+        margin-top: 6px;
+      }
     }
 
     .cat-strip-item:hover .cat-thumb-name {
@@ -1299,9 +1317,33 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       display: flex;
       flex-direction: column;
       align-items: center;
+      height: 100%;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
+    }
+
+    @media (max-width: 768px) {
+      .why-choose-card {
+        padding: 24px 16px 20px 16px;
+        border-radius: 16px;
+      }
+      .why-choose-icon-box {
+        width: 46px;
+        height: 46px;
+        margin-bottom: 12px;
+      }
+      .why-choose-icon-box svg {
+        width: 20px;
+        height: 20px;
+      }
+      .why-choose-card-title {
+        font-size: 1.02rem;
+        min-height: 2.4em;
+      }
+      .why-choose-card-text {
+        font-size: 0.8rem;
+      }
     }
 
     .why-choose-card:hover {
@@ -1888,6 +1930,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       display: flex;
       flex-direction: column;
       width: 100%;
+      height: 100%;
       text-decoration: none;
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -1950,6 +1993,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     .arrival-info-box {
       display: flex;
       flex-direction: column;
+      flex-grow: 1;
       padding-top: 14px;
     }
 
@@ -1966,9 +2010,11 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       color: var(--brand-mocha-brown, #3A2E28);
       text-decoration: none;
       margin-bottom: 6px;
-      white-space: nowrap;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
       overflow: hidden;
-      text-overflow: ellipsis;
+      min-height: 2.6em;
       transition: color 0.25s ease;
     }
 
@@ -1976,6 +2022,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       .arrival-card-name {
         font-size: 0.85rem;
         margin-bottom: 4px;
+        min-height: 2.5em;
       }
     }
 
@@ -1988,6 +2035,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       align-items: center;
       gap: 8px;
       margin-bottom: 14px;
+      flex-wrap: wrap;
     }
 
     @media (max-width: 480px) {
@@ -2029,6 +2077,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       align-items: center;
       justify-content: center;
       padding: 10px 16px;
+      margin-top: auto;
       background: rgba(253, 251, 247, 0.9);
       border: 1px solid rgba(207, 168, 116, 0.45);
       border-radius: 50px;

@@ -160,8 +160,8 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       top: 50%;
       transform: translateY(-50%);
       z-index: 3;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       background-color: rgba(255, 255, 255, 0.9);
       border: 1px solid rgba(0, 0, 0, 0.1);
@@ -170,7 +170,7 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 14px;
       font-weight: bold;
       opacity: 0;
       transition: all var(--transition-fast);
@@ -185,8 +185,8 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       color: #FFFFFF;
       transform: translateY(-50%) scale(1.1);
     }
-    .card-prev { left: 6px; }
-    .card-next { right: 6px; }
+    .card-prev { left: 4px; }
+    .card-next { right: 4px; }
 
     .card-slide-dots {
       position: absolute;
@@ -204,9 +204,16 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
     }
 
     @media (max-width: 768px) {
-      .card-slide-btn,
+      .card-slide-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+        opacity: 0.6;
+      }
+      .card-prev { left: 3px; }
+      .card-next { right: 3px; }
       .card-slide-dots {
-        opacity: 0.85;
+        opacity: 0.8;
       }
     }
     .card-dot {
@@ -248,10 +255,10 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       top: 8px;
       right: 8px;
       z-index: 2;
-      width: 34px;
-      height: 34px;
-      min-width: 34px;
-      min-height: 34px;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      min-height: 32px;
       border-radius: 50%;
       background-color: rgba(255, 255, 255, 0.92);
       border: 1px solid rgba(91, 70, 54, 0.12);
@@ -307,6 +314,11 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       line-height: 1.3;
       font-weight: 600;
       margin: 0;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.6em;
     }
     .product-title a {
       color: var(--brand-mocha-brown);
@@ -321,7 +333,6 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       display: flex;
       align-items: baseline;
       gap: 6px;
-      margin-top: auto;
       padding-top: 4px;
       flex-wrap: wrap;
     }
@@ -356,7 +367,8 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
       display: flex;
       justify-content: center;
       width: 100%;
-      margin-top: 6px;
+      margin-top: auto;
+      padding-top: 6px;
     }
 
     .quick-add-btn {
@@ -423,8 +435,8 @@ const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
 
     @media (max-width: 480px) {
       .card-details { padding: 8px 10px; gap: 4px; }
-      .product-title { font-size: 0.88rem; }
-      .price { font-size: 0.88rem; }
+      .product-title { font-size: 0.84rem; min-height: 2.5em; }
+      .price { font-size: 0.85rem; }
       .quick-add-btn { padding: 6px 10px; font-size: 0.7rem; max-width: 100%; }
     }
   `]

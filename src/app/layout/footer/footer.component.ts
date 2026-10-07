@@ -64,9 +64,8 @@ import { NewsletterService } from '../../core/services/newsletter.service';
                   </li>
                 </ng-container>
                 <ng-container *ngIf="categoriesPart1.length === 0">
-                  <li><a routerLink="/shop">Rings & Bands</a></li>
-                  <li><a routerLink="/shop">Fine Necklaces</a></li>
-                  <li><a routerLink="/shop">Statement Earrings</a></li>
+                  <li><a routerLink="/shop" [queryParams]="{ category: 'rings' }">Rings</a></li>
+                  <li><a routerLink="/shop" [queryParams]="{ category: 'necklaces' }">Necklaces & Pendants</a></li>
                 </ng-container>
               </ul>
 
@@ -78,9 +77,8 @@ import { NewsletterService } from '../../core/services/newsletter.service';
                   </li>
                 </ng-container>
                 <ng-container *ngIf="categoriesPart2.length === 0">
-                  <li><a routerLink="/shop">Luxury Bracelets</a></li>
-                  <li><a routerLink="/shop">Pendants</a></li>
-                  <li><a routerLink="/shop">Nath & Traditional</a></li>
+                  <li><a routerLink="/shop" [queryParams]="{ category: 'earrings' }">Earrings</a></li>
+                  <li><a routerLink="/shop" [queryParams]="{ category: 'bracelets' }">Bracelets & Bangles</a></li>
                 </ng-container>
               </ul>
             </div>
@@ -330,6 +328,7 @@ import { NewsletterService } from '../../core/services/newsletter.service';
       padding: 22px 0;
       font-size: 0.82rem;
       color: #9C8C80;
+      background-color: #120C07;
     }
 
     .copyright-content {
@@ -337,6 +336,7 @@ import { NewsletterService } from '../../core/services/newsletter.service';
       flex-direction: column;
       gap: 12px;
       align-items: center;
+      justify-content: center;
       text-align: center;
     }
 
@@ -346,23 +346,32 @@ import { NewsletterService } from '../../core/services/newsletter.service';
         justify-content: space-between;
         text-align: left;
       }
+      .copyright-text {
+        text-align: left;
+      }
     }
 
     .copyright-text {
       margin: 0;
+      font-size: 0.82rem;
+      color: #9C8C80;
+      text-align: center;
     }
 
     .legal-links {
       display: flex;
-      gap: 14px;
+      gap: 12px;
       align-items: center;
+      justify-content: center;
       flex-wrap: wrap;
     }
 
     .legal-links a {
       color: #B8A89C;
       text-decoration: none;
+      font-size: 0.82rem;
       transition: color 0.25s ease;
+      white-space: nowrap;
     }
 
     .legal-links a:hover {
@@ -371,6 +380,16 @@ import { NewsletterService } from '../../core/services/newsletter.service';
 
     .separator {
       color: #614F42;
+      font-size: 0.75rem;
+    }
+
+    @media (max-width: 576px) {
+      .separator {
+        display: none;
+      }
+      .legal-links {
+        gap: 8px 18px;
+      }
     }
   `]
 })

@@ -841,7 +841,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             </button>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 20px;">
 
             <!-- CARD 1: GST & LEGAL BUSINESS IDENTITY -->
             <div style="background: #ffffff; border-radius: 12px; border: 1px solid #E8DFD5; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 24px;">
@@ -904,7 +904,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   ></textarea>
                 </div>
 
-                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-row">
                   <div class="form-group">
                     <label style="font-weight: 700; color: #3A2E26;">Support Phone</label>
                     <input
@@ -1828,8 +1828,16 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             <div><strong>Customer:</strong> {{ selectedOrderForDetails.customer_name || selectedOrderForDetails.customer }} ({{ selectedOrderForDetails.customer_email || selectedOrderForDetails.email }})</div>
             <div *ngIf="selectedOrderForDetails.customer_phone"><strong>Phone:</strong> {{ selectedOrderForDetails.customer_phone }}</div>
             <div><strong>Shipping Address:</strong> {{ selectedOrderForDetails.shipping_address }}, {{ selectedOrderForDetails.city }}, {{ selectedOrderForDetails.state }} - {{ selectedOrderForDetails.pincode }}</div>
-            <div *ngIf="selectedOrderForDetails.tracking_code"><strong>Tracking Code:</strong> <code style="color: var(--brand-warm-gold); font-weight: bold; background: #FFF; padding: 2px 6px; border-radius: 3px;">{{ selectedOrderForDetails.tracking_code }}</code></div>
-            <div><strong>Payment Method:</strong> {{ selectedOrderForDetails.payment_method || selectedOrderForDetails.paymentMethod }} ({{ selectedOrderForDetails.payment_status || selectedOrderForDetails.paymentStatus }})</div>
+            <div><strong>Payment Method:</strong> {{ selectedOrderForDetails.payment_method || selectedOrderForDetails.paymentMethod }} (<span style="font-weight: 700;" [style.color]="(selectedOrderForDetails.payment_status || selectedOrderForDetails.paymentStatus) === 'PAID' ? '#2E7D32' : ((selectedOrderForDetails.payment_status || selectedOrderForDetails.paymentStatus) === 'REFUNDED' ? '#C62828' : '#D97706')">{{ selectedOrderForDetails.payment_status || selectedOrderForDetails.paymentStatus }}</span>)</div>
+            <div *ngIf="selectedOrderForDetails.razorpay_payment_id || selectedOrderForDetails.razorpayPaymentId">
+              <strong>Razorpay Payment ID:</strong> <code style="color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 6px; border-radius: 3px;">{{ selectedOrderForDetails.razorpay_payment_id || selectedOrderForDetails.razorpayPaymentId }}</code>
+            </div>
+            <div *ngIf="selectedOrderForDetails.razorpay_order_id || selectedOrderForDetails.razorpayOrderId">
+              <strong>Razorpay Order ID:</strong> <code style="color: var(--brand-mocha-brown); font-weight: bold; background: #FFF; padding: 2px 6px; border-radius: 3px;">{{ selectedOrderForDetails.razorpay_order_id || selectedOrderForDetails.razorpayOrderId }}</code>
+            </div>
+            <div *ngIf="selectedOrderForDetails.paid_at || selectedOrderForDetails.paidAt">
+              <strong>Paid At:</strong> {{ selectedOrderForDetails.paid_at || selectedOrderForDetails.paidAt }}
+            </div>
           </div>
 
           <!-- Status Progress Timeline with Timestamps -->

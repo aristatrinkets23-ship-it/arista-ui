@@ -835,6 +835,129 @@ declare var Razorpay: any;
       background: #443427 !important;
       color: #FFFFFF !important;
       transform: translateY(-1px);
+    /* ARISTA RAZORPAY TEST PAYMENT MODAL STYLES */
+    .rzp-test-card {
+      max-width: 480px;
+      width: 90%;
+      padding: 24px;
+      border-radius: 16px;
+      background: #FFFFFF;
+      box-shadow: 0 20px 50px rgba(22, 15, 9, 0.35);
+      border: 1.5px solid var(--brand-warm-gold, #CFA874);
+    }
+    .rzp-test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .rzp-brand-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rzp-badge-icon {
+      font-size: 1.2rem;
+    }
+    .rzp-badge-title {
+      font-family: var(--font-sans);
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: #1A120B;
+    }
+    .rzp-badge-tag {
+      background: #FEF3C7;
+      color: #92400E;
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    .rzp-amount-banner {
+      background: #FAF7F2;
+      border: 1px solid #E8DDD0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .rzp-order-ref {
+      display: block;
+      font-size: 0.78rem;
+      color: #776B5D;
+      font-weight: 600;
+    }
+    .rzp-atelier-name {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--brand-mocha-brown);
+    }
+    .rzp-total-val {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: #2E7D32;
+    }
+    .rzp-test-desc {
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 16px;
+      line-height: 1.45;
+    }
+    .rzp-test-options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .rzp-opt-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid #E2D9CF;
+      background: #FFFFFF;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+    .rzp-opt-btn:hover {
+      border-color: var(--brand-warm-gold);
+      background: #FDFBF7;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(207, 168, 116, 0.15);
+    }
+    .rzp-opt-btn.fail:hover {
+      border-color: #EF4444;
+      background: #FEF2F2;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+    }
+    .opt-icon {
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+    .opt-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .opt-info strong {
+      font-size: 0.88rem;
+      color: #1A120B;
+    }
+    .opt-info span {
+      font-size: 0.76rem;
+      color: #776B5D;
+    }
+    .opt-action {
+      font-size: 1.1rem;
+      color: var(--brand-warm-gold);
+      font-weight: bold;
     }
   `]
 })
@@ -1225,55 +1348,44 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     // 2. Handle Payment Flow
     if (this.selectedPayment === 'razorpay') {
       await this.loadRazorpayScript();
-      if (typeof Razorpay !== 'undefined') {
-        let rzpRes: Response;
-        try {
-          rzpRes = await fetch(API_ENDPOINTS.ORDERS.RAZORPAY_ORDER, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              amount: totalAmount,
-              receipt: this.generatedOrderNumber
-            })
-          });
-        } catch (rzpNetErr: any) {
-          console.error('Failed to communicate with Razorpay endpoint:', rzpNetErr);
-          this.orderErrorMessage = `Order #${this.generatedOrderNumber} was created, but initializing payment failed. You can complete payment from your Account or choose COD.`;
-          this.isProcessing = false;
-          this.cdr.detectChanges();
-          return;
-        }
+      let rzpRes: Response | null = null;
+      let rzpData: any = null;
 
-        let rzpData: any = null;
-        try {
+      try {
+        rzpRes = await fetch(API_ENDPOINTS.ORDERS.RAZORPAY_ORDER, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: totalAmount,
+            receipt: this.generatedOrderNumber
+          })
+        });
+        if (rzpRes && rzpRes.ok) {
           rzpData = await rzpRes.json();
-        } catch (rzpParseErr) {
-          console.error('Failed to parse Razorpay response:', rzpParseErr);
         }
+      } catch (err) {
+        console.warn('Razorpay server endpoint initialization fallback:', err);
+      }
 
-        if (!rzpRes.ok || !rzpData || !rzpData.success || !rzpData.data) {
-          console.error(`Razorpay initialization failed [HTTP ${rzpRes.status}]:`, rzpData);
-          this.orderErrorMessage = rzpData?.message || 'Payment gateway initialization failed. Please try again or select Cash on Delivery.';
-          this.isProcessing = false;
-          this.cdr.detectChanges();
-          return;
-        }
+      const rzpOrderId = rzpData?.data?.id;
+      const keyId = rzpData?.data?.keyId;
 
+      if (typeof Razorpay !== 'undefined' && rzpOrderId && keyId) {
         const options = {
-          key: rzpData.data.keyId || '',
-          amount: rzpData.data.amount,
+          key: keyId,
+          amount: rzpData?.data?.amount || Math.round(totalAmount * 100),
           currency: 'INR',
-          name: 'Arista Trinkets',
-          description: `Order ${this.generatedOrderNumber}`,
+          name: 'Arista Trinkets Atelier',
+          description: `Fine Jewellery Order #${this.generatedOrderNumber}`,
           image: '/assets/images/logo-icon.jpeg',
-          order_id: rzpData.data.id,
+          order_id: rzpOrderId,
           handler: async (payRes: any) => {
             await this.verifyRazorpayPayment(payRes);
           },
           modal: {
             ondismiss: () => {
               this.isProcessing = false;
-              this.orderErrorMessage = `Payment window was closed. Order #${this.generatedOrderNumber} remains pending until payment is completed.`;
+              this.orderErrorMessage = `Payment window was closed. Order #${this.generatedOrderNumber} remains pending in your account.`;
               this.cdr.detectChanges();
             }
           },
@@ -1287,13 +1399,20 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           }
         };
 
-        const rzp = new Razorpay(options);
-        rzp.open();
-        this.isProcessing = false;
-        return;
+        try {
+          const rzp = new Razorpay(options);
+          rzp.open();
+          this.isProcessing = false;
+          return;
+        } catch (err: any) {
+          console.error('Razorpay popup open error:', err);
+          this.orderErrorMessage = `Failed to open Razorpay payment gateway window. Please try again or choose another payment method.`;
+          this.isProcessing = false;
+          this.cdr.detectChanges();
+          return;
+        }
       } else {
-        console.error('Razorpay SDK failed to load');
-        this.orderErrorMessage = 'Payment gateway could not be loaded. Please refresh the page or select Cash on Delivery.';
+        this.orderErrorMessage = 'Unable to initialize Razorpay payment session with server. Please check your network connection.';
         this.isProcessing = false;
         this.cdr.detectChanges();
         return;
