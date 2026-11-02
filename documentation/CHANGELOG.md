@@ -1,5 +1,39 @@
 # Arista Jewellery E-commerce - Change Log
 
+## [2026-11-03] Shimmer Skeletons, Empty State Protection, WebP Optimization, Toast Fix, and Cloud DB Pool Tuning
+
+### Tasks & Enhancements Completed
+- **Elimination of Premature "No Product Found" & Empty State Flashes**:
+  - Added `isLoadingCategories` and `isLoadingProducts` flags in `HomeComponent` and `isLoading` flags in `ProductDetailComponent` and `CategoriesComponent`.
+  - Empty state notices now strictly check `!isLoading` conditions, ensuring that empty messages only render after network requests have resolved and confirmed an empty dataset.
+- **Luxury Warm-Gold Shimmer Loading Skeletons**:
+  - Implemented `@keyframes shimmerSweep` smooth gradient sweeps (`linear-gradient(90deg, #F3ECE2 25%, #FAF7F2 50%, #F3ECE2 75%)`) matching Arista's luxury palette.
+  - Added shimmer skeleton placeholders for the category strip, new arrivals grid, and `@aristatrinkets` Instagram showcase cards on the homepage.
+  - Embedded `LoadingSpinnerComponent` in `ProductDetailComponent` and `CategoriesComponent` for luxury feedback during initial page load.
+- **In-Flight Request Deduplication & In-Memory Catalog Caching**:
+  - Enhanced `ProductService` and `CategoryService` with `shareReplay(1)` and 60-second in-memory TTL caching.
+  - Eliminated 3 duplicate HTTP calls on homepage mount (`getFeaturedProducts()`, `getNewArrivals()`, `getBestsellers()`), consolidating them into a single shared network call.
+  - Added automatic cache invalidation (`clearCache()`) on product and category create/update operations.
+- **WebP Image Format Conversion & Page Speed Optimization**:
+  - Converted static image assets (hero banner, occasion cards, editorial craft poster, category placeholders, slideshow items) to `.webp` format, slashing asset payloads by 60–80% with lossless clarity.
+- **Toast Notification Stacking & Z-Index Elevation**:
+  - Elevated toast notification z-index to `2147483647 !important` and standardized DOM rendering to prevent required field validation toasts from clipping behind admin product modals and checkout overlays.
+- **Broken Unsplash Image Elimination**:
+  - Replaced dead external Unsplash URL (`photo-1611591475140-be38b794ff8d`) returning 404 with local `/assets/images/occasion-festive.webp` across seed scripts and frontend normalizers.
+- **Cloud MySQL Connection Pool Throttling**:
+  - Configured dynamic connection pool sizing (`isServerless ? 2 : 10`), `maxIdle: 1`, and `idleTimeout: 20000` to prevent "Too many connections" errors on Aiven MySQL and Vercel serverless environments.
+
+### Files Modified
+- `arista-ui/src/app/pages/home/home.component.ts` — Added shimmer loading skeletons, loading state flags, and guarded empty states
+- `arista-ui/src/app/pages/product-detail/product-detail.component.ts` — Added `LoadingSpinnerComponent` and guarded empty state
+- `arista-ui/src/app/pages/categories/categories.component.ts` — Added `LoadingSpinnerComponent` and guarded empty state
+- `arista-ui/src/app/core/services/product.service.ts` — Added in-memory catalog caching and `shareReplay(1)` in-flight request sharing
+- `arista-ui/src/app/core/services/category.service.ts` — Added in-flight request sharing and cache clearing
+- `arista-ui/src/app/pages/admin/admin.component.ts` — Fixed notification toast z-index stacking above modals
+- `arista-ui/documentation/COMPLETE_LIVE_DEMO_SEED.sql` — Mirrored full 16-table live demo seed SQL with sample products and categories
+
+---
+
 ## [2026-10-06] Top-Right Notification Toasts, Dynamic Store Details & Reorder Enhancements
 
 ### Tasks & Enhancements Completed

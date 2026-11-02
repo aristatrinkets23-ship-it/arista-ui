@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
-import { map, catchError, retry } from 'rxjs/operators';
+import { map, catchError, retry, tap, shareReplay } from 'rxjs/operators';
 import { Product } from '../models/product.model';
 import { ProductCardData } from '../models/product-card-data.model';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
@@ -19,8 +19,29 @@ interface ApiResponse<T> {
 })
 export class ProductService {
   private http = inject(HttpClient);
+  private cachedProducts: ProductCardData[] | null = null;
+  private inFlightProducts$: Observable<ProductCardData[]> | null = null;
+  private lastFetchedTime: number = 0;
+  private readonly CACHE_TTL_MS = 60000; // 1 minute in-memory cache
+
+  clearCache(): void {
+    this.cachedProducts = null;
+    this.inFlightProducts$ = null;
+    this.lastFetchedTime = 0;
+  }
 
   getProducts(categorySlug?: string, sortBy?: string, search?: string): Observable<ProductCardData[]> {
+    const isBaseCatalog = (!categorySlug || categorySlug === 'all') && !sortBy && (!search || search.trim() === '');
+
+    if (isBaseCatalog) {
+      if (this.cachedProducts && (Date.now() - this.lastFetchedTime < this.CACHE_TTL_MS)) {
+        return of(this.cachedProducts);
+      }
+      if (this.inFlightProducts$) {
+        return this.inFlightProducts$;
+      }
+    }
+
     let params = new HttpParams();
     if (categorySlug && categorySlug !== 'all') {
       params = params.set('category', categorySlug);
@@ -32,7 +53,7 @@ export class ProductService {
       params = params.set('search', search.trim());
     }
 
-    return this.http.get<ApiResponse<any[]>>(API_ENDPOINTS.PRODUCTS.LIST, { params }).pipe(
+    const request$ = this.http.get<ApiResponse<any[]>>(API_ENDPOINTS.PRODUCTS.LIST, { params }).pipe(
       retry(1),
       map(res => {
         if (!res || !res.success || !Array.isArray(res.data)) {
@@ -40,11 +61,28 @@ export class ProductService {
         }
         return res.data.map(p => this.mapProductCardData(p));
       }),
+      tap(data => {
+        if (isBaseCatalog) {
+          this.cachedProducts = data;
+          this.lastFetchedTime = Date.now();
+          this.inFlightProducts$ = null;
+        }
+      }),
       catchError(err => {
+        if (isBaseCatalog) {
+          this.inFlightProducts$ = null;
+        }
         console.error('Error fetching products from API:', err);
         return throwError(() => err);
-      })
+      }),
+      shareReplay(1)
     );
+
+    if (isBaseCatalog) {
+      this.inFlightProducts$ = request$;
+    }
+
+    return request$;
   }
 
   getAdminProducts(): Observable<Product[]> {
@@ -128,6 +166,7 @@ export class ProductService {
   }
 
   createProduct(payload: any): Observable<ApiResponse<{ id: number; name: string; slug: string }>> {
+    this.clearCache();
     const token = localStorage.getItem('arista_auth_token');
     let headers: { [key: string]: string } = {};
     if (token) {
@@ -137,6 +176,8 @@ export class ProductService {
       API_ENDPOINTS.ADMIN.PRODUCTS,
       payload,
       { headers }
+    ).pipe(
+      tap(() => this.clearCache())
     );
   }
 

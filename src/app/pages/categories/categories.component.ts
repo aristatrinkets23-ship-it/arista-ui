@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { Category } from '../../core/models/category.model';
 import { CategoryService, getDefaultCategoryImage } from '../../core/services/category.service';
 import { ChangeDetectorRef } from '@angular/core';
@@ -10,7 +11,7 @@ import { ChangeDetectorRef } from '@angular/core';
 @Component({
   selector: 'app-categories',
   standalone: true,
-  imports: [CommonModule, RouterLink, SectionHeadingComponent, ButtonComponent],
+  imports: [CommonModule, RouterLink, SectionHeadingComponent, ButtonComponent, LoadingSpinnerComponent],
   template: `
     <!-- Categories Hero -->
     <section class="cat-hero">
@@ -29,7 +30,10 @@ import { ChangeDetectorRef } from '@angular/core';
     <!-- Categories Grid -->
     <section class="section-padding">
       <div class="container">
-        <div *ngIf="categories.length > 0" class="categories-list">
+        <!-- Luxury Loading State -->
+        <app-loading-spinner *ngIf="isLoading" message="Curating signature collections..."></app-loading-spinner>
+
+        <div *ngIf="!isLoading && categories.length > 0" class="categories-list">
           <div *ngFor="let cat of categories; let i = index" class="cat-block" [class.reverse]="i % 2 !== 0">
             <div class="cat-image-box">
               <img
@@ -53,7 +57,7 @@ import { ChangeDetectorRef } from '@angular/core';
           </div>
         </div>
 
-        <div *ngIf="categories.length === 0" class="empty-state-card" style="text-align: center; padding: 60px 24px; background: var(--brand-pearl-beige); border-radius: 16px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
+        <div *ngIf="!isLoading && categories.length === 0" class="empty-state-card" style="text-align: center; padding: 60px 24px; background: var(--brand-pearl-beige); border-radius: 16px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
           <div style="font-size: 3rem; margin-bottom: 12px; color: var(--brand-warm-gold);">💎</div>
           <h2 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.6rem; margin-bottom: 8px;">No Categories Found</h2>
           <p style="color: #666; font-size: 0.95rem; margin-bottom: 24px; line-height: 1.6;">There are currently no categories added to the collection catalog. Please add categories and products from the admin panel.</p>
@@ -234,17 +238,24 @@ import { ChangeDetectorRef } from '@angular/core';
 })
 export class CategoriesComponent implements OnInit {
   categories: Category[] = [];
+  isLoading: boolean = true;
 
   private categoryService = inject(CategoryService);
   private cdr = inject(ChangeDetectorRef);
 
   ngOnInit(): void {
+    this.isLoading = true;
     this.categoryService.getCategories().subscribe({
       next: (cats) => {
         this.categories = cats;
+        this.isLoading = false;
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Failed to load categories:', err)
+      error: (err) => {
+        console.error('Failed to load categories:', err);
+        this.isLoading = false;
+        this.cdr.detectChanges();
+      }
     });
   }
 

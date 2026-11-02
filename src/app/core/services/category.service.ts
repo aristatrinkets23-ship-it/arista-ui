@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
-import { map, tap, catchError } from 'rxjs/operators';
+import { map, tap, catchError, shareReplay } from 'rxjs/operators';
 import { Category } from '../models/category.model';
 import { API_ENDPOINTS } from '../constants/api-endpoints';
 
@@ -39,13 +39,35 @@ export class CategoryService {
   private categoriesSubject = new BehaviorSubject<Category[]>([]);
   public categories$ = this.categoriesSubject.asObservable();
   private hasLoaded = false;
+  private inFlightCategories$: Observable<Category[]> | null = null;
+
+  clearCache(): void {
+    this.hasLoaded = false;
+    this.inFlightCategories$ = null;
+    this.categoriesSubject.next([]);
+  }
 
   getCategories(forceRefresh: boolean = false): Observable<Category[]> {
     if (this.hasLoaded && !forceRefresh && this.categoriesSubject.value.length > 0) {
-      return this.categories$;
+      return of(this.categoriesSubject.value);
     }
 
-    return this.refreshCategories();
+    if (this.inFlightCategories$ && !forceRefresh) {
+      return this.inFlightCategories$;
+    }
+
+    this.inFlightCategories$ = this.refreshCategories().pipe(
+      tap(() => {
+        this.inFlightCategories$ = null;
+      }),
+      catchError(err => {
+        this.inFlightCategories$ = null;
+        return throwError(() => err);
+      }),
+      shareReplay(1)
+    );
+
+    return this.inFlightCategories$;
   }
 
   refreshCategories(): Observable<Category[]> {
