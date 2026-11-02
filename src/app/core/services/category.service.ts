@@ -8,10 +8,10 @@ import { API_ENDPOINTS } from '../constants/api-endpoints';
 export function getDefaultCategoryImage(nameOrSlug?: string): string {
   if (!nameOrSlug) return '/assets/images/placeholder-jewellery.svg';
   const s = nameOrSlug.toLowerCase();
-  if (s.includes('ring')) return '/assets/images/occasion-daily-wear.jpg';
-  if (s.includes('necklace') || s.includes('pendant') || s.includes('choker')) return '/assets/images/occasion-wedding.jpg';
-  if (s.includes('earring') || s.includes('stud') || s.includes('hoop')) return '/assets/images/occasion-gifting.jpg';
-  if (s.includes('bracelet') || s.includes('bangle') || s.includes('cuff')) return '/assets/images/occasion-festive.jpg';
+  if (s.includes('ring')) return '/assets/images/occasion-daily-wear.webp';
+  if (s.includes('necklace') || s.includes('pendant') || s.includes('choker')) return '/assets/images/occasion-wedding.webp';
+  if (s.includes('earring') || s.includes('stud') || s.includes('hoop')) return '/assets/images/occasion-gifting.webp';
+  if (s.includes('bracelet') || s.includes('bangle') || s.includes('cuff')) return '/assets/images/occasion-festive.webp';
   return '/assets/images/placeholder-jewellery.svg';
 }
 
@@ -81,6 +81,9 @@ export class CategoryService {
 
   private mapCategory(c: any): Category {
     let img = c.image ? String(c.image).trim() : '';
+    if (img.includes('1611591475140') || img.includes('be38b794ff8d')) {
+      img = '/assets/images/occasion-festive.webp';
+    }
     const fallbackImg = getDefaultCategoryImage(c.slug || c.name);
     if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
       img = '/' + img;

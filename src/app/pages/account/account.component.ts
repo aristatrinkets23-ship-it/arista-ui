@@ -1037,7 +1037,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     </section>
 
     <!-- Address Modal Overlay Popup -->
-    <div class="modal-backdrop" *ngIf="showAddressModal" (click)="closeAddressModal()">
+    <div class="modal-backdrop" *ngIf="showAddressModal">
       <div class="modal-card-box" (click)="$event.stopPropagation()">
         <div class="modal-card-header">
           <h2 class="modal-header-title">{{ editingAddress ? 'Edit Shipping Destination' : '+ Add New Shipping Destination' }}</h2>
@@ -1087,7 +1087,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     </div>
 
     <!-- Sign Out Confirmation Modal Overlay -->
-    <div class="modal-backdrop" *ngIf="showLogoutModal" (click)="cancelLogout()">
+    <div class="modal-backdrop" *ngIf="showLogoutModal">
       <div class="modal-card-box signout-dialog" (click)="$event.stopPropagation()">
         <div class="signout-icon-wrap">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1106,7 +1106,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     </div>
 
     <!-- Customer Cancel Order Confirmation Modal Overlay -->
-    <div class="modal-backdrop" *ngIf="showCancelModal" (click)="closeCancelModal()">
+    <div class="modal-backdrop" *ngIf="showCancelModal">
       <div class="modal-card-box cancel-dialog" (click)="$event.stopPropagation()">
         <div class="cancel-icon-wrap">
           <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1194,7 +1194,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     </div>
 
     <!-- LUXURY REORDER / ADDED TO BAG POPUP MODAL (ROOT LEVEL) -->
-    <div class="modal-backdrop" *ngIf="showReorderModal" (click)="closeReorderModal()">
+    <div class="modal-backdrop" *ngIf="showReorderModal">
       <div class="modal-card-box reorder-dialog" (click)="$event.stopPropagation()">
         <!-- Header -->
         <div class="reorder-modal-header">
@@ -1340,7 +1340,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       top: 88px !important;
       right: 28px !important;
       bottom: auto !important;
-      z-index: 999999 !important;
+      z-index: 2147483647 !important;
       background: #15803D;
       color: #FFFFFF;
       padding: 12px 22px;

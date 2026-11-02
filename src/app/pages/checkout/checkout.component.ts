@@ -261,7 +261,7 @@ declare var Razorpay: any;
         </ng-template>
 
         <!-- INLINE AUTH MODAL POPUP FOR CHECKOUT -->
-        <div *ngIf="showAuthModal" class="modal-backdrop" (click)="showAuthModal = false">
+        <div *ngIf="showAuthModal" class="modal-backdrop">
           <div class="modal-card" (click)="$event.stopPropagation()">
             <div class="modal-header">
               <h2 class="form-title" style="margin:0;">Sign In to Express Checkout</h2>
@@ -1377,7 +1377,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           currency: 'INR',
           name: 'Arista Trinkets Atelier',
           description: `Fine Jewellery Order #${this.generatedOrderNumber}`,
-          image: '/assets/images/logo-icon.jpeg',
+          image: '/assets/images/logo-icon.webp',
           order_id: rzpOrderId,
           handler: async (payRes: any) => {
             await this.verifyRazorpayPayment(payRes);

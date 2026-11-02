@@ -142,6 +142,9 @@ export class ProductService {
 
   private mapProductCardData(p: any): ProductCardData {
     let img = p.image ? String(p.image).trim() : '';
+    if (img.includes('1611591475140') || img.includes('be38b794ff8d')) {
+      img = '/assets/images/occasion-festive.webp';
+    }
     const catName = p.category_name || p.category || '';
     const fallbackImg = getDefaultCategoryImage(catName);
     if (img && !img.startsWith('http') && !img.startsWith('data:') && !img.startsWith('/')) {
@@ -156,7 +159,13 @@ export class ProductService {
     const isActive = Boolean(p.is_active !== 0 && p.is_active !== false && p.isActive !== false && p.available !== false);
 
     const imagesList = Array.isArray(p.images) && p.images.length > 0
-      ? p.images.map((i: string) => (i.startsWith('http') || i.startsWith('data:') || i.startsWith('/') ? i : '/' + i))
+      ? p.images.map((i: string) => {
+          let url = String(i).trim();
+          if (url.includes('1611591475140') || url.includes('be38b794ff8d')) {
+            url = '/assets/images/occasion-festive.webp';
+          }
+          return (url.startsWith('http') || url.startsWith('data:') || url.startsWith('/') ? url : '/' + url);
+        })
       : [finalImg];
 
     return {

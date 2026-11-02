@@ -64,7 +64,7 @@ import { CartService } from '../../core/services/cart.service';
         </div>
 
         <!-- Clear Wishlist Confirmation Modal Popup -->
-        <div *ngIf="showClearModal" class="wishlist-modal-backdrop" (click)="closeClearModal()">
+        <div *ngIf="showClearModal" class="wishlist-modal-backdrop">
           <div class="wishlist-modal-card" (click)="$event.stopPropagation()">
             <div class="modal-icon-wrap">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -89,7 +89,7 @@ import { CartService } from '../../core/services/cart.service';
   styles: [`
     .wishlist-hero {
       position: relative;
-      background: linear-gradient(90deg, rgba(28, 18, 12, 0.8) 0%, rgba(28, 18, 12, 0.45) 45%, rgba(28, 18, 12, 0) 80%), url('/assets/images/wishlist-hero-bg.jpg') center right/cover no-repeat;
+      background: linear-gradient(90deg, rgba(28, 18, 12, 0.8) 0%, rgba(28, 18, 12, 0.45) 45%, rgba(28, 18, 12, 0) 80%), url('/assets/images/wishlist-hero-bg.webp') center right/cover no-repeat;
       padding: 72px 0;
       border-bottom: 1px solid var(--color-border, #E4D5C7);
       min-height: 280px;

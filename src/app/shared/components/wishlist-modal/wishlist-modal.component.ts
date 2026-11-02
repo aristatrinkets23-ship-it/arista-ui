@@ -10,7 +10,7 @@ import { CartService } from '../../../core/services/cart.service';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="wishlist-modal-backdrop" (click)="closeModal()">
+    <div class="wishlist-modal-backdrop">
       <div class="wishlist-modal-card" (click)="$event.stopPropagation()">
         <!-- Header -->
         <div class="modal-header">

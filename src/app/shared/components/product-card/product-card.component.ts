@@ -7,7 +7,7 @@ import { BadgeComponent } from '../badge/badge.component';
 import { CartService } from '../../../core/services/cart.service';
 import { WishlistService } from '../../../core/services/wishlist.service';
 
-const DEFAULT_IMAGE = 'assets/images/placeholder-jewellery.svg';
+const DEFAULT_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
 
 @Component({

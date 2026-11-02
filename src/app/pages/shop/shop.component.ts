@@ -134,7 +134,7 @@ import { CategoryService } from '../../core/services/category.service';
     /* Shop Hero */
     .shop-hero {
       position: relative;
-      background-image: url('/assets/images/hero-shop.jpg');
+      background-image: url('/assets/images/hero-shop.webp');
       background-size: cover;
       background-position: center right;
       background-repeat: no-repeat;

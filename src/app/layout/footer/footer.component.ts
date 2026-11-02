@@ -204,7 +204,7 @@ import { NewsletterService } from '../../core/services/newsletter.service';
       display: inline-block;
       width: 175px;
       height: 54px;
-      background-image: url('/assets/images/full-logo-transparent.png');
+      background-image: url('/assets/images/full-logo-transparent.webp');
       background-size: contain;
       background-repeat: no-repeat;
       background-position: left center;

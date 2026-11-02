@@ -239,7 +239,7 @@ import { SettingsService, StoreSettings } from '../../core/services/settings.ser
     /* Contact Hero */
     .contact-hero {
       position: relative;
-      background-image: url('/assets/images/hero-contact.jpg');
+      background-image: url('/assets/images/hero-contact.webp');
       background-size: cover;
       background-position: center right;
       background-repeat: no-repeat;
