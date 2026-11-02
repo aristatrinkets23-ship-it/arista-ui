@@ -6,6 +6,7 @@ import { SectionHeadingComponent } from '../../shared/components/section-heading
 import { ProductCardComponent } from '../../shared/components/product-card/product-card.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
 import { BadgeComponent } from '../../shared/components/badge/badge.component';
+import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { ProductCardData } from '../../core/models/product-card-data.model';
 import { Product } from '../../core/models/product.model';
 import { ProductService } from '../../core/services/product.service';
@@ -22,10 +23,16 @@ import { ChangeDetectorRef } from '@angular/core';
     SectionHeadingComponent,
     ProductCardComponent,
     ButtonComponent,
-    BadgeComponent
+    BadgeComponent,
+    LoadingSpinnerComponent
   ],
   template: `
-    <div class="product-detail-page" *ngIf="product">
+    <!-- Luxury Loading State -->
+    <div class="product-detail-loading" *ngIf="isLoading" style="min-height: 60vh; display: flex; align-items: center; justify-content: center; padding: 100px 24px;">
+      <app-loading-spinner message="Unveiling jewellery creation..."></app-loading-spinner>
+    </div>
+
+    <div class="product-detail-page" *ngIf="!isLoading && product">
       <!-- Main Product Grid -->
       <section class="section-padding">
         <div class="container product-main-grid">
@@ -239,7 +246,7 @@ import { ChangeDetectorRef } from '@angular/core';
     </div>
 
     <!-- Fallback Empty State when product is null/not found -->
-    <div class="product-detail-page empty-detail-page" *ngIf="!product">
+    <div class="product-detail-page empty-detail-page" *ngIf="!isLoading && !product">
       <section class="section-padding text-center" style="padding: 90px 24px;">
         <div class="container" style="max-width: 580px; margin: 0 auto; background: var(--brand-pearl-beige); padding: 48px 32px; border-radius: 16px; border: 1px dashed var(--brand-warm-gold);">
           <div style="font-size: 3.2rem; margin-bottom: 16px;">✨</div>
@@ -781,7 +788,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   private wishlistService = inject(WishlistService);
   private cdr = inject(ChangeDetectorRef);
   private wishlistSub!: Subscription;
-  isLoading: boolean = false;
+  isLoading: boolean = true;
 
   get isOutOfStock(): boolean {
     if (!this.product) return false;

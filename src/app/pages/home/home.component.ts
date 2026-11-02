@@ -229,8 +229,18 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
           <h2 class="cat-section-title">Shop by <em>Category</em></h2>
         </div>
 
+        <!-- Shimmer Skeleton Loading State for Categories -->
+        <div *ngIf="isLoadingCategories" class="category-static-container">
+          <div class="category-static-grid">
+            <div *ngFor="let s of [1, 2, 3, 4]" class="cat-strip-item" style="pointer-events: none;">
+              <div class="cat-thumb-box" style="background: linear-gradient(90deg, #F3ECE2 25%, #FAF7F2 50%, #F3ECE2 75%); background-size: 200% 100%; animation: shimmerSweep 1.5s infinite; border: 2px solid rgba(207, 168, 116, 0.25);"></div>
+              <span class="cat-thumb-name" style="display: inline-block; width: 64px; height: 14px; background: #EAE3D9; border-radius: 4px; margin-top: 6px;"></span>
+            </div>
+          </div>
+        </div>
+
         <!-- Case 1: More than 5 categories -> Moving Infinite Marquee Effect -->
-        <div *ngIf="categories.length > 5" class="category-marquee-container">
+        <div *ngIf="!isLoadingCategories && categories.length > 5" class="category-marquee-container">
           <div class="category-marquee-track">
             <!-- First Track -->
             <div class="category-marquee-group">
@@ -265,7 +275,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
         </div>
 
         <!-- Case 2: 1 to 5 categories -> Clean Centered Static Layout (No Duplication) -->
-        <div *ngIf="categories.length > 0 && categories.length <= 5" class="category-static-container">
+        <div *ngIf="!isLoadingCategories && categories.length > 0 && categories.length <= 5" class="category-static-container">
           <div class="category-static-grid scroll-reveal-stagger">
             <a
               *ngFor="let cat of categories"
@@ -281,7 +291,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
           </div>
         </div>
 
-        <div *ngIf="categories.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
+        <div *ngIf="!isLoadingCategories && categories.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
           <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">No Categories Created Yet</h3>
           <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Add collection categories from the Admin Dashboard to feature them here on the homepage.</p>
           <a routerLink="/admin" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
@@ -339,7 +349,19 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
           <div class="arrivals-title-underline"></div>
         </div>
 
-        <div *ngIf="newArrivals.length > 0" class="arrivals-grid">
+        <!-- Shimmer Skeleton Loading State for New Arrivals -->
+        <div *ngIf="isLoadingProducts" class="arrivals-grid">
+          <div *ngFor="let s of [1, 2, 3, 4]" class="arrival-card-v2" style="border: 1px solid #ECE4DA; border-radius: 14px; overflow: hidden; background: #FAF7F2; padding-bottom: 16px; pointer-events: none;">
+            <div style="height: 280px; width: 100%; background: linear-gradient(90deg, #F3ECE2 25%, #FAF7F2 50%, #F3ECE2 75%); background-size: 200% 100%; animation: shimmerSweep 1.5s infinite;"></div>
+            <div style="padding: 16px 16px 0 16px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="height: 18px; width: 75%; border-radius: 4px; background: #EAE3D9;"></div>
+              <div style="height: 14px; width: 45%; border-radius: 4px; background: #EAE3D9;"></div>
+              <div style="height: 38px; width: 100%; border-radius: 50px; background: #EAE3D9; margin-top: 6px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="!isLoadingProducts && newArrivals.length > 0" class="arrivals-grid">
           <div *ngFor="let product of newArrivals" class="arrival-card-v2">
             <a [routerLink]="['/product', product.slug]" class="arrival-img-box">
               <span class="arrival-badge-pill">{{ product.badge || 'NEW' }}</span>
@@ -385,13 +407,13 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
           </div>
         </div>
 
-        <div *ngIf="newArrivals.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
+        <div *ngIf="!isLoadingProducts && newArrivals.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
           <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">No New Arrivals Available</h3>
           <p style="color: #666; font-size: 0.92rem;">New products will appear here automatically when added to the catalog.</p>
         </div>
 
         <!-- View All Button -->
-        <div class="arrivals-footer" *ngIf="newArrivals.length > 0">
+        <div class="arrivals-footer" *ngIf="!isLoadingProducts && newArrivals.length > 0">
           <a routerLink="/shop" class="view-all-pill-btn">VIEW ALL</a>
         </div>
       </div>
@@ -563,7 +585,12 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
       <div class="container">
         <h2 class="insta-section-title">@aristatrinkets</h2>
 
-        <div *ngIf="bestsellerProducts.length > 0" class="insta-grid">
+        <!-- Shimmer Skeleton Loading State for Instagram Grid -->
+        <div *ngIf="isLoadingProducts" class="insta-grid">
+          <div *ngFor="let s of [1, 2, 3]" class="insta-card" style="height: 320px; background: linear-gradient(90deg, #F3ECE2 25%, #FAF7F2 50%, #F3ECE2 75%); background-size: 200% 100%; animation: shimmerSweep 1.5s infinite; border-radius: 12px; pointer-events: none;"></div>
+        </div>
+
+        <div *ngIf="!isLoadingProducts && bestsellerProducts.length > 0" class="insta-grid">
           <a
             *ngFor="let product of bestsellerProducts"
             [routerLink]="['/product', product.slug]"
@@ -582,7 +609,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
           </a>
         </div>
 
-        <div *ngIf="bestsellerProducts.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
+        <div *ngIf="!isLoadingProducts && bestsellerProducts.length === 0" class="empty-section-notice" style="text-align: center; padding: 40px 24px; background: rgba(207, 168, 116, 0.08); border-radius: 12px; border: 1px dashed var(--brand-warm-gold); max-width: 600px; margin: 0 auto;">
           <h3 style="font-family: var(--font-serif); color: var(--brand-mocha-brown); font-size: 1.3rem; margin-bottom: 8px;">Explore Our Curated Collection</h3>
           <p style="color: #666; font-size: 0.92rem; margin-bottom: 20px;">Discover the most loved fine jewellery handcrafted for life's special moments.</p>
           <a routerLink="/shop" style="padding: 10px 24px; text-decoration: none; border-radius: 50px; font-weight: 700; background: var(--brand-warm-gold); color: #1A120B; font-size: 0.88rem; display: inline-block;">
@@ -593,6 +620,11 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     </section>
   `,
   styles: [`
+    @keyframes shimmerSweep {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
     .hero-section {
       position: relative;
       background-image: url('/assets/images/hero-banner.webp');
@@ -2587,6 +2619,8 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   newArrivals: ProductCardData[] = [];
   bestsellerProducts: ProductCardData[] = [];
   activeOccasionId = 'wedding';
+  isLoadingCategories: boolean = true;
+  isLoadingProducts: boolean = true;
 
   faqs = [
     {
@@ -2772,9 +2806,14 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.categoryService.getCategories().subscribe({
       next: (cats) => {
         this.categories = cats;
+        this.isLoadingCategories = false;
         this.cdr.detectChanges();
       },
-      error: (err) => console.error('Failed to load categories for home:', err)
+      error: (err) => {
+        console.error('Failed to load categories for home:', err);
+        this.isLoadingCategories = false;
+        this.cdr.detectChanges();
+      }
     });
 
     this.productService.getFeaturedProducts().subscribe({
@@ -2788,19 +2827,29 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.productService.getNewArrivals().subscribe({
       next: (prods) => {
         this.newArrivals = prods;
+        this.isLoadingProducts = false;
         this.cdr.detectChanges();
         setTimeout(() => this.initScrollReveal(), 100);
       },
-      error: (err) => console.error('Failed to load new arrivals:', err)
+      error: (err) => {
+        console.error('Failed to load new arrivals:', err);
+        this.isLoadingProducts = false;
+        this.cdr.detectChanges();
+      }
     });
 
     this.productService.getBestsellers().subscribe({
       next: (prods) => {
         this.bestsellerProducts = prods;
+        this.isLoadingProducts = false;
         this.cdr.detectChanges();
         setTimeout(() => this.initScrollReveal(), 100);
       },
-      error: (err) => console.error('Failed to load bestsellers:', err)
+      error: (err) => {
+        console.error('Failed to load bestsellers:', err);
+        this.isLoadingProducts = false;
+        this.cdr.detectChanges();
+      }
     });
 
     this.cartSub = this.cartService.cart$.subscribe(() => {

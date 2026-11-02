@@ -46,7 +46,8 @@ agam vadodra/
 │
 └── documentation/               # (in arista-ui/documentation/)
     ├── ARCHITECTURE.md          # System architecture & stack specification
-    ├── DATABASE_SCHEMA.md       # Data dictionary (11 tables)
+    ├── DATABASE_SCHEMA.md       # Data dictionary (16 relational tables)
+    ├── COMPLETE_LIVE_DEMO_SEED.sql # Full 16-table seed script for demo & staging deployment
     ├── DATABASE_SCHEMA.sql      # MySQL 8 DDL script (in arista-ui/documentation/)
     ├── API_SPECIFICATION.md     # REST API endpoint documentation (all IMPLEMENTED)
     ├── FRONTEND_ARCHITECTURE.md # Angular frontend structure
