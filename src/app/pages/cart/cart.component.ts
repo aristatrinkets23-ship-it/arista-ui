@@ -34,7 +34,7 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
     </section>
 
     <!-- ─── Auth Modal Popup ──────────────────────────────────────────────── -->
-    <div *ngIf="showAuthBanner()" class="auth-modal-backdrop" (click)="onBackdropClick($event)">
+    <div *ngIf="showAuthBanner()" class="auth-modal-backdrop">
       <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
 
         <!-- Close Button -->
@@ -217,7 +217,7 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
     </section>
 
     <!-- Clear Bag Confirmation Modal Popup -->
-    <div *ngIf="showClearCartModal()" class="auth-modal-backdrop" (click)="onConfirmBackdropClick($event, 'clear')">
+    <div *ngIf="showClearCartModal()" class="auth-modal-backdrop">
       <div class="auth-modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="clearModalTitle">
         <button type="button" class="auth-modal-close" (click)="showClearCartModal.set(false)" aria-label="Close dialog">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -251,7 +251,7 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
     </div>
 
     <!-- Remove Single Item Confirmation Modal Popup -->
-    <div *ngIf="itemToRemove()" class="auth-modal-backdrop" (click)="onConfirmBackdropClick($event, 'remove')">
+    <div *ngIf="itemToRemove()" class="auth-modal-backdrop">
       <div class="auth-modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="removeModalTitle">
         <button type="button" class="auth-modal-close" (click)="itemToRemove.set(null)" aria-label="Close dialog">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -286,7 +286,7 @@ import { resolveProductImage, getFallbackProductImage } from '../../core/utils/i
   styles: [`
     .cart-hero {
       position: relative;
-      background-image: url('/assets/images/cart-hero-banner.jpg');
+      background-image: url('/assets/images/cart-hero-banner.webp');
       background-size: cover;
       background-position: center right;
       background-repeat: no-repeat;

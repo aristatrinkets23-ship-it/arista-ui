@@ -595,7 +595,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
   styles: [`
     .hero-section {
       position: relative;
-      background-image: url('/assets/images/hero-banner.jpg');
+      background-image: url('/assets/images/hero-banner.webp');
       background-size: cover;
       background-position: center right;
       background-repeat: no-repeat;
@@ -1212,7 +1212,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
     .heritage-parallax-bg {
       position: absolute;
       inset: -90px;
-      background-image: url('/assets/images/heritage-banner-bg.png');
+      background-image: url('/assets/images/heritage-banner-bg.webp');
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;
@@ -2682,7 +2682,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       title: 'Daily Wear',
       subtitle: 'Minimalist & Effortless',
       description: 'Sleek, lightweight everyday gold & diamond pieces designed for effortless elegance and work-to-dinner style.',
-      image: '/assets/images/occasion-daily-wear.jpg',
+      image: '/assets/images/occasion-daily-wear.webp',
       slug: 'daily-wear'
     },
     {
@@ -2690,7 +2690,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       title: 'Wedding',
       subtitle: 'Eternal Heirloom Grace',
       description: 'Heirloom-worthy statements — the pieces you save for the day you want to remember forever.',
-      image: '/assets/images/occasion-wedding.jpg',
+      image: '/assets/images/occasion-wedding.webp',
       slug: 'wedding'
     },
     {
@@ -2698,7 +2698,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       title: 'Gifting',
       subtitle: 'Precious Tokens of Love',
       description: 'Curated luxury jewellery gifts crafted to celebrate life’s most precious milestones, anniversaries, and birthdays.',
-      image: '/assets/images/occasion-gifting.jpg',
+      image: '/assets/images/occasion-gifting.webp',
       slug: 'gifting'
     },
     {
@@ -2706,12 +2706,12 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
       title: 'Festive',
       subtitle: 'Grand Celebration Shimmer',
       description: 'Traditional and contemporary shimmer for grand celebrations, pujas, and bright festive moments.',
-      image: '/assets/images/occasion-festive.jpg',
+      image: '/assets/images/occasion-festive.webp',
       slug: 'festive'
     }
   ];
 
-  editorialPhoto: string = '/assets/images/editorial-artisanal-craft.jpg';
+  editorialPhoto: string = '/assets/images/editorial-artisanal-craft.webp';
 
   @ViewChild('heritageSection') heritageSection?: ElementRef<HTMLElement>;
   @ViewChild('heritageBg') heritageBg?: ElementRef<HTMLElement>;

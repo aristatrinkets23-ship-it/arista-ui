@@ -11,6 +11,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { CartService } from '../../core/services/cart.service';
 import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 import { SettingsService } from '../../core/services/settings.service';
+import { compressAndConvertToWebP } from '../../core/utils/image-utils';
 
 const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
@@ -19,29 +20,6 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   template: `
-    <!-- Floating Luxury Toast Notification Banner -->
-    <div class="toast-notification-wrap" *ngIf="toastMessage">
-      <div class="toast-card" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
-        <div class="toast-icon-box">
-          <svg *ngIf="toastType === 'success'" class="toast-svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          <svg *ngIf="toastType === 'error'" class="toast-svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-          </svg>
-        </div>
-        <div class="toast-content">
-          <div class="toast-title">{{ toastTitle || (toastType === 'success' ? 'Success' : 'Notice') }}</div>
-          <div class="toast-message">{{ toastMessage }}</div>
-        </div>
-        <button type="button" class="btn-close-toast" (click)="dismissToast()" aria-label="Close notification">
-          <svg class="close-icon-svg" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-          </svg>
-        </button>
-      </div>
-    </div>
-
     <!-- Admin Top Header Banner -->
     <section class="admin-hero">
       <div class="container hero-content">
@@ -95,7 +73,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             type="button"
             class="tab-btn"
             [class.active]="activeTab === 'categories'"
-            (click)="activeTab = 'categories'"
+            (click)="activeTab = 'categories'; loadAdminCategories()"
           >
             Categories ({{ categories.length }})
           </button>
@@ -103,7 +81,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             type="button"
             class="tab-btn"
             [class.active]="activeTab === 'products'"
-            (click)="activeTab = 'products'"
+            (click)="activeTab = 'products'; loadAdminProducts()"
           >
             Product Catalog ({{ products.length }})
           </button>
@@ -1009,7 +987,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </section>
 
     <!-- EDIT PRODUCT MODAL OVERLAY POPUP -->
-    <div *ngIf="editingProduct" class="modal-backdrop" (click)="closeEditModal()">
+    <div *ngIf="editingProduct" class="modal-backdrop">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="form-title" style="margin:0;">Edit Product Details (#{{ editingProduct.id }})</h2>
@@ -1018,6 +996,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
         <div class="success-banner" *ngIf="editSuccessMessage" style="margin-top:16px;">
           ✓ {{ editSuccessMessage }}
+        </div>
+        <div class="error-banner" *ngIf="editProductErrorMessage" style="margin-top:16px;">
+          ✕ {{ editProductErrorMessage }}
         </div>
 
         <form (submit)="updateProduct($event)" class="product-form" style="margin-top: 16px;">
@@ -1208,7 +1189,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- EDIT CATEGORY MODAL OVERLAY POPUP -->
-    <div *ngIf="editingCategory" class="modal-backdrop" (click)="closeEditCategoryModal()">
+    <div *ngIf="editingCategory" class="modal-backdrop">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="form-title" style="margin:0;">Edit Category Details ({{ editingCategory.name }})</h2>
@@ -1217,6 +1198,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
         <div class="success-banner" *ngIf="editCategorySuccessMessage" style="margin-top:16px;">
           ✓ {{ editCategorySuccessMessage }}
+        </div>
+        <div class="error-banner" *ngIf="editCategoryErrorMessage" style="margin-top:16px;">
+          ✕ {{ editCategoryErrorMessage }}
         </div>
 
         <form (submit)="updateCategory($event)" class="product-form" style="margin-top: 16px;">
@@ -1285,7 +1269,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- ADD PRODUCT MODAL OVERLAY POPUP -->
-    <div *ngIf="showAddProductModal" class="modal-backdrop" (click)="closeAddProductModal()">
+    <div *ngIf="showAddProductModal" class="modal-backdrop">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="form-title" style="margin:0;">+ Add New Jewellery Creation to Catalog</h2>
@@ -1294,6 +1278,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
         <div class="success-banner" *ngIf="successMessage" style="margin-top:16px;">
           ✓ {{ successMessage }}
+        </div>
+        <div class="error-banner" *ngIf="productErrorMessage" style="margin-top:16px;">
+          ✕ {{ productErrorMessage }}
         </div>
 
         <form (submit)="saveProduct($event)" class="product-form" style="margin-top: 16px;">
@@ -1494,7 +1481,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- ADD CATEGORY MODAL OVERLAY POPUP -->
-    <div *ngIf="showAddCategoryModal" class="modal-backdrop" (click)="closeAddCategoryModal()">
+    <div *ngIf="showAddCategoryModal" class="modal-backdrop">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="form-title" style="margin:0;">+ Add New Collection Category</h2>
@@ -1584,7 +1571,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- CREATE NEW ADMIN USER MODAL OVERLAY POPUP -->
-    <div *ngIf="showCreateAdminModal" class="modal-backdrop" (click)="closeCreateAdminModal()">
+    <div *ngIf="showCreateAdminModal" class="modal-backdrop">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="form-title" style="margin:0;">+ Create New Admin User Account</h2>
@@ -1643,7 +1630,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- UPDATE ADMIN PASSWORD MODAL OVERLAY POPUP -->
-    <div *ngIf="showUpdatePasswordModal" class="modal-backdrop" (click)="closeUpdatePasswordModal()">
+    <div *ngIf="showUpdatePasswordModal" class="modal-backdrop">
       <div class="modal-card" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <h2 class="form-title" style="margin:0;">Update Admin Password ({{ editingAdminUser?.name }})</h2>
@@ -1696,7 +1683,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- Logout Confirmation Modal Overlay -->
-    <div class="logout-modal-backdrop" *ngIf="showLogoutModal" (click)="cancelLogout()">
+    <div class="logout-modal-backdrop" *ngIf="showLogoutModal">
       <div class="logout-modal-card" (click)="$event.stopPropagation()">
         <div class="modal-icon-wrap">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1715,7 +1702,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- Item Delete Confirmation Modal Overlay -->
-    <div class="logout-modal-backdrop" *ngIf="deleteTarget" (click)="cancelDelete()">
+    <div class="logout-modal-backdrop" *ngIf="deleteTarget">
       <div class="logout-modal-card" (click)="$event.stopPropagation()">
         <div class="modal-icon-wrap" style="background: #FFEBEE; color: #C62828; border-color: #FFCDD2;">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1739,7 +1726,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- Order Status Change Confirmation Modal Overlay -->
-    <div class="logout-modal-backdrop" *ngIf="pendingOrderStatusChange" (click)="cancelOrderStatusChange()">
+    <div class="logout-modal-backdrop" *ngIf="pendingOrderStatusChange">
       <div class="logout-modal-card" (click)="$event.stopPropagation()" style="max-width: 460px;">
         <div class="modal-icon-wrap" style="background: #FEF3C7; color: #D97706; border-color: #FCD34D;">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1784,7 +1771,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     </div>
 
     <!-- ORDER ITEMS DETAILS MODAL OVERLAY POPUP (ROOT LEVEL) -->
-    <div *ngIf="selectedOrderForDetails" class="modal-backdrop" (click)="selectedOrderForDetails = null">
+    <div *ngIf="selectedOrderForDetails" class="modal-backdrop">
       <div class="modal-card" style="max-width: 680px;" (click)="$event.stopPropagation()">
         <div class="modal-header">
           <div>
@@ -1915,6 +1902,29 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
         </div>
       </div>
     </div>
+
+    <!-- Floating Luxury Toast Notification Banner (Rendered at Root to Top All Modals) -->
+    <div class="toast-notification-wrap" *ngIf="toastMessage">
+      <div class="toast-card" [class.success]="toastType === 'success'" [class.error]="toastType === 'error'">
+        <div class="toast-icon-box">
+          <svg *ngIf="toastType === 'success'" class="toast-svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+          </svg>
+          <svg *ngIf="toastType === 'error'" class="toast-svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+          </svg>
+        </div>
+        <div class="toast-content">
+          <div class="toast-title">{{ toastTitle || (toastType === 'success' ? 'Success' : 'Notice') }}</div>
+          <div class="toast-message">{{ toastMessage }}</div>
+        </div>
+        <button type="button" class="btn-close-toast" (click)="dismissToast()" aria-label="Close notification">
+          <svg class="close-icon-svg" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
   `,
   styles: [`
     .logout-modal-backdrop {
@@ -2033,11 +2043,11 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
     /* Refined Atelier Luxury Notification Toast */
     .toast-notification-wrap {
-      position: fixed;
-      top: 24px;
-      right: 24px;
-      z-index: 999999;
-      pointer-events: none;
+      position: fixed !important;
+      top: 24px !important;
+      right: 24px !important;
+      z-index: 2147483647 !important;
+      pointer-events: none !important;
       animation: toastSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
@@ -3470,7 +3480,7 @@ export class AdminComponent implements OnInit {
     return Math.min(a, b);
   }
 
-  homepageEditorialPhoto: string = '/assets/images/editorial-artisanal-craft.jpg';
+  homepageEditorialPhoto: string = '/assets/images/editorial-artisanal-craft.webp';
   newEditorialPhotoPreview: string = '';
   homepageSaveSuccess: string = '';
   homepageSaveError: string = '';
@@ -3478,6 +3488,7 @@ export class AdminComponent implements OnInit {
 
   showAddProductModal: boolean = false;
   isSavingProduct: boolean = false;
+  productErrorMessage: string = '';
   showAddCategoryModal: boolean = false;
 
   adminUser: any = null;
@@ -3487,6 +3498,7 @@ export class AdminComponent implements OnInit {
 
   editingProduct: any = null;
   editSuccessMessage: string = '';
+  editProductErrorMessage: string = '';
 
   newSystemFileName: string = '';
   editSystemFileName: string = '';
@@ -3494,6 +3506,7 @@ export class AdminComponent implements OnInit {
   editingCategory: any = null;
   editCategoryFileName: string = '';
   editCategorySuccessMessage: string = '';
+  editCategoryErrorMessage: string = '';
 
   newCategoryFileName: string = '';
   categorySuccessMessage: string = '';
@@ -4020,15 +4033,11 @@ export class AdminComponent implements OnInit {
       .catch(err => console.error('Error fetching homepage config:', err));
   }
 
-  onEditorialPhotoSelected(event: Event): void {
+  async onEditorialPhotoSelected(event: Event): Promise<void> {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.newEditorialPhotoPreview = reader.result as string;
-        this.cdr.detectChanges();
-      };
-      reader.readAsDataURL(file);
+      this.newEditorialPhotoPreview = await compressAndConvertToWebP(file, 1600, 1600, 0.85);
+      this.cdr.detectChanges();
     }
   }
 
@@ -4138,61 +4147,53 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  onFileSelected(event: Event, targetForm: 'new' | 'edit'): void {
+  async onFileSelected(event: Event, targetForm: 'new' | 'edit'): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
       const fileName = file.name;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (targetForm === 'new') {
-          this.newProduct.image = result;
-          this.newSystemFileName = fileName;
-          if (!this.newProduct.images) this.newProduct.images = [];
-          if (!this.newProduct.images.includes(result)) {
-            this.newProduct.images.unshift(result);
-          }
-        } else if (this.editingProduct) {
-          this.editingProduct.image = result;
-          this.editSystemFileName = fileName;
-          if (!this.editingProduct.images) this.editingProduct.images = [];
-          if (!this.editingProduct.images.includes(result)) {
-            this.editingProduct.images.unshift(result);
-          }
+      const result = await compressAndConvertToWebP(file, 1400, 1400, 0.85);
+      if (targetForm === 'new') {
+        this.newProduct.image = result;
+        this.newSystemFileName = fileName;
+        if (!this.newProduct.images) this.newProduct.images = [];
+        if (!this.newProduct.images.includes(result)) {
+          this.newProduct.images.unshift(result);
         }
-        this.cdr.detectChanges();
-      };
-      reader.readAsDataURL(file);
+      } else if (this.editingProduct) {
+        this.editingProduct.image = result;
+        this.editSystemFileName = fileName;
+        if (!this.editingProduct.images) this.editingProduct.images = [];
+        if (!this.editingProduct.images.includes(result)) {
+          this.editingProduct.images.unshift(result);
+        }
+      }
+      this.cdr.detectChanges();
     }
   }
 
-  onMultipleFilesSelected(event: Event, targetForm: 'new' | 'edit'): void {
+  async onMultipleFilesSelected(event: Event, targetForm: 'new' | 'edit'): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       const filesArr = Array.from(input.files);
-      filesArr.forEach((file) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          if (targetForm === 'new') {
-            if (!this.newProduct.images) this.newProduct.images = [];
-            this.newProduct.images.push(result);
-            if (!this.newProduct.image || this.newProduct.image === '/assets/images/placeholder-rings.svg') {
-              this.newProduct.image = result;
-            }
-          } else if (this.editingProduct) {
-            if (!this.editingProduct.images) this.editingProduct.images = [];
-            this.editingProduct.images.push(result);
-            if (!this.editingProduct.image || this.editingProduct.image === '/assets/images/placeholder-rings.svg') {
-              this.editingProduct.image = result;
-            }
+      for (const file of filesArr) {
+        const result = await compressAndConvertToWebP(file, 1400, 1400, 0.85);
+        if (targetForm === 'new') {
+          if (!this.newProduct.images) this.newProduct.images = [];
+          this.newProduct.images.push(result);
+          if (!this.newProduct.image || this.newProduct.image === '/assets/images/placeholder-rings.svg') {
+            this.newProduct.image = result;
           }
-          this.cdr.detectChanges();
-        };
-        reader.readAsDataURL(file);
-      });
+        } else if (this.editingProduct) {
+          if (!this.editingProduct.images) this.editingProduct.images = [];
+          this.editingProduct.images.push(result);
+          if (!this.editingProduct.image || this.editingProduct.image === '/assets/images/placeholder-rings.svg') {
+            this.editingProduct.image = result;
+          }
+        }
+      }
       input.value = '';
+      this.cdr.detectChanges();
     }
   }
 
@@ -4348,46 +4349,70 @@ export class AdminComponent implements OnInit {
       specifications: specsList
     };
     this.editSuccessMessage = '';
+    this.editProductErrorMessage = '';
     this.editSystemFileName = '';
   }
 
   closeEditModal(): void {
     this.editingProduct = null;
     this.editSuccessMessage = '';
+    this.editProductErrorMessage = '';
     this.editSystemFileName = '';
   }
 
   async updateProduct(event: Event): Promise<void> {
     event.preventDefault();
     if (!this.editingProduct) return;
+    this.editProductErrorMessage = '';
 
     if (!this.editingProduct.name || !this.editingProduct.name.trim()) {
-      this.showToast('Product Name is mandatory.', 'error');
+      const msg = 'Product Name is mandatory.';
+      this.editProductErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.editingProduct.category || !this.editingProduct.category.trim()) {
-      this.showToast('Category selection is mandatory.', 'error');
+      const msg = 'Category selection is mandatory.';
+      this.editProductErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.editingProduct.price || Number(this.editingProduct.price) <= 0) {
-      this.showToast('Valid Product Price is mandatory.', 'error');
+      const msg = 'Valid Product Price is mandatory.';
+      this.editProductErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (this.isPriceGreaterThanCompareAt(this.editingProduct.price, this.editingProduct.compareAtPrice)) {
-      this.showToast('Product Price (₹ INR) cannot be greater than Compare-At Price (₹ INR).', 'error');
+      const msg = 'Product Price (₹ INR) cannot be greater than Compare-At Price (₹ INR).';
+      this.editProductErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (this.editingProduct.stockQuantity === '' || this.editingProduct.stockQuantity === null || this.editingProduct.stockQuantity === undefined || Number(this.editingProduct.stockQuantity) < 0) {
-      this.showToast('Stock Quantity is mandatory.', 'error');
+      const msg = 'Stock Quantity is mandatory.';
+      this.editProductErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     const hasImage = (this.editingProduct.image && this.editingProduct.image.trim() !== '') || (this.editingProduct.images && this.editingProduct.images.length > 0);
     if (!hasImage) {
-      this.showToast('Product Image is mandatory.', 'error');
+      const msg = 'Product Image is mandatory.';
+      this.editProductErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.editingProduct.description || !this.editingProduct.description.trim()) {
-      this.showToast('Product Description is mandatory.', 'error');
+      const msg = 'Product Description is mandatory.';
+      this.editProductErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
 
@@ -4502,40 +4527,65 @@ export class AdminComponent implements OnInit {
 
     // SHOW API RESPONSE AS TOAST NOTIFICATION
     this.showToast(notificationMsg, isSuccess ? 'success' : 'error');
+    this.loadAdminProducts();
+    this.loadAdminCategories();
+    this.cdr.detectChanges();
   }
 
   async saveProduct(event: Event): Promise<void> {
     event.preventDefault();
 
     if (this.isSavingProduct) return;
+    this.productErrorMessage = '';
 
     if (!this.newProduct.name || !this.newProduct.name.trim()) {
-      this.showToast('Product Name is mandatory.', 'error');
+      const msg = 'Product Name is mandatory.';
+      this.productErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.newProduct.category || !this.newProduct.category.trim()) {
-      this.showToast('Category selection is mandatory.', 'error');
+      const msg = 'Category selection is mandatory.';
+      this.productErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.newProduct.price || Number(this.newProduct.price) <= 0) {
-      this.showToast('Valid Product Price is mandatory.', 'error');
+      const msg = 'Valid Product Price is mandatory.';
+      this.productErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (this.isPriceGreaterThanCompareAt(this.newProduct.price, this.newProduct.compareAtPrice)) {
-      this.showToast('Product Price (₹ INR) cannot be greater than Compare-At Price (₹ INR).', 'error');
+      const msg = 'Product Price (₹ INR) cannot be greater than Compare-At Price (₹ INR).';
+      this.productErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (this.newProduct.stockQuantity === '' || this.newProduct.stockQuantity === null || this.newProduct.stockQuantity === undefined || Number(this.newProduct.stockQuantity) < 0) {
-      this.showToast('Stock Quantity is mandatory.', 'error');
+      const msg = 'Stock Quantity is mandatory.';
+      this.productErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     const hasImage = (this.newProduct.image && this.newProduct.image.trim() !== '') || (this.newProduct.images && this.newProduct.images.length > 0);
     if (!hasImage) {
-      this.showToast('Product Image is mandatory.', 'error');
+      const msg = 'Product Image is mandatory.';
+      this.productErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.newProduct.description || !this.newProduct.description.trim()) {
-      this.showToast('Product Description is mandatory.', 'error');
+      const msg = 'Product Description is mandatory.';
+      this.productErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
 
@@ -4584,8 +4634,11 @@ export class AdminComponent implements OnInit {
           this.closeAddProductModal();
           this.showToast(`Jewellery creation "${createdName}" published to catalog!`, 'success');
           this.loadAdminProducts();
+          this.loadAdminCategories();
         } else {
-          this.showToast(res?.message || 'Failed to create product in database.', 'error');
+          const msg = res?.message || 'Failed to create product in database.';
+          this.productErrorMessage = msg;
+          this.showToast(msg, 'error');
         }
         this.cdr.detectChanges();
       },
@@ -4598,6 +4651,7 @@ export class AdminComponent implements OnInit {
           return;
         }
         const errorMsg = err.error?.message || (err.status === 0 ? 'Network error: Cannot reach the backend server. Please verify your connection.' : 'Failed to publish product to database.');
+        this.productErrorMessage = errorMsg;
         this.showToast(errorMsg, 'error');
         this.cdr.detectChanges();
       }
@@ -4826,6 +4880,8 @@ export class AdminComponent implements OnInit {
       this.products = this.products.filter(p => String(p.id) !== targetStr);
       this.mockDataService.deleteProduct(id);
       this.showToast(`Jewellery product "${name}" deleted from catalog.`, 'success');
+      this.loadAdminProducts();
+      this.loadAdminCategories();
       this.cdr.detectChanges();
     } else if (type === 'category') {
       const cat = this.categories.find(c => String(c.id) === targetStr || c.slug === targetStr);
@@ -4871,6 +4927,7 @@ export class AdminComponent implements OnInit {
 
       this.categories = this.categories.filter(c => String(c.id) !== targetStr && c.slug !== targetStr);
       this.showToast(`Category "${catName}" removed from catalog.`, 'success');
+      this.loadAdminCategories();
       this.cdr.detectChanges();
     } else if (type === 'user') {
       try {
@@ -4914,16 +4971,13 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  onCategoryFileSelected(event: Event): void {
+  async onCategoryFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
       this.newCategoryFileName = file.name;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.newCategory.image = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      this.newCategory.image = await compressAndConvertToWebP(file, 1200, 1200, 0.85);
+      this.cdr.detectChanges();
     }
   }
 
@@ -4934,18 +4988,26 @@ export class AdminComponent implements OnInit {
 
     if (!this.newCategory.name || !this.newCategory.name.trim()) {
       this.categoryErrorMessage = 'Category Name is mandatory.';
+      this.showToast(this.categoryErrorMessage, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.newCategory.slug || !this.newCategory.slug.trim()) {
       this.categoryErrorMessage = 'Category Slug is mandatory.';
+      this.showToast(this.categoryErrorMessage, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.newCategory.image || !this.newCategory.image.trim()) {
       this.categoryErrorMessage = 'Category Image is mandatory.';
+      this.showToast(this.categoryErrorMessage, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.newCategory.description || !this.newCategory.description.trim()) {
       this.categoryErrorMessage = 'Category Description is mandatory.';
+      this.showToast(this.categoryErrorMessage, 'error');
+      this.cdr.detectChanges();
       return;
     }
 
@@ -4960,6 +5022,8 @@ export class AdminComponent implements OnInit {
     if (isDuplicate) {
       const errMsg = `Category "${this.newCategory.name.trim()}" already exists. Cannot add duplicate categories.`;
       this.categoryErrorMessage = errMsg;
+      this.showToast(errMsg, 'error');
+      this.cdr.detectChanges();
       return;
     }
 
@@ -4970,7 +5034,6 @@ export class AdminComponent implements OnInit {
       image: this.newCategory.image.trim()
     };
 
-    let createdCatId: any = null;
     try {
       const token = this.authService.getToken();
       const res = await fetch(API_ENDPOINTS.ADMIN.CATEGORIES, {
@@ -4986,32 +5049,25 @@ export class AdminComponent implements OnInit {
       if (!res.ok || (data && data.success === false)) {
         const errMsg = data?.message || `Category "${this.newCategory.name.trim()}" already exists.`;
         this.categoryErrorMessage = errMsg;
+        this.showToast(errMsg, 'error');
+        this.cdr.detectChanges();
         return;
       }
-      if (data && data.data && data.data.id) {
-        createdCatId = data.data.id;
-      }
-    } catch (err) {
-      // Offline fallback
-    }
 
-    try {
-      const added = this.mockDataService.addCategory({
-        ...payload,
-        id: createdCatId || undefined,
-        featured: true
-      });
-
-      const catName = added.name;
+      const catName = payload.name;
       this.closeAddCategoryModal();
       this.showToast(`Category "${catName}" published successfully!`, 'success');
+      this.loadAdminCategories();
+      this.cdr.detectChanges();
     } catch (err: any) {
-      const errMsg = err.message || `Category "${this.newCategory.name.trim()}" already exists.`;
+      const errMsg = err?.message || 'Failed to create category. Please verify your connection.';
       this.categoryErrorMessage = errMsg;
+      this.showToast(errMsg, 'error');
     }
   }
 
   openAddCategoryModal(): void {
+    this.loadAdminCategories();
     this.resetAddCategoryForm();
     this.showAddCategoryModal = true;
   }
@@ -5034,6 +5090,7 @@ export class AdminComponent implements OnInit {
   }
 
   openAddProductModal(): void {
+    this.loadAdminCategories();
     this.resetAddProductForm();
     this.showAddProductModal = true;
   }
@@ -5065,6 +5122,7 @@ export class AdminComponent implements OnInit {
     };
     this.newSystemFileName = '';
     this.successMessage = '';
+    this.productErrorMessage = '';
   }
 
   openCreateAdminModal(): void {
@@ -5124,6 +5182,8 @@ export class AdminComponent implements OnInit {
 
     this.categories = this.categories.filter(c => String(c.id) !== targetStr && c.slug !== targetStr);
     this.showToast(`Category "${name}" removed from catalog.`, 'success');
+    this.loadAdminCategories();
+    this.cdr.detectChanges();
   }
 
   editCategory(category: Category): void {
@@ -5137,12 +5197,14 @@ export class AdminComponent implements OnInit {
     };
     this.editCategoryFileName = '';
     this.editCategorySuccessMessage = '';
+    this.editCategoryErrorMessage = '';
   }
 
   closeEditCategoryModal(): void {
     this.editingCategory = null;
     this.editCategoryFileName = '';
     this.editCategorySuccessMessage = '';
+    this.editCategoryErrorMessage = '';
   }
 
   onEditCategoryNameChange(name: string): void {
@@ -5164,37 +5226,47 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  onEditCategoryFileSelected(event: Event): void {
+  async onEditCategoryFileSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0] && this.editingCategory) {
       const file = input.files[0];
       this.editCategoryFileName = file.name;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        this.editingCategory.image = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
+      this.editingCategory.image = await compressAndConvertToWebP(file, 1200, 1200, 0.85);
+      this.cdr.detectChanges();
     }
   }
 
   async updateCategory(event: Event): Promise<void> {
     event.preventDefault();
     if (!this.editingCategory) return;
+    this.editCategoryErrorMessage = '';
 
     if (!this.editingCategory.name || !this.editingCategory.name.trim()) {
-      this.showToast('Category Name is mandatory.', 'error');
+      const msg = 'Category Name is mandatory.';
+      this.editCategoryErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.editingCategory.slug || !this.editingCategory.slug.trim()) {
-      this.showToast('Category Slug is mandatory.', 'error');
+      const msg = 'Category Slug is mandatory.';
+      this.editCategoryErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.editingCategory.image || !this.editingCategory.image.trim()) {
-      this.showToast('Category Image is mandatory.', 'error');
+      const msg = 'Category Image is mandatory.';
+      this.editCategoryErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
     if (!this.editingCategory.description || !this.editingCategory.description.trim()) {
-      this.showToast('Category Description is mandatory.', 'error');
+      const msg = 'Category Description is mandatory.';
+      this.editCategoryErrorMessage = msg;
+      this.showToast(msg, 'error');
+      this.cdr.detectChanges();
       return;
     }
 
@@ -5208,7 +5280,9 @@ export class AdminComponent implements OnInit {
 
     if (isDuplicate) {
       const errMsg = `Category "${this.editingCategory.name.trim()}" already exists. Cannot update with duplicate name or slug.`;
+      this.editCategoryErrorMessage = errMsg;
       this.showToast(errMsg, 'error');
+      this.cdr.detectChanges();
       return;
     }
 
@@ -5234,7 +5308,9 @@ export class AdminComponent implements OnInit {
       if (this.checkAuthError(res, data)) return;
       if (!res.ok || (data && data.success === false)) {
         const errMsg = data?.message || 'Category update failed.';
+        this.editCategoryErrorMessage = errMsg;
         this.showToast(errMsg, 'error');
+        this.cdr.detectChanges();
         return;
       }
     } catch (err) {
@@ -5254,6 +5330,8 @@ export class AdminComponent implements OnInit {
     const name = this.editingCategory.name;
     this.closeEditCategoryModal();
     this.showToast(`Category "${name}" updated successfully!`, 'success');
+    this.loadAdminCategories();
+    this.cdr.detectChanges();
   }
 
   clearCategoryFile(targetForm: 'new' | 'edit'): void {

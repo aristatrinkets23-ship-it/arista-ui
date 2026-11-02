@@ -28,7 +28,7 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
 
         <!-- Brand Logo (Unified Emblem + Brand Mark) -->
         <a routerLink="/" class="brand-logo" aria-label="Arista Trinkets Home">
-          <img src="/assets/images/full-logo-transparent.png" alt="Arista Trinkets Fine Jewellery" class="brand-logo-img" width="168" height="52" ngSkipOversizedImageWarning />
+          <img src="/assets/images/full-logo-transparent.webp" alt="Arista Trinkets Fine Jewellery" class="brand-logo-img" width="168" height="52" ngSkipOversizedImageWarning />
         </a>
 
         <!-- Desktop Navigation Bar -->
@@ -79,7 +79,7 @@ import { ProductCardData } from '../../core/models/product-card-data.model';
     <div class="mobile-drawer" [class.open]="isMobileNavOpen">
       <div class="drawer-header">
         <a routerLink="/" (click)="toggleMobileNav()" class="drawer-logo" aria-label="Arista Trinkets Home">
-          <img src="/assets/images/full-logo-transparent.png" alt="Arista Trinkets Fine Jewellery" class="drawer-logo-img" width="140" height="44" ngSkipOversizedImageWarning />
+          <img src="/assets/images/full-logo-transparent.webp" alt="Arista Trinkets Fine Jewellery" class="drawer-logo-img" width="140" height="44" ngSkipOversizedImageWarning />
         </a>
         <button type="button" class="close-btn" (click)="toggleMobileNav()" aria-label="Close menu">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

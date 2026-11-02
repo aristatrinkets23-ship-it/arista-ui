@@ -41,7 +41,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
           </p>
         </div>
         <div class="story-image-box animate-slide-right">
-          <img src="/assets/images/about-heritage-artisan.jpg" alt="Arista Fine Jewellery Collection Box" class="story-img" />
+          <img src="/assets/images/about-heritage-artisan.webp" alt="Arista Fine Jewellery Collection Box" class="story-img" />
           <div class="story-img-badge">
             <span class="badge-number">100%</span>
             <span class="badge-text">Demi Fine & Anti-Tarnish</span>
@@ -264,7 +264,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
     /* About Hero Styling */
     .about-hero {
       position: relative;
-      background-image: url('/assets/images/hero-about.jpg');
+      background-image: url('/assets/images/hero-about.webp');
       background-size: cover;
       background-position: center right;
       background-repeat: no-repeat;
@@ -431,7 +431,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
     .heritage-parallax-bg {
       position: absolute;
       inset: -90px;
-      background-image: url('/assets/images/heritage-banner-bg.png');
+      background-image: url('/assets/images/heritage-banner-bg.webp');
       background-size: cover;
       background-position: center center;
       background-repeat: no-repeat;

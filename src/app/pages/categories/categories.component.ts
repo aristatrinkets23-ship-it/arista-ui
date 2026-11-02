@@ -67,7 +67,7 @@ import { ChangeDetectorRef } from '@angular/core';
   styles: [`
     .cat-hero {
       position: relative;
-      background-image: url('/assets/images/hero-categories.jpg');
+      background-image: url('/assets/images/hero-categories.webp');
       background-size: cover;
       background-position: center right;
       background-repeat: no-repeat;
