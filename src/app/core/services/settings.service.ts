@@ -15,16 +15,16 @@ export interface StoreSettings {
   invoicePrefix: string;
 }
 
-const DEFAULT_SETTINGS: StoreSettings = {
-  gstNumber: '24AAACA1234A1Z5',
-  gstPercentage: 3.0,
-  deliveryCharge: 50.0,
-  freeDeliveryThreshold: 600.0,
-  companyName: 'Arista Trinkets',
-  companyAddress: 'Studio 101, Jewel Arcade, Near City Centre, Surat, Gujarat - 395001',
-  companyPhone: '9016134899',
-  companyEmail: 'info@aristatrinkets.com',
-  companyTiming: 'Mon – Sat: 10:00 AM – 7:00 PM IST',
+const INITIAL_SETTINGS: StoreSettings = {
+  gstNumber: '',
+  gstPercentage: 0,
+  deliveryCharge: 0,
+  freeDeliveryThreshold: 0,
+  companyName: '',
+  companyAddress: '',
+  companyPhone: '',
+  companyEmail: '',
+  companyTiming: '',
   invoicePrefix: 'INV-'
 };
 
@@ -32,7 +32,7 @@ const DEFAULT_SETTINGS: StoreSettings = {
   providedIn: 'root'
 })
 export class SettingsService {
-  private settingsSubject = new BehaviorSubject<StoreSettings>(DEFAULT_SETTINGS);
+  private settingsSubject = new BehaviorSubject<StoreSettings>(INITIAL_SETTINGS);
   public settings$: Observable<StoreSettings> = this.settingsSubject.asObservable();
 
   constructor() {
@@ -50,27 +50,23 @@ export class SettingsService {
         const json = await res.json();
         if (json && json.success && json.data) {
           const loaded: StoreSettings = {
-            gstNumber: json.data.gstNumber || DEFAULT_SETTINGS.gstNumber,
-            gstPercentage: Number(json.data.gstPercentage) || DEFAULT_SETTINGS.gstPercentage,
-            deliveryCharge: Number(json.data.deliveryCharge) !== undefined && !isNaN(Number(json.data.deliveryCharge))
-              ? Number(json.data.deliveryCharge)
-              : DEFAULT_SETTINGS.deliveryCharge,
-            freeDeliveryThreshold: Number(json.data.freeDeliveryThreshold) !== undefined && !isNaN(Number(json.data.freeDeliveryThreshold))
-              ? Number(json.data.freeDeliveryThreshold)
-              : DEFAULT_SETTINGS.freeDeliveryThreshold,
-            companyName: json.data.companyName || DEFAULT_SETTINGS.companyName,
-            companyAddress: json.data.companyAddress || DEFAULT_SETTINGS.companyAddress,
-            companyPhone: json.data.companyPhone || DEFAULT_SETTINGS.companyPhone,
-            companyEmail: json.data.companyEmail || DEFAULT_SETTINGS.companyEmail,
-            companyTiming: json.data.companyTiming || DEFAULT_SETTINGS.companyTiming,
-            invoicePrefix: json.data.invoicePrefix || DEFAULT_SETTINGS.invoicePrefix
+            gstNumber: json.data.gstNumber ?? '',
+            gstPercentage: Number(json.data.gstPercentage ?? 0),
+            deliveryCharge: Number(json.data.deliveryCharge ?? 0),
+            freeDeliveryThreshold: Number(json.data.freeDeliveryThreshold ?? 0),
+            companyName: json.data.companyName ?? '',
+            companyAddress: json.data.companyAddress ?? '',
+            companyPhone: json.data.companyPhone ?? '',
+            companyEmail: json.data.companyEmail ?? '',
+            companyTiming: json.data.companyTiming ?? '',
+            invoicePrefix: json.data.invoicePrefix ?? 'INV-'
           };
           this.settingsSubject.next(loaded);
           return loaded;
         }
       }
     } catch (err) {
-      // Safe fallback to default settings if backend network glitch
+      console.error('Failed to fetch live settings from backend:', err);
     }
     return this.currentSettings;
   }

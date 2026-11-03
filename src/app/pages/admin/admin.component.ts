@@ -888,7 +888,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                     <input
                       type="text"
                       [(ngModel)]="storeSettingsForm.company_phone"
-                      placeholder="+91 90161 34899"
+                      placeholder="+91 1234567890"
                     />
                   </div>
                   <div class="form-group">
@@ -3341,15 +3341,15 @@ export class AdminComponent implements OnInit {
   activeTab: 'products' | 'add-product' | 'categories' | 'add-category' | 'orders' | 'credentials' | 'homepage-photos' | 'settings' = 'categories';
 
   storeSettingsForm = {
-    gst_number: '24AAACA1234A1Z5',
-    gst_percentage: 3.0,
-    delivery_charge: 50.0,
-    free_delivery_threshold: 600.0,
-    company_name: 'Arista Trinkets',
-    company_address: 'Studio 101, Jewel Arcade, Near City Centre, Surat, Gujarat - 395001',
-    company_phone: '9016134899',
-    company_email: 'info@aristatrinkets.com',
-    company_timing: 'Mon – Sat: 10:00 AM – 7:00 PM IST',
+    gst_number: '',
+    gst_percentage: 0,
+    delivery_charge: 0,
+    free_delivery_threshold: 0,
+    company_name: '',
+    company_address: '',
+    company_phone: '',
+    company_email: '',
+    company_timing: '',
     invoice_prefix: 'INV-'
   };
   isLoadingSettings: boolean = false;
@@ -3955,17 +3955,18 @@ export class AdminComponent implements OnInit {
       const data = await res.json();
       if (this.checkAuthError(res, data)) return;
       if (data && data.success && data.data) {
+        const d = data.data;
         this.storeSettingsForm = {
-          gst_number: data.data.gst_number || '24AAACA1234A1Z5',
-          gst_percentage: Number(data.data.gst_percentage) !== undefined ? Number(data.data.gst_percentage) : 3.0,
-          delivery_charge: Number(data.data.delivery_charge) !== undefined ? Number(data.data.delivery_charge) : 50.0,
-          free_delivery_threshold: Number(data.data.free_delivery_threshold) !== undefined ? Number(data.data.free_delivery_threshold) : 600.0,
-          company_name: data.data.company_name || data.data.companyName || 'Arista Trinkets',
-          company_address: data.data.company_address || data.data.companyAddress || 'Studio 101, Jewel Arcade, Near City Centre, Surat, Gujarat - 395001',
-          company_phone: data.data.company_phone || data.data.companyPhone || '9016134899',
-          company_email: data.data.company_email || data.data.companyEmail || 'info@aristatrinkets.com',
-          company_timing: data.data.company_timing || data.data.companyTiming || 'Mon – Sat: 10:00 AM – 7:00 PM IST',
-          invoice_prefix: data.data.invoice_prefix || data.data.invoicePrefix || 'INV-'
+          gst_number: d.gst_number ?? d.gstNumber ?? '',
+          gst_percentage: Number(d.gst_percentage ?? d.gstPercentage ?? 0),
+          delivery_charge: Number(d.delivery_charge ?? d.deliveryCharge ?? 0),
+          free_delivery_threshold: Number(d.free_delivery_threshold ?? d.freeDeliveryThreshold ?? 0),
+          company_name: d.company_name ?? d.companyName ?? '',
+          company_address: d.company_address ?? d.companyAddress ?? '',
+          company_phone: d.company_phone ?? d.companyPhone ?? '',
+          company_email: d.company_email ?? d.companyEmail ?? '',
+          company_timing: d.company_timing ?? d.companyTiming ?? '',
+          invoice_prefix: d.invoice_prefix ?? d.invoicePrefix ?? 'INV-'
         };
         this.validateGstinInput();
       }
@@ -3997,18 +3998,43 @@ export class AdminComponent implements OnInit {
     this.isSavingSettings = true;
     try {
       const token = this.authService.getToken();
+      const payload = {
+        gst_number: (this.storeSettingsForm.gst_number || '').trim(),
+        gst_percentage: Number(this.storeSettingsForm.gst_percentage),
+        delivery_charge: Number(this.storeSettingsForm.delivery_charge),
+        free_delivery_threshold: Number(this.storeSettingsForm.free_delivery_threshold),
+        company_name: (this.storeSettingsForm.company_name || '').trim(),
+        company_address: (this.storeSettingsForm.company_address || '').trim(),
+        company_phone: (this.storeSettingsForm.company_phone || '').trim(),
+        company_email: (this.storeSettingsForm.company_email || '').trim(),
+        company_timing: (this.storeSettingsForm.company_timing || '').trim(),
+        invoice_prefix: (this.storeSettingsForm.invoice_prefix || 'INV-').trim()
+      };
+
       const res = await fetch(API_ENDPOINTS.ADMIN.SETTINGS, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(this.storeSettingsForm)
+        body: JSON.stringify(payload)
       });
       const data = await res.json();
       if (this.checkAuthError(res, data)) return;
       if (data && data.success) {
         this.showToast('Settings saved successfully! Changes are now live.', 'success');
+        this.settingsService.updateLocalSettings({
+          companyPhone: payload.company_phone,
+          companyEmail: payload.company_email,
+          companyAddress: payload.company_address,
+          companyName: payload.company_name,
+          companyTiming: payload.company_timing,
+          deliveryCharge: payload.delivery_charge,
+          freeDeliveryThreshold: payload.free_delivery_threshold,
+          gstPercentage: payload.gst_percentage,
+          gstNumber: payload.gst_number,
+          invoicePrefix: payload.invoice_prefix
+        });
         this.settingsService.fetchSettings();
       } else {
         this.showToast(data?.message || 'Failed to save settings.', 'error');
