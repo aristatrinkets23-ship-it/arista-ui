@@ -1169,9 +1169,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             ></textarea>
           </div>
 
-          <!-- COMPLIMENTARY SHIPPING & RETURNS -->
+          <!-- INSURED SHIPPING & EXCHANGE INFO -->
           <div class="form-group" style="margin-top: 14px;">
-            <label>Complimentary Shipping & Returns Info</label>
+            <label>Insured Shipping & Exchange Info</label>
             <textarea
               rows="3"
               [(ngModel)]="editingProduct.shippingInfo"
@@ -1458,9 +1458,9 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             ></textarea>
           </div>
 
-          <!-- COMPLIMENTARY SHIPPING & RETURNS -->
+          <!-- INSURED SHIPPING & EXCHANGE INFO -->
           <div class="form-group" style="margin-top: 14px;">
-            <label>Complimentary Shipping & Returns Info</label>
+            <label>Insured Shipping & Exchange Info</label>
             <textarea
               rows="3"
               [(ngModel)]="newProduct.shippingInfo"

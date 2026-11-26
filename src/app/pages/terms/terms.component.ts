@@ -69,9 +69,9 @@ import { SettingsService } from '../../core/services/settings.service';
           <div class="policy-block">
             <span class="policy-num">05</span>
             <div class="policy-content">
-              <h3>30-Day Returns & Care Guarantee</h3>
+              <h3>7-Day Exchange & Quality Guarantee</h3>
               <p>
-                We stand firmly behind the excellence of our craft. If your jewel does not meet your expectations, we offer a complimentary 30-day return or exchange period for unworn pieces accompanied by the original tamper-evident security tag and certificate.
+                We stand firmly behind the excellence of our craft. If your jewel arrives damaged or does not meet your expectations, we offer an easy 7-day exchange period for unworn pieces accompanied by the original tamper-evident security tag and certificate.
               </p>
               <p>
                 Custom bespoke engravings or personalized pieces may be subject to individual appraisal terms.

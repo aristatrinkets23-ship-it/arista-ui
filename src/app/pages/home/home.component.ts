@@ -87,8 +87,8 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                   <polyline points="9 12 11 14 15 10"></polyline>
                 </svg>
               </div>
-              <span class="hero-feature-title">LIFETIME</span>
-              <span class="hero-feature-sub">Warranty Included</span>
+              <span class="hero-feature-title">CERTIFIED</span>
+              <span class="hero-feature-sub">Quality Assured</span>
             </div>
 
             <div class="hero-feature-item">
@@ -115,8 +115,8 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                 <circle cx="18.5" cy="18.5" r="2.5"></circle>
               </svg>
               <div>
-                <span>FREE SHIPPING</span>
-                <span class="hero-trust-sub">On Every Order</span>
+                <span>INSURED SHIPPING</span>
+                <span class="hero-trust-sub">Pan-India Delivery</span>
               </div>
             </div>
 
@@ -126,8 +126,8 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                 <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
               </svg>
               <div>
-                <span>30-DAY RETURNS</span>
-                <span class="hero-trust-sub">No Questions Asked</span>
+                <span>EASY EXCHANGE</span>
+                <span class="hero-trust-sub">Hassle-Free Support</span>
               </div>
             </div>
 
@@ -178,7 +178,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
               <polyline points="1 4 1 10 7 10"></polyline>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
             </svg>
-            EASY 30-DAY RETURNS
+            EASY EXCHANGE POLICY
           </span>
           <span class="marquee-sep">|</span>
         </div>
@@ -211,7 +211,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
               <polyline points="1 4 1 10 7 10"></polyline>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
             </svg>
-            EASY 30-DAY RETURNS
+            EASY EXCHANGE POLICY
           </span>
           <span class="marquee-sep">|</span>
         </div>
@@ -2630,7 +2630,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     },
     {
       question: 'What is your return and exchange policy?',
-      answer: 'We offer a hassle-free 30-day money-back guarantee and complimentary exchanges on all unworn items in their original packaging.',
+      answer: 'We offer an easy 7-day exchange policy for unworn jewellery in its original packaging with security tags intact. If you have any sizing or quality queries, our atelier concierge is always here to assist you.',
       isOpen: false
     },
     {

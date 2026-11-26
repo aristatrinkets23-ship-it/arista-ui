@@ -179,7 +179,7 @@ import { ButtonComponent } from '../../shared/components/button/button.component
             </div>
             <h3 class="pillar-title">Timeless Longevity</h3>
             <p class="pillar-desc">
-              Heirloom-grade craftsmanship designed to be cherished across generations with lifetime polishing support.
+              Heirloom-grade craftsmanship designed to be cherished across generations with dedicated atelier care and maintenance support.
             </p>
           </div>
         </div>

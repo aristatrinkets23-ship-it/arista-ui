@@ -210,7 +210,7 @@ import { ChangeDetectorRef } from '@angular/core';
 
               <div class="acc-item" [class.active]="openAcc === 'ship'">
                 <button type="button" class="acc-header" (click)="toggleAcc('ship')">
-                  <span>Complimentary Shipping & Returns</span>
+                  <span>Insured Shipping & Easy Exchange</span>
                   <span class="acc-icon">+</span>
                 </button>
                 <div class="acc-wrapper" [class.open]="openAcc === 'ship'">
