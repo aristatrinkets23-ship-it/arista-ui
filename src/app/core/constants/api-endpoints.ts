@@ -69,6 +69,8 @@ export const API_ENDPOINTS = {
     CATEGORY_BY_ID: (id: string | number) => `${BASE_URL}/admin/categories/${id}`,
     ORDER_STATUS: (id: string | number) => `${BASE_URL}/admin/orders/${id}/status`,
     ORDER_PAYMENT_STATUS: (id: string | number) => `${BASE_URL}/admin/orders/${id}/payment-status`,
-    SETTINGS: `${BASE_URL}/admin/settings`
+    SETTINGS: `${BASE_URL}/admin/settings`,
+    UPLOAD_IMAGE: `${BASE_URL}/admin/upload-image`,
+    STORAGE_STATUS: `${BASE_URL}/admin/upload-status`
   }
 };

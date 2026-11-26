@@ -4055,7 +4055,7 @@ export class AdminComponent implements OnInit {
   async onEditorialPhotoSelected(event: Event): Promise<void> {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file) {
-      this.newEditorialPhotoPreview = await compressAndConvertToWebP(file, 1600, 1600, 0.85);
+      this.newEditorialPhotoPreview = await compressAndConvertToWebP(file, 1200, 1200, 0.84);
       this.cdr.detectChanges();
     }
   }
@@ -4069,9 +4069,9 @@ export class AdminComponent implements OnInit {
     return false;
   }
 
-  saveEditorialPhoto(): void {
-    const photoToSave = this.newEditorialPhotoPreview || this.homepageEditorialPhoto;
-    if (!photoToSave) return;
+  async saveEditorialPhoto(): Promise<void> {
+    const rawPhoto = this.newEditorialPhotoPreview || this.homepageEditorialPhoto;
+    if (!rawPhoto) return;
 
     this.isSavingHomepagePhoto = true;
     this.homepageSaveSuccess = '';
@@ -4085,6 +4085,8 @@ export class AdminComponent implements OnInit {
       this.router.navigate(['/admin/login'], { queryParams: { reason: 'session_expired' } });
       return;
     }
+
+    const photoToSave = await this.uploadImageToBackend(rawPhoto, 'banners');
 
     fetch(API_ENDPOINTS.ADMIN.HOMEPAGE_CONFIG, {
       method: 'PUT',
@@ -4166,28 +4168,71 @@ export class AdminComponent implements OnInit {
     }
   }
 
+  async uploadImageToBackend(base64Data: string, folder: string = 'products'): Promise<string> {
+    if (!base64Data || !base64Data.startsWith('data:image')) {
+      return base64Data;
+    }
+    const token = this.authService.getToken() || localStorage.getItem('arista_auth_token') || '';
+    if (!token) return base64Data;
+
+    try {
+      const res = await fetch(API_ENDPOINTS.ADMIN.UPLOAD_IMAGE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ image: base64Data, folder })
+      });
+      const data = await res.json();
+      if (data && data.success && data.data && data.data.url) {
+        return data.data.url;
+      }
+    } catch (err) {
+      console.warn('Backend image upload fallback to local WebP data URL:', err);
+    }
+    return base64Data;
+  }
+
   async onFileSelected(event: Event, targetForm: 'new' | 'edit'): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
       const fileName = file.name;
-      const result = await compressAndConvertToWebP(file, 1400, 1400, 0.85);
+      const previewResult = await compressAndConvertToWebP(file, 1100, 1100, 0.82);
       if (targetForm === 'new') {
-        this.newProduct.image = result;
+        this.newProduct.image = previewResult;
         this.newSystemFileName = fileName;
         if (!this.newProduct.images) this.newProduct.images = [];
-        if (!this.newProduct.images.includes(result)) {
-          this.newProduct.images.unshift(result);
+        if (!this.newProduct.images.includes(previewResult)) {
+          this.newProduct.images.unshift(previewResult);
         }
       } else if (this.editingProduct) {
-        this.editingProduct.image = result;
+        this.editingProduct.image = previewResult;
         this.editSystemFileName = fileName;
         if (!this.editingProduct.images) this.editingProduct.images = [];
-        if (!this.editingProduct.images.includes(result)) {
-          this.editingProduct.images.unshift(result);
+        if (!this.editingProduct.images.includes(previewResult)) {
+          this.editingProduct.images.unshift(previewResult);
         }
       }
       this.cdr.detectChanges();
+
+      // Persist to CDN / static storage in background
+      const uploadedUrl = await this.uploadImageToBackend(previewResult, 'products');
+      if (uploadedUrl && uploadedUrl !== previewResult) {
+        if (targetForm === 'new') {
+          this.newProduct.image = uploadedUrl;
+          if (this.newProduct.images) {
+            this.newProduct.images = this.newProduct.images.map((img: string) => img === previewResult ? uploadedUrl : img);
+          }
+        } else if (this.editingProduct) {
+          this.editingProduct.image = uploadedUrl;
+          if (this.editingProduct.images) {
+            this.editingProduct.images = this.editingProduct.images.map((img: string) => img === previewResult ? uploadedUrl : img);
+          }
+        }
+        this.cdr.detectChanges();
+      }
     }
   }
 
@@ -4196,20 +4241,34 @@ export class AdminComponent implements OnInit {
     if (input.files && input.files.length > 0) {
       const filesArr = Array.from(input.files);
       for (const file of filesArr) {
-        const result = await compressAndConvertToWebP(file, 1400, 1400, 0.85);
+        const previewResult = await compressAndConvertToWebP(file, 1100, 1100, 0.82);
         if (targetForm === 'new') {
           if (!this.newProduct.images) this.newProduct.images = [];
-          this.newProduct.images.push(result);
+          this.newProduct.images.push(previewResult);
           if (!this.newProduct.image || this.newProduct.image === '/assets/images/placeholder-rings.svg') {
-            this.newProduct.image = result;
+            this.newProduct.image = previewResult;
           }
         } else if (this.editingProduct) {
           if (!this.editingProduct.images) this.editingProduct.images = [];
-          this.editingProduct.images.push(result);
+          this.editingProduct.images.push(previewResult);
           if (!this.editingProduct.image || this.editingProduct.image === '/assets/images/placeholder-rings.svg') {
-            this.editingProduct.image = result;
+            this.editingProduct.image = previewResult;
           }
         }
+        this.cdr.detectChanges();
+
+        this.uploadImageToBackend(previewResult, 'products').then(uploadedUrl => {
+          if (uploadedUrl && uploadedUrl !== previewResult) {
+            if (targetForm === 'new' && this.newProduct.images) {
+              this.newProduct.images = this.newProduct.images.map((img: string) => img === previewResult ? uploadedUrl : img);
+              if (this.newProduct.image === previewResult) this.newProduct.image = uploadedUrl;
+            } else if (this.editingProduct && this.editingProduct.images) {
+              this.editingProduct.images = this.editingProduct.images.map((img: string) => img === previewResult ? uploadedUrl : img);
+              if (this.editingProduct.image === previewResult) this.editingProduct.image = uploadedUrl;
+            }
+            this.cdr.detectChanges();
+          }
+        });
       }
       input.value = '';
       this.cdr.detectChanges();
@@ -4968,8 +5027,16 @@ export class AdminComponent implements OnInit {
     if (input.files && input.files[0]) {
       const file = input.files[0];
       this.newCategoryFileName = file.name;
-      this.newCategory.image = await compressAndConvertToWebP(file, 1200, 1200, 0.85);
+      const preview = await compressAndConvertToWebP(file, 1000, 1000, 0.82);
+      this.newCategory.image = preview;
       this.cdr.detectChanges();
+
+      this.uploadImageToBackend(preview, 'categories').then(uploadedUrl => {
+        if (uploadedUrl && uploadedUrl !== preview) {
+          this.newCategory.image = uploadedUrl;
+          this.cdr.detectChanges();
+        }
+      });
     }
   }
 
@@ -5217,8 +5284,16 @@ export class AdminComponent implements OnInit {
     if (input.files && input.files[0] && this.editingCategory) {
       const file = input.files[0];
       this.editCategoryFileName = file.name;
-      this.editingCategory.image = await compressAndConvertToWebP(file, 1200, 1200, 0.85);
+      const preview = await compressAndConvertToWebP(file, 1000, 1000, 0.82);
+      this.editingCategory.image = preview;
       this.cdr.detectChanges();
+
+      this.uploadImageToBackend(preview, 'categories').then(uploadedUrl => {
+        if (uploadedUrl && uploadedUrl !== preview && this.editingCategory) {
+          this.editingCategory.image = uploadedUrl;
+          this.cdr.detectChanges();
+        }
+      });
     }
   }
 
