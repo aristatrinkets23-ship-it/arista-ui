@@ -205,78 +205,87 @@ import { CategoryService } from '../../core/services/category.service';
     .shop-toolbar {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 16px;
       justify-content: space-between;
-      align-items: center;
-      margin-bottom: 36px;
-      padding-bottom: 20px;
+      align-items: stretch;
+      margin-bottom: 32px;
+      padding-bottom: 18px;
       border-bottom: 1px solid var(--color-border);
     }
 
-    @media (min-width: 768px) {
+    @media (min-width: 900px) {
       .shop-toolbar {
         flex-direction: row;
+        align-items: flex-start;
       }
     }
 
     .filter-tabs {
       display: flex;
-      gap: 10px;
+      gap: 8px 10px;
       flex-wrap: wrap;
-      justify-content: center;
+      align-items: center;
+      justify-content: flex-start;
+      flex: 1;
     }
 
     .tab-btn {
       background-color: var(--brand-pearl-beige);
       color: var(--brand-mocha-brown);
       border: 1px solid var(--color-border);
-      padding: 10px 22px;
-      min-height: 44px;
+      padding: 8px 18px;
+      min-height: 38px;
       border-radius: var(--radius-full);
       font-family: var(--font-sans);
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       cursor: pointer;
-      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+      white-space: nowrap;
     }
 
     .tab-btn:hover {
       background-color: rgba(207, 168, 116, 0.2);
       border-color: var(--brand-warm-gold);
-      transform: translateY(-2px);
+      transform: translateY(-1px);
     }
 
     .tab-btn.active {
       background-color: var(--brand-warm-gold);
       color: var(--brand-mocha-brown);
       border-color: var(--brand-warm-gold);
-      box-shadow: 0 6px 18px rgba(207, 168, 116, 0.35);
-      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(207, 168, 116, 0.3);
+      transform: translateY(-1px);
     }
 
     .sort-wrapper {
       display: flex;
       align-items: center;
       gap: 10px;
+      flex-shrink: 0;
+      align-self: flex-start;
+      margin-top: 2px;
     }
 
     .sort-label {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 600;
       color: var(--brand-mocha-brown);
       text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
     }
 
     .sort-select {
-      padding: 10px 16px;
-      min-height: 44px;
+      padding: 8px 14px;
+      min-height: 38px;
       border: 1px solid var(--color-border);
       border-radius: var(--radius-sm);
       font-family: var(--font-sans);
-      font-size: 0.88rem;
+      font-size: 0.84rem;
       color: var(--brand-mocha-brown);
       background-color: #FFFFFF;
       cursor: pointer;

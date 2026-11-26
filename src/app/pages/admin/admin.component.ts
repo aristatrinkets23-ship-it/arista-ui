@@ -2,7 +2,6 @@ import { Component, OnInit, inject, ChangeDetectorRef, HostListener } from '@ang
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { MockDataService } from '../../core/mock/mock-data.service';
 import { ProductService } from '../../core/services/product.service';
 import { CategoryService, getDefaultCategoryImage } from '../../core/services/category.service';
 import { ProductCardData } from '../../core/models/product-card-data.model';
@@ -12,13 +11,14 @@ import { CartService } from '../../core/services/cart.service';
 import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 import { SettingsService } from '../../core/services/settings.service';
 import { compressAndConvertToWebP } from '../../core/utils/image-utils';
+import { AppDateTimePipe } from '../../shared/pipes/date-time.pipe';
 
 const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, AppDateTimePipe],
   template: `
     <!-- Admin Top Header Banner -->
     <section class="admin-hero">
@@ -456,7 +456,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   <th style="width: 85px; text-align: right;">Total</th>
                   <th style="width: 120px;">Fulfillment</th>
                   <th style="width: 105px;">Item Details</th>
-                  <th style="width: 115px;">Update Status</th>
+                  <th style="width: 145px; min-width: 145px; padding-right: 18px;">Update Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -477,7 +477,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   <td>
                     <strong class="order-no" style="font-size: 0.88rem; color: var(--brand-mocha-brown); display: block;">#{{ order.order_number || order.number }}</strong>
                     <span class="order-date" style="display: block; font-size: 0.72rem; color: #666; margin-top: 1px;">
-                      📅 {{ order.ordered_at || order.created_at || order.date }}
+                      📅 {{ (order.created_at || order.ordered_at || order.date) | appDateTime }}
                     </span>
                     <span *ngIf="order.tracking_code" style="display: inline-block; background: var(--brand-pearl-beige); color: var(--brand-mocha-brown); font-family: monospace; font-size: 0.68rem; padding: 1px 5px; border-radius: 3px; margin-top: 2px; border: 1px solid var(--color-border);">
                       🏷️ {{ order.tracking_code }}
@@ -524,11 +524,11 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                     <span class="status-badge pending" *ngIf="(order.order_status || order.status) === 'PENDING'" style="font-size: 0.7rem; padding: 2px 8px;">PENDING</span>
 
                     <div style="font-size: 0.68rem; color: #666; margin-top: 3px; font-weight: 500;">
-                      <span *ngIf="(order.order_status || order.status) === 'DELIVERED'">✓ {{ order.delivered_at || order.ordered_at }}</span>
-                      <span *ngIf="(order.order_status || order.status) === 'SHIPPED'">🚚 {{ order.shipped_at || order.ordered_at }}</span>
-                      <span *ngIf="(order.order_status || order.status) === 'PROCESSING'">⏱ {{ order.processing_at || order.ordered_at }}</span>
-                      <span *ngIf="(order.order_status || order.status) === 'CANCELLED'">✕ {{ order.cancelled_at || order.ordered_at }}</span>
-                      <span *ngIf="(order.order_status || order.status) === 'PENDING'">📅 {{ order.ordered_at || order.created_at }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'DELIVERED'">✓ {{ (order.delivered_at || order.ordered_at) | appDateTime }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'SHIPPED'">🚚 {{ (order.shipped_at || order.ordered_at) | appDateTime }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'PROCESSING'">⏱ {{ (order.processing_at || order.ordered_at) | appDateTime }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'CANCELLED'">✕ {{ (order.cancelled_at || order.ordered_at) | appDateTime }}</span>
+                      <span *ngIf="(order.order_status || order.status) === 'PENDING'">📅 {{ (order.created_at || order.ordered_at) | appDateTime }}</span>
                     </div>
 
                     <!-- Customer Cancellation Reason Tag -->
@@ -559,7 +559,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                       </a>
                     </div>
                   </td>
-                  <td>
+                  <td style="padding-right: 18px; min-width: 145px;">
                     <select class="status-select-compact" [value]="order.order_status || order.status" (change)="promptChangeOrderStatus(order, $event)">
                       <option value="PENDING">PENDING</option>
                       <option value="PROCESSING">PROCESSING</option>
@@ -648,7 +648,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                       <span class="badge-tag">{{ admin.role }}</span>
                     </td>
                     <td>
-                      <span class="order-date">{{ admin.createdAt }}</span>
+                      <span class="order-date">{{ admin.createdAt | appDateTime }}</span>
                     </td>
                     <td>
                       <span class="stock-pill in-stock">{{ admin.status || 'ACTIVE' }}</span>
@@ -877,7 +877,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                   <textarea
                     [(ngModel)]="storeSettingsForm.company_address"
                     rows="3"
-                    placeholder="Studio 101, Jewel Arcade, Near City Centre, Surat, Gujarat - 395001"
+                    placeholder="e.g. Studio 101, Atelier Arcade, High Street"
                     style="width: 100%; padding: 10px; border: 1.5px solid #D1C7BD; border-radius: 8px; font-size: 0.88rem;"
                   ></textarea>
                 </div>
@@ -1779,7 +1779,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               Order Details (#{{ selectedOrderForDetails.order_number || selectedOrderForDetails.number }})
             </h2>
             <div style="font-size: 0.78rem; color: #888; margin-top: 3px;">
-              Placed on {{ selectedOrderForDetails.ordered_at || selectedOrderForDetails.created_at }}
+              Placed on {{ (selectedOrderForDetails.created_at || selectedOrderForDetails.ordered_at) | appDateTime }}
             </div>
           </div>
           <button type="button" class="btn-close" (click)="selectedOrderForDetails = null" title="Close Popup">&times;</button>
@@ -1794,7 +1794,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
                 <span style="font-size: 1.15rem;">🚫</span> ORDER CANCELLED
               </span>
               <span *ngIf="selectedOrderForDetails.cancelled_at" style="font-size: 0.78rem; color: #742A2A; font-weight: 600; background: #FED7D7; padding: 2px 8px; border-radius: 4px;">
-                Cancelled: {{ selectedOrderForDetails.cancelled_at }}
+                Cancelled: {{ selectedOrderForDetails.cancelled_at | appDateTime }}
               </span>
             </div>
             <div style="font-size: 0.85rem; color: #2D3748; line-height: 1.5;">
@@ -1823,7 +1823,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
               <strong>Razorpay Order ID:</strong> <code style="color: var(--brand-mocha-brown); font-weight: bold; background: #FFF; padding: 2px 6px; border-radius: 3px;">{{ selectedOrderForDetails.razorpay_order_id || selectedOrderForDetails.razorpayOrderId }}</code>
             </div>
             <div *ngIf="selectedOrderForDetails.paid_at || selectedOrderForDetails.paidAt">
-              <strong>Paid At:</strong> {{ selectedOrderForDetails.paid_at || selectedOrderForDetails.paidAt }}
+              <strong>Paid At:</strong> {{ (selectedOrderForDetails.paid_at || selectedOrderForDetails.paidAt) | appDateTime }}
             </div>
           </div>
 
@@ -1833,24 +1833,24 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px;">
               <div style="padding: 8px 10px; border-radius: 6px; background: #FAF7F2; border-left: 3px solid #CFA874;">
                 <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">1. Placed</span>
-                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.ordered_at || selectedOrderForDetails.created_at }}</strong>
+                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ (selectedOrderForDetails.created_at || selectedOrderForDetails.ordered_at) | appDateTime }}</strong>
               </div>
               <div style="padding: 8px 10px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.processing_at ? '3px solid #9C27B0' : '3px solid #E0E0E0'">
                 <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">2. In Progress</span>
-                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.processing_at || 'Pending' }}</strong>
+                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.processing_at ? (selectedOrderForDetails.processing_at | appDateTime) : 'Pending' }}</strong>
               </div>
               <div style="padding: 8px 10px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.shipped_at ? '3px solid #0288D1' : '3px solid #E0E0E0'">
                 <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">3. Shipped</span>
-                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.shipped_at || 'Pending' }}</strong>
+                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.shipped_at ? (selectedOrderForDetails.shipped_at | appDateTime) : 'Pending' }}</strong>
               </div>
               <div style="padding: 8px 10px; border-radius: 6px; background: #FAF7F2;" [style.border-left]="selectedOrderForDetails.delivered_at ? '3px solid #2E7D32' : '3px solid #E0E0E0'">
                 <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #888; display: block;">4. Delivered</span>
-                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.delivered_at || 'Pending' }}</strong>
+                <strong style="font-size: 0.78rem; color: var(--brand-mocha-brown); display: block;">{{ selectedOrderForDetails.delivered_at ? (selectedOrderForDetails.delivered_at | appDateTime) : 'Pending' }}</strong>
               </div>
               <div *ngIf="(selectedOrderForDetails.order_status || selectedOrderForDetails.status) === 'CANCELLED'"
                    style="padding: 8px 10px; border-radius: 6px; background: #FFF5F5; border-left: 3px solid #E53E3E;">
                 <span style="font-size: 0.68rem; font-weight: 700; text-transform: uppercase; color: #E53E3E; display: block;">5. Cancelled</span>
-                <strong style="font-size: 0.78rem; color: #C53030; display: block;">{{ selectedOrderForDetails.cancelled_at || 'Cancelled' }}</strong>
+                <strong style="font-size: 0.78rem; color: #C53030; display: block;">{{ selectedOrderForDetails.cancelled_at ? (selectedOrderForDetails.cancelled_at | appDateTime) : 'Cancelled' }}</strong>
               </div>
             </div>
           </div>
@@ -1994,16 +1994,17 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       display: flex;
       gap: 12px;
       justify-content: center;
+      margin-top: 6px;
     }
 
     .modal-btn-cancel {
-      flex: 1;
-      padding: 12px 18px;
-      min-height: 44px;
-      border: 1px solid var(--color-border);
+      flex: 0 1 auto;
+      padding: 9px 22px;
+      min-height: 38px;
+      border: 1px solid #D5C9BD;
       background: #FFFFFF;
       color: var(--brand-mocha-brown);
-      border-radius: var(--radius-full);
+      border-radius: 8px;
       font-weight: 600;
       font-size: 0.85rem;
       cursor: pointer;
@@ -2011,16 +2012,17 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     }
     .modal-btn-cancel:hover {
       background: var(--brand-pearl-beige);
+      border-color: var(--brand-mocha-brown);
     }
 
     .modal-btn-confirm {
-      flex: 1;
-      padding: 12px 18px;
-      min-height: 44px;
+      flex: 0 1 auto;
+      padding: 9px 24px;
+      min-height: 38px;
       border: none;
       background: var(--brand-mocha-brown);
       color: #FFFFFF;
-      border-radius: var(--radius-full);
+      border-radius: 8px;
       font-weight: 600;
       font-size: 0.85rem;
       cursor: pointer;
@@ -2391,12 +2393,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
       box-shadow: var(--shadow-sm);
       overflow-x: auto;
       width: 100%;
-    }
-
-    @media (min-width: 1024px) {
-      .orders-table-wrapper {
-        overflow-x: hidden;
-      }
+      -webkit-overflow-scrolling: touch;
     }
 
     .admin-table {
@@ -2407,6 +2404,7 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
 
     .orders-table {
       width: 100%;
+      min-width: 980px;
       border-collapse: collapse;
       text-align: left;
       table-layout: auto;
@@ -2486,15 +2484,16 @@ const DEFAULT_FALLBACK_IMAGE = '/assets/images/placeholder-jewellery.svg';
     }
 
     .status-select-compact {
-      padding: 4px 6px;
+      padding: 5px 8px;
       border: 1px solid var(--color-border);
       border-radius: var(--radius-sm);
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--brand-mocha-brown);
       background: #FFFFFF;
       width: 100%;
-      max-width: 110px;
+      max-width: 125px;
+      box-sizing: border-box;
       cursor: pointer;
     }
 
@@ -3448,11 +3447,7 @@ export class AdminComponent implements OnInit {
     product.available = newStatus;
     product.isActive = newStatus;
 
-    this.mockDataService.updateProduct(product.id, {
-      available: newStatus,
-      isActive: newStatus
-    } as any);
-
+    
     this.showToast(`Product "${product.name}" is now ${actionLabel}.`, 'success');
     this.cdr.detectChanges();
   }
@@ -3816,7 +3811,6 @@ export class AdminComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  mockOrders: any[] = [];
 
   toastMessage: string = '';
   toastType: 'success' | 'error' = 'success';
@@ -3834,7 +3828,6 @@ export class AdminComponent implements OnInit {
 
   private productService = inject(ProductService);
   private categoryService = inject(CategoryService);
-  private mockDataService = inject(MockDataService);
   private authService = inject(AuthService);
   private cartService = inject(CartService);
   private router = inject(Router);
@@ -4509,26 +4502,7 @@ export class AdminComponent implements OnInit {
       // Offline fallback
     }
 
-    // Sync product update with MockDataService
-    this.mockDataService.updateProduct(this.editingProduct.id, {
-      name: this.editingProduct.name.trim(),
-      category: this.editingProduct.category,
-      price: Number(this.editingProduct.price),
-      compareAtPrice: this.editingProduct.compareAtPrice ? Number(this.editingProduct.compareAtPrice) : undefined,
-      badge: (this.editingProduct.badge as any) || undefined,
-      image: finalImage,
-      images: imagesList,
-      inStock: isStockValid,
-      stockQuantity: stockQty,
-      available: isProductActive,
-      isActive: isProductActive,
-      description: this.editingProduct.description ? this.editingProduct.description.trim() : '',
-      materials: materialsArray,
-      careGuide: this.editingProduct.careGuide || '',
-      shippingInfo: this.editingProduct.shippingInfo || '',
-      specifications: validSpecs
-    } as any);
-
+    
     // Update product in local state
     const index = this.products.findIndex(p => String(p.id) === String(this.editingProduct.id) || p.slug === this.editingProduct.slug);
     if (index !== -1) {
@@ -4725,7 +4699,7 @@ export class AdminComponent implements OnInit {
           name: u.name,
           email: u.email,
           role: u.role || 'ADMIN',
-          createdAt: u.createdAt || new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+          createdAt: u.createdAt || new Date().toISOString(),
           status: 'ACTIVE'
         }));
         this.cdr.detectChanges();
@@ -4904,8 +4878,7 @@ export class AdminComponent implements OnInit {
       }
 
       this.products = this.products.filter(p => String(p.id) !== targetStr);
-      this.mockDataService.deleteProduct(id);
-      this.showToast(`Jewellery product "${name}" deleted from catalog.`, 'success');
+            this.showToast(`Jewellery product "${name}" deleted from catalog.`, 'success');
       this.loadAdminProducts();
       this.loadAdminCategories();
       this.cdr.detectChanges();
@@ -4943,14 +4916,7 @@ export class AdminComponent implements OnInit {
         // Offline fallback
       }
 
-      try {
-        this.mockDataService.deleteCategory(id);
-      } catch (mockErr: any) {
-        this.showToast(mockErr.message || `Cannot delete category "${catName}".`, 'error');
-        this.cdr.detectChanges();
-        return;
-      }
-
+      
       this.categories = this.categories.filter(c => String(c.id) !== targetStr && c.slug !== targetStr);
       this.showToast(`Category "${catName}" removed from catalog.`, 'success');
       this.loadAdminCategories();
@@ -5199,13 +5165,7 @@ export class AdminComponent implements OnInit {
       // Offline fallback
     }
 
-    try {
-      this.mockDataService.deleteCategory(id);
-    } catch (mockErr: any) {
-      this.showToast(mockErr.message || `Cannot delete category "${name}".`, 'error');
-      return;
-    }
-
+    
     this.categories = this.categories.filter(c => String(c.id) !== targetStr && c.slug !== targetStr);
     this.showToast(`Category "${name}" removed from catalog.`, 'success');
     this.loadAdminCategories();
@@ -5343,8 +5303,7 @@ export class AdminComponent implements OnInit {
       // Offline fallback
     }
 
-    this.mockDataService.updateCategory(this.editingCategory.id, payload);
-
+    
     const idx = this.categories.findIndex(c => c.id === this.editingCategory.id);
     if (idx !== -1) {
       this.categories[idx] = {

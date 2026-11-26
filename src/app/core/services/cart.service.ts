@@ -352,7 +352,7 @@ export class CartService {
     this.saveAndUpdateLocal([]);
   }
 
-  syncCartWithMockProducts(): void {
+  syncLocalCart(): void {
     if (!this.authService.isAuthenticated()) {
       const currentItems = this.loadCartFromStorage();
       if (currentItems && currentItems.length > 0) {

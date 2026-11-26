@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { SectionHeadingComponent } from '../../shared/components/section-heading/section-heading.component';
 import { ButtonComponent } from '../../shared/components/button/button.component';
+import { AppDateTimePipe } from '../../shared/pipes/date-time.pipe';
 import { AuthService } from '../../core/services/auth.service';
 import { CartService } from '../../core/services/cart.service';
 import { WishlistService } from '../../core/services/wishlist.service';
@@ -14,7 +15,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, SectionHeadingComponent, ButtonComponent],
+  imports: [CommonModule, FormsModule, RouterLink, SectionHeadingComponent, ButtonComponent, AppDateTimePipe],
   template: `
     <!-- Luxury Breadcrumb Bar -->
     <nav class="account-breadcrumb-bar" aria-label="Breadcrumb">
@@ -524,7 +525,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                   <header class="order-header-bar">
                     <div class="order-ref-group">
                       <span class="order-id">Order #{{ order.order_number || order.number }}</span>
-                      <span class="order-timestamp">Placed on {{ order.created_at || order.ordered_at | date:'MMMM d, y, h:mm a' }}</span>
+                      <span class="order-timestamp">Placed on {{ (order.created_at || order.ordered_at) | appDateTime }}</span>
                     </div>
 
                     <div class="order-pill-group">
@@ -546,7 +547,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                   <div *ngIf="(order.order_status || order.status) === 'CANCELLED'" class="order-cancellation-banner">
                     <div class="cancellation-badge-wrap">
                       <span class="cancelled-tag">ORDER CANCELLED</span>
-                      <span class="cancelled-meta" *ngIf="order.cancelled_at">on {{ order.cancelled_at | date:'MMMM d, y, h:mm a' }}</span>
+                      <span class="cancelled-meta" *ngIf="order.cancelled_at">on {{ order.cancelled_at | appDateTime }}</span>
                     </div>
                     <span class="cancelled-reason" *ngIf="order.cancellation_reason">Reason: {{ order.cancellation_reason }}</span>
                   </div>
@@ -589,7 +590,7 @@ import { API_ENDPOINTS } from '../../core/constants/api-endpoints';
                         </div>
                         <div class="milestone-text-block">
                           <span class="milestone-label">{{ step.label }}</span>
-                          <span class="milestone-date" *ngIf="step.date">{{ step.date | date:'shortDate' }}</span>
+                          <span class="milestone-date" *ngIf="step.date">{{ step.date | appDateTime }}</span>
                         </div>
                       </div>
                     </div>
