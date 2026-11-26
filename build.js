@@ -84,5 +84,10 @@ if (fs.existsSync(path.join(frontendDir, 'src', 'assets'))) {
   copyRecursive(path.join(frontendDir, 'src', 'assets'), path.join(distDir, 'assets'));
 }
 
+// Copy _redirects (for Netlify SPA client-side routing)
+if (fs.existsSync(path.join(frontendDir, 'src', '_redirects'))) {
+  fs.copyFileSync(path.join(frontendDir, 'src', '_redirects'), path.join(distDir, '_redirects'));
+}
+
 console.log('   ✓ Static assets copied successfully.');
 console.log('=== BUILD COMPLETE: Production bundle ready in dist/ ===');

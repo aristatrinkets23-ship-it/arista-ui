@@ -2,5 +2,5 @@ const isLocal = typeof window !== 'undefined' && (window.location.hostname === '
 
 export const environment = {
   production: !isLocal,
-  apiUrl: isLocal ? 'http://localhost:5000/api/v1' : 'https://arista-server.vercel.app/api/v1'
+  apiUrl: isLocal ? 'http://localhost:5000/api/v1' : 'https://arista-server.onrender.com/api/v1'
 };
